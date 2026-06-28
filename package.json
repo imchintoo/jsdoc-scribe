@@ -1,0 +1,42 @@
+{
+    "name": "jsdoc-scribe",
+    "version": "1.0.1",
+    "description": "Pure, deterministic, AST-based JSDoc comment generator for JavaScript & TypeScript. No AI involved — every comment line comes straight from the syntax tree.",
+    "main": "lib/index.js",
+    "bin": {
+        "gen-comments": "./bin/cli.js"
+    },
+    "files": [
+        "bin",
+        "lib",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "demo": "node bin/cli.js example",
+        "test": "node test/run.js",
+        "prepublishOnly": "npm test"
+    },
+    "keywords": [
+        "jsdoc",
+        "comments",
+        "documentation",
+        "typescript",
+        "javascript",
+        "cli",
+        "ast",
+        "code-documentation",
+        "comment-generator",
+        "autodoc"
+    ],
+    "author": {
+        "name": "Chintan Goswami"
+    },
+    "license": "MIT",
+    "engines": {
+        "node": ">=14"
+    },
+    "dependencies": {
+        "typescript": ">=5.0.0"
+    }
+}
