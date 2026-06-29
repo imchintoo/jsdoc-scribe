@@ -19,14 +19,14 @@ Usage:
 
 Options:
   --write, -w     Overwrite files in place.
-                   (default: writes a sibling "<name>.commented.<ext>" file
+                   (default: writes a sibling "<name>.<ext>" file
                     next to each original, so you can review a diff first)
   --force, -f     Add comment blocks even on nodes that already have one.
   --help, -h      Show this help.
   --version, -v   Show the installed version.
 
 Examples:
-  gen-comments src/utils.ts                  # preview only, writes utils.commented.ts
+  gen-comments src/utils.ts                  # preview only, writes utils.ts
   gen-comments .                              # scan whole project, preview only
   gen-comments . --write                      # scan whole project, edit files in place
   gen-comments src --write --force            # re-document files that already have JSDoc

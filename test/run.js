@@ -29,7 +29,7 @@ function check(label, fn) {
 check("adds a function doc with correct param/return types (TS)", () => {
     const file = tmpFile("a.ts", "export function add(a: number, b: number): number {\n  return a + b;\n}\n");
     processFile(file, { write: false, silent: true });
-    const out = fs.readFileSync(file.replace(".ts", ".commented.ts"), "utf8");
+    const out = fs.readFileSync(file.replace(".ts", ".ts"), "utf8");
     assert.match(out, /@function add/);
     assert.match(out, /@param \{number\} a/);
     assert.match(out, /@returns \{number\}/);
@@ -38,7 +38,7 @@ check("adds a function doc with correct param/return types (TS)", () => {
 check("infers non-void return type from a bare return statement (no AI, just syntax)", () => {
     const file = tmpFile("b.js", 'function greet(name) {\n  return "hi " + name;\n}\n');
     processFile(file, { write: false, silent: true });
-    const out = fs.readFileSync(file.replace(".js", ".commented.js"), "utf8");
+    const out = fs.readFileSync(file.replace(".js", ".js"), "utf8");
     assert.match(out, /@returns \{any\}/); // no annotation available in plain JS, but NOT void
 });
 
@@ -58,7 +58,7 @@ check("output remains syntactically valid TypeScript", () => {
     const ts = require("typescript");
     const file = tmpFile("e.ts", "export class Foo {\n  bar(x: string): string {\n    return x;\n  }\n}\n");
     processFile(file, { write: false, silent: true });
-    const outPath = file.replace(".ts", ".commented.ts");
+    const outPath = file.replace(".ts", ".ts");
     const text = fs.readFileSync(outPath, "utf8");
     const sf = ts.createSourceFile(outPath, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
     assert.strictEqual((sf.parseDiagnostics || []).length, 0);

@@ -1,19 +1,26 @@
 {
     "name": "jsdoc-scribe",
-    "version": "1.0.1",
-    "description": "Pure, deterministic, AST-based JSDoc comment generator for JavaScript & TypeScript. No AI involved — every comment line comes straight from the syntax tree.",
+    "version": "1.7.0",
+    "description": "Pure, deterministic, AST-based JSDoc comment generator and documentation site builder for JavaScript and TypeScript. No AI involved.",
     "main": "lib/index.js",
+    "exports": {
+        ".": "./lib/index.js",
+        "./docs": "./lib/docs.js"
+    },
     "bin": {
-        "gen-comments": "./bin/cli.js"
+        "gen-comments": "./bin/cli.js",
+        "gen-docs": "./bin/gen-docs.js"
     },
     "files": [
         "bin",
         "lib",
         "README.md",
+        "CHANGELOG.md",
         "LICENSE"
     ],
     "scripts": {
-        "demo": "node bin/cli.js example",
+        "demo": "node bin/cli.js sample",
+        "docs": "node bin/gen-docs.js sample --out docs --title jsdoc-scribe",
         "test": "node test/run.js",
         "prepublishOnly": "npm test"
     },
@@ -27,7 +34,8 @@
         "ast",
         "code-documentation",
         "comment-generator",
-        "autodoc"
+        "autodoc",
+        "docs-generator"
     ],
     "author": {
         "name": "Chintan Goswami"
@@ -35,6 +43,14 @@
     "license": "MIT",
     "engines": {
         "node": ">=14"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/imchintoo/jsdoc-scribe.git"
+    },
+    "homepage": "https://github.com/imchintoo/jsdoc-scribe#readme",
+    "bugs": {
+        "url": "https://github.com/imchintoo/jsdoc-scribe/issues"
     },
     "dependencies": {
         "typescript": ">=5.0.0"
