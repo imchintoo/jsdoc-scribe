@@ -230,7 +230,20 @@ gen-docs src --out docs --title "My Project"
 # Open docs/index.html in your browser
 ```
 
-The output is a self-contained static site — no server required.
+The output is a self-contained static site — no server required. Output structure:
+
+```
+docs/
+  index.html          # project index (module cards)
+  search-index.js     # shared search index (fetched once)
+  assets/
+    style.css         # shared CSS — cached after first page load
+    app.js            # shared JS (search, theme toggle, copy)
+  modules/
+    api.html
+    utils.html
+    ...
+```
 
 ### CLI flags
 
@@ -349,13 +362,19 @@ const {
 
 ```js
 const { generateSite } = require('jsdoc-scribe/docs');
+const fs = require('fs'), path = require('path');
 
-generateSite(['src'], {
-  out: 'docs',
-  title: 'My Project',
-  theme: 'default',
-  sourceUrl: 'https://github.com/org/repo/blob/main',
+const pages = generateSite(['src'], {
+  projectName: 'My Project',
+  version: '1.0.0',
 });
+
+// pages = [{ path: 'index.html', html }, { path: 'assets/style.css', html }, ...]
+for (const p of pages) {
+  const dest = path.join('docs', p.path);
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.writeFileSync(dest, p.html, 'utf8');
+}
 ```
 
 ### Step-by-step
@@ -390,13 +409,15 @@ const pages = buildSite(modules, {
   sourceUrl: 'https://github.com/org/repo/blob/main',
 });
 
-// 5. Write pages yourself
+// 5. Write all files
+// pages = [{ path, html }] and includes HTML pages + shared assets:
+//   assets/style.css, assets/app.js, search-index.js
+// Always use mkdirSync so assets/ and modules/ are created automatically.
 const outDir = 'docs';
-fs.mkdirSync(outDir, { recursive: true });
-for (const [filePath, html] of Object.entries(pages)) {
-  const dest = path.join(outDir, filePath);
+for (const p of pages) {
+  const dest = path.join(outDir, p.path);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.writeFileSync(dest, html);
+  fs.writeFileSync(dest, p.html, 'utf8');
 }
 ```
 

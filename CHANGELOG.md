@@ -3,6 +3,138 @@
 All notable changes to `jsdoc-scribe` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.11.0] - 2026-06-30
+
+### Changed — Code Quality (Phase D)
+
+**`extractor.js` robustness**
+- Added `sourceFile` null guard: if `ts.createSourceFile()` returns a falsy value the function logs to stderr and returns an empty-but-valid module object instead of throwing.
+- Wrapped the entire `visit(node)` body in `try/catch`: a malformed or unexpected AST node now logs a warning (`jsdoc-scribe: skipped node in <file> — <message>`) and continues visiting sibling nodes instead of aborting the whole module.
+
+**`renderer.js` refactor**
+- Extracted `buildSymbolMap(modules)` from `buildSite()` — builds the `{name → {anchorId, modulePath}}` cross-reference map used by `{@link}` resolution.
+- Extracted `buildIndexBody(modules)` — builds the module-grid HTML block for the index page (previously inlined in `buildSite()`).
+- Extracted `buildModuleBody(mod, sourceUrl, symbolMap)` — builds the sections HTML for a single module page (previously inlined in `buildSite()`).
+- `buildSite()` is now a slim coordinator (~25 lines) delegating to the three helpers above.
+
+**`docs.js` async upgrade**
+- `extractModules(files)` is now `async` and uses `Promise.allSettled`: all files are attempted in parallel; fulfilled results are collected, rejected ones are logged to stderr and skipped.
+- `generateSite(inputPaths, options)` is now `async` accordingly.
+
+---
+
+## [1.10.0] - 2026-06-30
+
+### Added — Test coverage (Phase C)
+
+Expanded `npm test` from 7 tests to **25 tests** across three suites.
+
+**`test/extractor.test.js` — 10 new tests** (exercises `lib/extractor.js`):
+- Module-level `@module` description and `@since` extracted from top-of-file JSDoc
+- `@param` type and description parsed from JSDoc block
+- `@returns` type and description parsed
+- `@since` and `@deprecated` on individual items
+- `@throws` with type and description
+- 1-based source line numbers on all functions (ordered)
+- Class with constructor, methods, properties, and static members
+- Interface with optional properties
+- Enum members and their values
+- Type alias and exported `const` variable
+
+**`test/renderer.test.js` — 8 new tests** (exercises `lib/renderer.js` via mock module objects):
+- `buildSite` returns exactly 3 shared assets + `index.html` + one page per module
+- Search index contains every symbol (function, class) with root-relative URLs
+- Module page includes right-side TOC with `data-anchor` attributes and "On this page" title
+- `@deprecated` badge and notice rendered for deprecated items
+- Source link contains GitHub URL and `#L42` line anchor when `sourceUrl` set
+- `@example` blocks rendered with `tok-kw` syntax-highlighting spans
+- Sidebar symbol tree includes `sym-rows` and kind pills for the active module
+- `{@link Symbol}` in descriptions resolves to `<a class="link-ref">` with `href`
+
+### Fixed — `@description` tag in JSDoc blocks
+
+`parseJSDocBlock()` now recognises `@description <text>` as an alias for the plain-text
+description that precedes the first `@tag`. Previously `@description` was silently discarded as
+an unknown tag, leaving `mod.description === null` for any file that used it (including all
+built-in sample files).
+
+---
+
+## [1.9.0] - 2026-06-30
+
+### Changed — Enterprise HTML Redesign (Phase B)
+
+Complete visual overhaul of the generated documentation site.
+
+**Three-column layout**
+- Left sidebar (272 px) · Center content (flexible) · Right TOC (224 px)
+- CSS Grid replaces the old flexbox layout: `.layout { grid-template-columns: 272px 1fr 224px }`
+- Index page uses two-column grid (no right TOC); module pages use three columns automatically via the `has-toc` class
+
+**Right-side "On this page" TOC**
+- New `buildToc(mod)` function generates a per-section TOC (Functions, Classes, Interfaces, etc.) with every symbol as a clickable anchor
+- `IntersectionObserver` scroll spy in `app.js` tracks which card is on screen and highlights the matching TOC item with an accent-colored left border
+- TOC hides at ≤1280 px viewport width; three columns collapse to two
+
+**Symbol tree in sidebar**
+- Active module expands to show every symbol underneath its file link
+- Each symbol is prefixed with a color-coded pill badge (`fn`, `cls`, `if`, `ty`, `en`, `$`) matching its kind
+- New `.sym-rows`, `.sym-row`, `.sym-pill`, `.sym-link` CSS classes
+
+**Color-coded cards**
+- Each card now has a 3 px left accent border: green=function, blue=class, purple=interface, orange=enum, teal=type alias, gray=variable/const
+- Added `card-fn`, `card-cls`, `card-iface`, `card-enum`, `card-type`, `card-var` CSS classes to all render functions
+
+**Server-side syntax highlighting for `@example` blocks**
+- New `highlightCode(raw)` function in `renderer.js` tokenizes JS/TS code at build time
+- Handles line comments, block comments, strings (single/double/template), numbers, and 40+ keywords
+- Produces `<span class="tok-kw|tok-str|tok-cmt|tok-num">` spans; colors adapt to dark/light theme via CSS vars
+
+**Responsive layout**
+- `@media (max-width: 1280px)`: right TOC hidden, grid collapses to two columns
+- `@media (max-width: 860px)`: sidebar becomes a fixed overlay (off-screen by default), hamburger button appears in the top-left, main content uses mobile padding
+- Hamburger toggle with animated open/close icon (three-bar → X)
+
+**Print styles**
+- `@media print`: sidebar, TOC, hamburger, copy buttons, theme toggle, and search box all hidden
+- Cards get `break-inside: avoid` and a neutral border for clean PDF output
+
+**Section counts**
+- Section headings now show item count: `Functions (3)` using a `.section-count` monospace chip
+
+**Other polish**
+- `html { scroll-behavior: smooth }` for smooth anchor navigation
+- Sidebar active link gets a 2 px accent left border instead of just a background change
+- Card hover adds a subtle box-shadow
+- All `section()` calls updated with count display
+- CSS ~15 KB (up from ~9 KB), app.js ~4 KB (up from ~2.6 KB) — still cached after first load
+
+---
+
+## [1.8.0] - 2026-06-30
+
+### Changed — Performance: Shared Static Assets (Phase A)
+
+Previously every generated HTML page inlined the same 9 KB CSS block, 3 KB client JS, and 34 KB search index. On a 9-page site that wasted 630+ KB of duplicate payload.
+
+- **CSS extracted** to `assets/style.css` — written once per build, shared by all pages via `<link rel="stylesheet">`.
+- **Client JS extracted** to `assets/app.js` — written once, shared via `<script src>`. Browsers cache it after the first page load.
+- **Search index extracted** to `search-index.js` — written once as `window.__SEARCH_INDEX__=[...]`, loaded before `app.js` via `<script src>`. No more 34 KB inline JSON on every page.
+- `app.js` auto-detects its location (`/modules/` in the path) and adjusts search result URLs at runtime, so a single shared index file works for both the index page and all module pages.
+
+### Result
+| Metric | Before | After |
+|---|---|---|
+| Total site size | 628 KB | 225 KB (−64%) |
+| Per-page HTML (avg) | ~70 KB | ~20 KB |
+| Cache benefit (2nd+ page) | ~70 KB reload | ~20 KB reload |
+| Shared assets (loaded once) | — | 46 KB |
+
+### Upgraded — `buildSite()` output
+The return array now includes three additional entries: `{ path: 'assets/style.css', html: '...' }`, `{ path: 'assets/app.js', html: '...' }`, `{ path: 'search-index.js', html: '...' }`. The CLI handles these automatically. Programmatic API users should use `fs.mkdirSync(path.dirname(dest), { recursive: true })` before writing each file (the README example is updated).
+
+---
+
 ## [1.7.0] - 2026-06-29
 
 ### Added

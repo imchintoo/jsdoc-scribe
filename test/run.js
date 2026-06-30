@@ -1,14 +1,19 @@
 "use strict";
 
 /**
- * Minimal self-test, no framework needed — runs on every `npm test`
- * and ideally before every `npm publish` (see prepublishOnly).
- * Pure assertions against deterministic output, so it never flakes.
+ * Minimal self-test runner — no framework needed.
+ * Runs on every `npm test` and ideally before every `npm publish`.
+ * Pure assertions against deterministic output; never flakes.
+ *
+ * Suites:
+ *   1. gen-comments (lib/index.js) — 7 tests
+ *   2. extractor     (lib/extractor.js) — 10 tests
+ *   3. renderer      (lib/renderer.js)  — 8 tests
  */
 
-const fs = require("fs");
+const fs   = require("fs");
 const path = require("path");
-const os = require("os");
+const os   = require("os");
 const assert = require("assert");
 const { processFile, collectFiles } = require("../lib/index.js");
 
@@ -20,26 +25,38 @@ function tmpFile(name, content) {
 }
 
 let passed = 0;
+let failed = 0;
 function check(label, fn) {
-    fn();
-    passed += 1;
-    console.log(`  ok - ${label}`);
+    try {
+        fn();
+        passed += 1;
+        console.log("  ok - " + label);
+    } catch (err) {
+        failed += 1;
+        console.error("  FAIL - " + label);
+        console.error("       " + err.message);
+    }
 }
+
+// ---------------------------------------------------------------------------
+// Suite 1 — gen-comments (lib/index.js)
+// ---------------------------------------------------------------------------
+console.log("\n-- gen-comments --");
 
 check("adds a function doc with correct param/return types (TS)", () => {
     const file = tmpFile("a.ts", "export function add(a: number, b: number): number {\n  return a + b;\n}\n");
     processFile(file, { write: false, silent: true });
-    const out = fs.readFileSync(file.replace(".ts", ".ts"), "utf8");
+    const out = fs.readFileSync(file, "utf8");
     assert.match(out, /@function add/);
     assert.match(out, /@param \{number\} a/);
     assert.match(out, /@returns \{number\}/);
 });
 
 check("infers non-void return type from a bare return statement (no AI, just syntax)", () => {
-    const file = tmpFile("b.js", 'function greet(name) {\n  return "hi " + name;\n}\n');
+    const file = tmpFile("b.js", "function greet(name) {\n  return \"hi \" + name;\n}\n");
     processFile(file, { write: false, silent: true });
-    const out = fs.readFileSync(file.replace(".js", ".js"), "utf8");
-    assert.match(out, /@returns \{any\}/); // no annotation available in plain JS, but NOT void
+    const out = fs.readFileSync(file, "utf8");
+    assert.match(out, /@returns \{any\}/);
 });
 
 check("skips nodes that already have a leading JSDoc block", () => {
@@ -55,12 +72,11 @@ check("--force re-adds comments even when one already exists", () => {
 });
 
 check("output remains syntactically valid TypeScript", () => {
-    const ts = require("typescript");
+    const ts   = require("typescript");
     const file = tmpFile("e.ts", "export class Foo {\n  bar(x: string): string {\n    return x;\n  }\n}\n");
     processFile(file, { write: false, silent: true });
-    const outPath = file.replace(".ts", ".ts");
-    const text = fs.readFileSync(outPath, "utf8");
-    const sf = ts.createSourceFile(outPath, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    const text = fs.readFileSync(file, "utf8");
+    const sf   = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
     assert.strictEqual((sf.parseDiagnostics || []).length, 0);
 });
 
@@ -81,4 +97,20 @@ check("is idempotent: running twice adds 0 blocks the second time", () => {
     assert.strictEqual(second, 0);
 });
 
-console.log(`\n${passed} test(s) passed.`);
+// ---------------------------------------------------------------------------
+// Suite 2 — extractor (lib/extractor.js)
+// ---------------------------------------------------------------------------
+console.log("\n-- extractor --");
+require("./extractor.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 3 — renderer (lib/renderer.js)
+// ---------------------------------------------------------------------------
+console.log("\n-- renderer --");
+require("./renderer.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Summary
+// ---------------------------------------------------------------------------
+console.log("\n" + passed + " test(s) passed." + (failed ? "  " + failed + " FAILED." : ""));
+if (failed > 0) process.exit(1);
