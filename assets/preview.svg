@@ -1,0 +1,138 @@
+<svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+  <title>jsdoc-scribe generated documentation preview</title>
+  <desc>Stripe-style layout: sticky topnav, white sidebar with smart module grouping, two-column cards with syntax-highlighted code panels, and right TOC with scroll-spy.</desc>
+  <defs>
+    <linearGradient id="fadeBottom" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f6f9fc" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#f6f9fc" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+  <!-- outer frame -->
+  <rect width="900" height="520" rx="10" fill="#e8e8e8"/>
+  <rect x="2" y="2" width="896" height="516" rx="9" fill="#ffffff" stroke="#d0d0d0" stroke-width="1"/>
+  <!-- TOPNAV -->
+  <rect x="2" y="2" width="896" height="44" rx="9" fill="#ffffff"/>
+  <rect x="2" y="38" width="896" height="1" fill="#e6ebf1"/>
+  <rect x="16" y="17" width="16" height="2" rx="1" fill="#0a2540"/>
+  <rect x="16" y="22" width="12" height="2" rx="1" fill="#0a2540"/>
+  <rect x="16" y="27" width="16" height="2" rx="1" fill="#0a2540"/>
+  <text x="40" y="28" font-size="13" font-weight="700" fill="#0a2540">jsdoc-scribe</text>
+  <text x="126" y="28" font-size="10" fill="#697386" font-family="monospace">v1.15.0</text>
+  <rect x="310" y="12" width="280" height="22" rx="5" fill="#f6f9fc" stroke="#e6ebf1" stroke-width="1"/>
+  <circle cx="323" cy="23" r="4" fill="none" stroke="#aab" stroke-width="1.2"/>
+  <line x1="326" y1="26" x2="329" y2="29" stroke="#aab" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="334" y="27" font-size="11" fill="#aab" font-style="italic">Search...  (Ctrl+K)</text>
+  <rect x="575" y="15" width="10" height="13" rx="2" fill="#e6ebf1"/>
+  <text x="577" y="25" font-size="9" fill="#697386" font-family="monospace">/</text>
+  <!-- SIDEBAR -->
+  <rect x="2" y="43" width="168" height="475" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="14" y="64" font-size="9" font-weight="700" fill="#8898aa" letter-spacing="1">MODULES</text>
+  <text x="14" y="83" font-size="9" fill="#5c5c5c">&#9658;</text>
+  <text x="24" y="83" font-size="11" font-weight="600" fill="#8898aa" letter-spacing=".5">CONTAINER</text>
+  <text x="14" y="100" font-size="9" fill="#5c5c5c">&#9658;</text>
+  <text x="24" y="100" font-size="11" font-weight="600" fill="#8898aa" letter-spacing=".5">EVENTS</text>
+  <text x="14" y="117" font-size="9" fill="#5c5c5c">&#9658;</text>
+  <text x="24" y="117" font-size="11" font-weight="600" fill="#8898aa" letter-spacing=".5">MIDDLEWARE</text>
+  <text x="14" y="136" font-size="9" fill="#625bf6">&#9660;</text>
+  <text x="24" y="136" font-size="11" font-weight="700" fill="#625bf6" letter-spacing=".5">SRC</text>
+  <rect x="2" y="141" width="168" height="18" fill="#f0effe"/>
+  <rect x="2" y="141" width="2" height="18" fill="#625bf6"/>
+  <text x="30" y="154" font-size="12" fill="#625bf6" font-weight="600">api</text>
+  <rect x="2" y="159" width="168" height="72" fill="#fafafe"/>
+  <rect x="32" y="163" width="18" height="11" rx="2" fill="#dcfce7"/>
+  <text x="34" y="172" font-size="8" fill="#166534" font-weight="700" font-family="monospace">fn</text>
+  <text x="54" y="172" font-size="11" fill="#425466">getUser</text>
+  <rect x="32" y="178" width="18" height="11" rx="2" fill="#dcfce7"/>
+  <text x="34" y="187" font-size="8" fill="#166534" font-weight="700" font-family="monospace">fn</text>
+  <text x="54" y="187" font-size="11" fill="#425466">createUser</text>
+  <rect x="32" y="193" width="18" height="11" rx="2" fill="#dbeafe"/>
+  <text x="33" y="202" font-size="8" fill="#1e40af" font-weight="700" font-family="monospace">cls</text>
+  <text x="54" y="202" font-size="11" fill="#425466">ApiClient</text>
+  <rect x="32" y="208" width="18" height="11" rx="2" fill="#f3e8ff"/>
+  <text x="35" y="217" font-size="8" fill="#6b21a8" font-weight="700" font-family="monospace">if</text>
+  <text x="54" y="217" font-size="11" fill="#425466">ApiConfig</text>
+  <rect x="32" y="223" width="18" height="11" rx="2" fill="#f1f5f9"/>
+  <text x="36" y="232" font-size="8" fill="#475569" font-weight="700" font-family="monospace">$</text>
+  <text x="54" y="232" font-size="11" fill="#425466">BASE_URL</text>
+  <text x="14" y="251" font-size="12" fill="#425466">errors</text>
+  <text x="14" y="268" font-size="12" fill="#425466">models</text>
+  <text x="14" y="285" font-size="12" fill="#425466">utils</text>
+  <!-- MAIN CONTENT -->
+  <rect x="170" y="43" width="556" height="475" fill="#f6f9fc"/>
+  <rect x="170" y="43" width="556" height="72" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="186" y="62" font-size="11" fill="#697386">
+    <tspan fill="#625bf6">jsdoc-scribe</tspan>
+    <tspan fill="#697386"> / api</tspan>
+  </text>
+  <text x="186" y="82" font-size="18" font-weight="700" fill="#0a2540">api</text>
+  <text x="186" y="98" font-size="10" fill="#697386" font-family="monospace">sample/api.ts</text>
+  <rect x="170" y="115" width="556" height="22" fill="#f6f9fc" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="186" y="130" font-size="9" font-weight="700" fill="#697386" letter-spacing="1">FUNCTIONS <tspan fill="#aab">(2)</tspan></text>
+  <!-- CARD 1 -->
+  <rect x="170" y="137" width="556" height="100" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="188" y="158" font-size="13" font-weight="700" fill="#0a2540" font-family="monospace">getUser</text>
+  <rect x="258" y="148" width="45" height="14" rx="3" fill="#dcfce7"/>
+  <text x="262" y="159" font-size="9" fill="#166534" font-weight="600">Exported</text>
+  <text x="308" y="158" font-size="11" fill="#aab" font-family="monospace">api.ts:14</text>
+  <text x="188" y="174" font-size="11" fill="#425466">Get the authenticated user by ID.</text>
+  <text x="188" y="190" font-size="10" fill="#697386">@param</text>
+  <text x="220" y="190" font-size="10" fill="#0a2540" font-family="monospace">userId</text>
+  <text x="258" y="190" font-size="10" fill="#697386">string — user unique identifier</text>
+  <text x="188" y="206" font-size="10" fill="#697386">Returns</text>
+  <text x="228" y="206" font-size="10" fill="#0a2540" font-family="monospace">Promise&lt;User&gt;</text>
+  <rect x="555" y="137" width="171" height="100" fill="#1a2e44"/>
+  <text x="567" y="155" font-size="8" font-weight="700" fill="#4a6f8a" letter-spacing="1">SIGNATURE</text>
+  <rect x="686" y="141" width="30" height="12" rx="2" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.13)" stroke-width="0.5"/>
+  <text x="692" y="150" font-size="8" fill="#7a95b0">Copy</text>
+  <text x="567" y="170" font-size="10" fill="#c8daea" font-family="monospace"><tspan fill="#79b8ff">async</tspan> function</text>
+  <text x="567" y="184" font-size="10" fill="#c8daea" font-family="monospace">  getUser(</text>
+  <text x="567" y="198" font-size="10" fill="#c8daea" font-family="monospace">    userId: <tspan fill="#c792ea">string</tspan></text>
+  <text x="567" y="212" font-size="10" fill="#c8daea" font-family="monospace">  ): <tspan fill="#c792ea">Promise</tspan>&lt;<tspan fill="#c792ea">User</tspan>&gt;</text>
+  <!-- CARD 2 -->
+  <rect x="170" y="237" width="556" height="100" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="188" y="258" font-size="13" font-weight="700" fill="#0a2540" font-family="monospace">createUser</text>
+  <rect x="278" y="248" width="45" height="14" rx="3" fill="#dcfce7"/>
+  <text x="282" y="259" font-size="9" fill="#166534" font-weight="600">Exported</text>
+  <rect x="328" y="248" width="33" height="14" rx="3" fill="#eff6ff"/>
+  <text x="332" y="259" font-size="9" fill="#1e40af" font-weight="600">Async</text>
+  <text x="188" y="274" font-size="11" fill="#425466">Create a new user with the given profile data.</text>
+  <rect x="555" y="237" width="171" height="100" fill="#1a2e44"/>
+  <text x="567" y="255" font-size="8" font-weight="700" fill="#4a6f8a" letter-spacing="1">EXAMPLE</text>
+  <text x="567" y="270" font-size="10" fill="#c8daea" font-family="monospace"><tspan fill="#79b8ff">const</tspan> user =</text>
+  <text x="567" y="284" font-size="10" fill="#c8daea" font-family="monospace">  <tspan fill="#79b8ff">await</tspan> createUser(&#123;</text>
+  <text x="567" y="298" font-size="10" fill="#c8daea" font-family="monospace">    name: <tspan fill="#9ecbff">"Alice"</tspan></text>
+  <text x="567" y="312" font-size="10" fill="#c8daea" font-family="monospace">  &#125;);</text>
+  <!-- CARD 3 partial -->
+  <rect x="170" y="337" width="556" height="22" fill="#f6f9fc" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="186" y="352" font-size="9" font-weight="700" fill="#697386" letter-spacing="1">CLASSES <tspan fill="#aab">(1)</tspan></text>
+  <rect x="170" y="359" width="556" height="90" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="188" y="380" font-size="13" font-weight="700" fill="#0a2540" font-family="monospace">ApiClient</text>
+  <rect x="268" y="370" width="45" height="14" rx="3" fill="#dcfce7"/>
+  <text x="272" y="381" font-size="9" fill="#166534" font-weight="600">Exported</text>
+  <text x="188" y="396" font-size="11" fill="#425466">HTTP client with retry logic and auth injection.</text>
+  <rect x="555" y="359" width="171" height="90" fill="#1a2e44"/>
+  <text x="567" y="377" font-size="8" font-weight="700" fill="#4a6f8a" letter-spacing="1">SIGNATURE</text>
+  <text x="567" y="392" font-size="10" fill="#c8daea" font-family="monospace"><tspan fill="#79b8ff">class</tspan> ApiClient &#123;</text>
+  <text x="567" y="406" font-size="10" fill="#c8daea" font-family="monospace">  baseUrl: <tspan fill="#c792ea">string</tspan></text>
+  <text x="567" y="420" font-size="10" fill="#c8daea" font-family="monospace">  get(path: <tspan fill="#c792ea">string</tspan>)</text>
+  <text x="567" y="434" font-size="10" fill="#c8daea" font-family="monospace">    : <tspan fill="#c792ea">Promise</tspan>&lt;<tspan fill="#c792ea">any</tspan>&gt;</text>
+  <!-- fade -->
+  <rect x="170" y="420" width="556" height="98" fill="url(#fadeBottom)"/>
+  <!-- RIGHT TOC -->
+  <rect x="726" y="43" width="174" height="475" fill="#f6f9fc" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="742" y="72" font-size="9" font-weight="700" fill="#697386" letter-spacing="1">ON THIS PAGE</text>
+  <text x="742" y="94" font-size="10" font-weight="600" fill="#425466">Functions</text>
+  <line x1="742" y1="98" x2="882" y2="98" stroke="#e6ebf1" stroke-width="0.5"/>
+  <rect x="742" y="102" width="2" height="15" fill="#625bf6"/>
+  <text x="748" y="113" font-size="11" fill="#625bf6" font-weight="600">getUser</text>
+  <text x="748" y="130" font-size="11" fill="#697386">createUser</text>
+  <text x="742" y="148" font-size="10" font-weight="600" fill="#425466">Classes</text>
+  <line x1="742" y1="152" x2="882" y2="152" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="748" y="165" font-size="11" fill="#697386">ApiClient</text>
+  <text x="742" y="183" font-size="10" font-weight="600" fill="#425466">Interfaces</text>
+  <line x1="742" y1="187" x2="882" y2="187" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="748" y="200" font-size="11" fill="#697386">ApiConfig</text>
+  <text x="742" y="218" font-size="10" font-weight="600" fill="#425466">Variables</text>
+  <line x1="742" y1="222" x2="882" y2="222" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="748" y="235" font-size="11" fill="#697386">BASE_URL</text>
+</svg>

@@ -8,6 +8,15 @@
 > Pure, deterministic, **AST-based** JSDoc comment generator and multi-page documentation site builder for JavaScript & TypeScript.  
 > **No AI. No LLM. No surprises.** Same input always produces the same output.
 
+
+---
+
+## Preview
+
+![jsdoc-scribe docs preview](https://raw.githubusercontent.com/imchintoo/jsdoc-scribe/main/assets/preview.svg)
+
+The generated site features a sticky topnav with centered search, a white sidebar with smart module grouping, two-column symbol cards (prose left / dark code panel right), and a scroll-spy TOC on module pages.
+
 ---
 
 ## What it does
@@ -32,7 +41,6 @@
   - [Quick start](#quick-start)
   - [CLI flags](#cli-flags-1)
   - [Config file](#config-file)
-  - [Themes](#themes)
   - [Source links](#source-links)
   - [Ignore patterns](#ignore-patterns)
   - [Watch mode](#watch-mode)
@@ -219,7 +227,7 @@ gen-comments src --write --force         # also re-document already-commented fi
 
 ## gen-docs — Build a documentation site
 
-`gen-docs` reads your source files (or an entire directory), extracts the public API using the same AST engine, and outputs a multi-page HTML documentation site with search, themes, source links, and cross-references.
+`gen-docs` reads your source files (or an entire directory), extracts the public API using the same AST engine, and outputs a multi-page HTML documentation site with a sticky topnav, white sidebar with smart module grouping, two-column symbol cards, a right-side scroll-spy TOC, client-side search, source links, and cross-references.
 
 ### Quick start
 
@@ -238,7 +246,7 @@ docs/
   search-index.js     # shared search index (fetched once)
   assets/
     style.css         # shared CSS — cached after first page load
-    app.js            # shared JS (search, theme toggle, copy)
+    app.js            # shared JS (search, scroll-spy TOC, copy)
   modules/
     api.html
     utils.html
@@ -255,7 +263,6 @@ gen-docs <path> [path2 ...] [options]
 |---|---|---|
 | `--out <dir>` | `-o` | Output directory (default: `docs`). |
 | `--title <name>` | `-t` | Site title shown in the header and `<title>` tag. |
-| `--theme <name>` | `-T` | Visual theme: `default`, `minimal`, or `dark` (default: `default`). |
 | `--json` | `-j` | Also write a `docs.json` machine-readable export. |
 | `--readme` | `-r` | Also write a `README.md` with markdown tables of every module. |
 | `--source-url <url>` | `-s` | GitHub base URL for per-card source links (e.g. `https://github.com/org/repo/blob/main`). |
@@ -267,7 +274,6 @@ gen-docs <path> [path2 ...] [options]
 
 ```bash
 gen-docs src --out docs --title "My API"
-gen-docs src --theme dark --source-url https://github.com/org/repo/blob/main
 gen-docs src --json --readme --out _site
 gen-docs src --ignore "**/internal/**" --ignore "**/*.test.ts"
 gen-docs src --watch
@@ -281,7 +287,6 @@ Create `.jsdoc-scribe.json` in your project root to avoid repeating flags:
 {
   "out": "docs",
   "title": "My Project",
-  "theme": "default",
   "json": true,
   "readme": false,
   "sourceUrl": "https://github.com/org/repo/blob/main",
@@ -294,19 +299,6 @@ Create `.jsdoc-scribe.json` in your project root to avoid repeating flags:
 ```
 
 CLI flags always override config file values. Use `--config path/to/other.json` to point to a custom config path.
-
-### Themes
-
-| Theme | Description |
-|---|---|
-| `default` | Blue-accented light sidebar, light/dark toggle stored in `localStorage`. |
-| `minimal` | Clean light-only layout, no toggle. |
-| `dark` | Forced dark mode, no toggle. |
-
-```bash
-gen-docs src --theme minimal
-gen-docs src --theme dark
-```
 
 ### Source links
 
@@ -405,7 +397,6 @@ modules.forEach(mod => {
 // 4. Build the HTML site
 const pages = buildSite(modules, {
   title: 'My Project',
-  theme: 'dark',
   sourceUrl: 'https://github.com/org/repo/blob/main',
 });
 
@@ -503,6 +494,16 @@ jobs:
 ```
 
 Enable GitHub Pages in your repo settings (Settings → Pages → Source: GitHub Actions) and your docs will be live at `https://<org>.github.io/<repo>` after every push.
+
+---
+
+## What's new
+
+### v1.15.0 — Sidebar smart grouping
+Large projects with deeply-nested module paths (e.g. `applications/admin/modules/environment/foo`) previously showed the full path repeated as group labels. The sidebar now strips the longest shared prefix across all modules and shows only the last path segment as the toggle label. Individual module links show just the filename; hover for the full path. Empty modules (zero exports) show a "No exported items" placeholder instead of a blank card.
+
+### v1.14.0 — Stripe-style layout
+Complete visual overhaul: sticky topnav bar (project name top-left, centered search with `Ctrl+K` shortcut), white sidebar with uppercase section headers and accent-colour active links, three-column CSS grid (sidebar 240 px | main 1 fr | TOC 200 px), and a right-side "On this page" TOC with IntersectionObserver scroll-spy.
 
 ---
 
