@@ -1,3 +1,28 @@
+## [1.15.0] - 2026-07-01
+
+### Changed
+- Phase H: Smart sidebar grouping — strips deeper common root from module labels, caps group nesting at 2 dir segments
+- Sidebar group labels now show only the deepest relevant directory name (not the full path), fixing the verbose UPPERCASE path bug
+- Module links inside groups show only the filename, with the full relative path in `title` for hover tooltips
+- Sidebar section title and dir-toggle headers are now sticky (position:sticky) so they stay visible while scrolling
+- Index page module cards display shortened labels (deep common root stripped)
+- Empty-state message in `buildModuleBody` upgraded to styled `<div class="empty">` with explicit "No exported items in this module." text
+- Index page module cards show "No exported items" italic note for modules with zero exports
+- New helpers: `deeperCommonRoot()` and `hasExports()` added to renderer.js
+
+## [1.14.0] - 2026-07-01
+
+### Changed
+- Phase G: Stripe-style documentation layout (v1.14.0)
+- New sticky top navigation bar with project name (top-left) and centered search
+- Sidebar redesigned: white background, uppercase section headers, accent-colored active links
+- Right-side TOC restored ("On this page") with scroll-spy via IntersectionObserver
+- Three-column CSS Grid layout: sidebar (240px) | main (1fr) | toc (200px)
+- Card scroll-margin-top updated for topnav offset
+- Search moved from sidebar to topnav center; "/" and Ctrl+K shortcuts
+- Accent color: #625bf6 (Stripe purple)
+- Hamburger toggle updated for overlay sidebar on mobile
+
 # Changelog
 
 All notable changes to `jsdoc-scribe` are documented here.

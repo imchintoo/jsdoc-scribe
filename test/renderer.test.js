@@ -99,18 +99,59 @@ module.exports = function runRendererTests(check) {
         assert.ok(idx.every(e => e.url && e.url.startsWith("modules/")), "URL prefix wrong");
     });
 
-    check("renderer: module page uses two-column card layout, no TOC", () => {
+    check("renderer: module page has two-column card layout and right TOC (Phase G)", () => {
         const modules = [makeMod("/proj/src/svc.ts", {
             functions: [makeFunc("start"), makeFunc("stop")],
         })];
         const modPage = buildSite(modules, { projectName: "Test" }).find(p => p.path.startsWith("modules/"));
         assert.ok(modPage, "no module page");
+        // Two-column card layout still present
         assert.ok(modPage.html.includes("card-code"),   "card-code panel missing");
         assert.ok(modPage.html.includes("card-prose"),  "card-prose panel missing");
         assert.ok(modPage.html.includes("code-label"),  "code-label missing in code panel");
         assert.ok(modPage.html.includes("fn-start"),    "anchor id fn-start missing");
-        assert.ok(!modPage.html.includes("has-toc"),    "has-toc should be absent");
-        assert.ok(!modPage.html.includes("On this page"), "TOC title should be absent");
+        // Phase G: TOC is now present
+        assert.ok(modPage.html.includes("layout-toc"),  "layout-toc class should be present (Phase G)");
+        assert.ok(modPage.html.includes("toc-title"),   "toc-title should be present (Phase G)");
+        assert.ok(modPage.html.includes("On this page"),"TOC heading should be present (Phase G)");
+        assert.ok(modPage.html.includes('data-anchor='),"toc data-anchor attributes missing");
+    });
+
+    check("renderer: topnav present on index and module pages (Phase G)", () => {
+        const modules = [makeMod("/proj/src/api.ts", {
+            functions: [makeFunc("getUser")],
+        })];
+        const pages = buildSite(modules, { projectName: "MyDocs", version: "1.14.0" });
+        const indexPage = pages.find(p => p.path === "index.html");
+        const modPage   = pages.find(p => p.path.startsWith("modules/"));
+        assert.ok(indexPage, "index.html missing");
+        assert.ok(modPage,   "module page missing");
+        assert.ok(indexPage.html.includes('class="topnav"'), "topnav missing from index page");
+        assert.ok(modPage.html.includes('class="topnav"'),   "topnav missing from module page");
+        assert.ok(indexPage.html.includes("search-box"),  "search-box missing from index topnav");
+        assert.ok(modPage.html.includes("topnav-logo"),   "topnav-logo missing from module page");
+        assert.ok(modPage.html.includes("search-kbd"),    "search-kbd hint missing");
+    });
+
+    check("renderer: sidebar has section-title, no sidebar-header (Phase G)", () => {
+        const modules = [makeMod("/proj/src/api.ts")];
+        const pages = buildSite(modules, { projectName: "Test" });
+        const modPage = pages.find(p => p.path.startsWith("modules/"));
+        assert.ok(modPage, "no module page");
+        // New white sidebar has section-title
+        assert.ok(modPage.html.includes("sidebar-section-title"), "sidebar-section-title missing");
+        // Old dark sidebar-header is gone
+        assert.ok(!modPage.html.includes("sidebar-header"), "sidebar-header should be absent (Phase G)");
+    });
+
+    check("renderer: CSS_STRUCTURE contains Phase G variables and selectors", () => {
+        const { CSS_STRUCTURE } = require("../lib/renderer.js");
+        assert.ok(CSS_STRUCTURE.includes("--topnav-h"),        "--topnav-h missing from CSS");
+        assert.ok(CSS_STRUCTURE.includes("--accent"),          "--accent missing from CSS");
+        assert.ok(CSS_STRUCTURE.includes("--sidebar-bg"),      "--sidebar-bg missing from CSS");
+        assert.ok(CSS_STRUCTURE.includes(".topnav"),           ".topnav selector missing");
+        assert.ok(CSS_STRUCTURE.includes(".toc-title"),        ".toc-title selector missing");
+        assert.ok(CSS_STRUCTURE.includes("layout-toc"),        "layout-toc class missing");
     });
 
     check("renderer: deprecated badge and notice rendered for deprecated items", () => {
@@ -181,5 +222,43 @@ module.exports = function runRendererTests(check) {
         assert.ok(utilPage.html.includes("AppError"), "AppError not present in resolved link");
         assert.ok(utilPage.html.includes("href="),    "resolved link has no href");
     });
+
+    check("renderer: sidebar smart grouping strips deep common prefix", () => {
+        const deepMods = [
+            makeMod("/proj/applications/admin/modules/environment/routeConstants.ts"),
+            makeMod("/proj/applications/admin/modules/environment/config.ts", {
+                functions: [makeFunc("getEnv")],
+            }),
+            makeMod("/proj/applications/admin/modules/auth/login.ts", {
+                functions: [makeFunc("login")],
+            }),
+        ];
+        const pages = buildSite(deepMods, { projectName: "Test" });
+        const idx = pages.find(p => p.path === "index.html");
+        assert.ok(idx, "index.html missing");
+        // Group labels must be short (last segment only)
+        assert.ok(idx.html.includes(">environment<") || idx.html.includes(">environment</"),
+            "group label should be 'environment' not full path");
+        assert.ok(idx.html.includes(">auth<") || idx.html.includes(">auth</"),
+            "group label should be 'auth' not full path");
+        // Must NOT contain the long nested path as visible text
+        assert.ok(!idx.html.includes("ADMIN/MODULES"), "long path leaked into sidebar");
+        assert.ok(!idx.html.includes("applications/admin/modules/environment</"),
+            "full path should not appear as group label");
+    });
+
+    check("renderer: empty module shows placeholder on index card and module page", () => {
+        const mods = [
+            makeMod("/proj/src/empty.ts"),
+            makeMod("/proj/src/utils.ts", { functions: [makeFunc("doIt")] }),
+        ];
+        const pages = buildSite(mods, { projectName: "Test" });
+        const idx = pages.find(p => p.path === "index.html");
+        assert.ok(idx.html.includes("No exported"), "index card should note empty module");
+        // Module page with exports should still have card content
+        const utilPage = pages.find(p => p.path && p.path.includes("utils"));
+        assert.ok(utilPage && utilPage.html.includes("card-prose"), "utils card-prose missing");
+    });
+
 
 };
