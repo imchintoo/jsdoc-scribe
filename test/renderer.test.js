@@ -99,16 +99,18 @@ module.exports = function runRendererTests(check) {
         assert.ok(idx.every(e => e.url && e.url.startsWith("modules/")), "URL prefix wrong");
     });
 
-    check("renderer: module page has right-side TOC with data-anchor attributes", () => {
+    check("renderer: module page uses two-column card layout, no TOC", () => {
         const modules = [makeMod("/proj/src/svc.ts", {
             functions: [makeFunc("start"), makeFunc("stop")],
         })];
         const modPage = buildSite(modules, { projectName: "Test" }).find(p => p.path.startsWith("modules/"));
         assert.ok(modPage, "no module page");
-        assert.ok(modPage.html.includes("has-toc"),      "has-toc class missing");
-        assert.ok(modPage.html.includes("data-anchor="), "data-anchor missing from TOC");
-        assert.ok(modPage.html.includes("On this page"), "TOC title missing");
-        assert.ok(modPage.html.includes("fn-start"),     "anchor for start not in TOC");
+        assert.ok(modPage.html.includes("card-code"),   "card-code panel missing");
+        assert.ok(modPage.html.includes("card-prose"),  "card-prose panel missing");
+        assert.ok(modPage.html.includes("code-label"),  "code-label missing in code panel");
+        assert.ok(modPage.html.includes("fn-start"),    "anchor id fn-start missing");
+        assert.ok(!modPage.html.includes("has-toc"),    "has-toc should be absent");
+        assert.ok(!modPage.html.includes("On this page"), "TOC title should be absent");
     });
 
     check("renderer: deprecated badge and notice rendered for deprecated items", () => {

@@ -1,6 +1,6 @@
 {
   "name": "jsdoc-scribe",
-  "version": "1.11.0",
+  "version": "1.13.0",
   "description": "Pure, deterministic, AST-based JSDoc comment generator and documentation site builder for JavaScript and TypeScript. No AI involved.",
   "main": "lib/index.js",
   "exports": {

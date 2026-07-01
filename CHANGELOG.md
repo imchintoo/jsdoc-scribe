@@ -3,6 +3,61 @@
 All notable changes to `jsdoc-scribe` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.13.0] - 2026-07-01
+
+### Changed — Phase F: Single-design documentation site
+
+**`lib/renderer.js` — complete visual redesign**
+- Removed `THEMES` map and all CSS-variable-based theming; single built-in design replaces it
+- Dark blue sidebar (`#0a2540`) with white text and `#00d4ff` active link highlight
+- Light content area (`#f6f9fc` background) with white symbol cards
+- **Two-column card layout**: each symbol card is a CSS grid split — left prose panel (description, params, returns, throws) and right dark code panel (`#1a2e44`)
+- Right code panel shows `@example` content when present; falls back to the type/class signature
+- Removed right-side TOC column entirely: `buildToc()` deleted, `has-toc` class gone, `IntersectionObserver` scroll-spy removed from `CLIENT_JS`
+- Removed dark/light mode toggle button from sidebar
+- Responsive: code panel collapses below prose at ≤860 px; sidebar becomes hamburger overlay at ≤720 px
+- New helpers: `card()`, `codePanel()`, `buildFnSig()`, `buildClassSig()`, `buildIfaceSig()`
+- Retained: Ctrl+K search, copy button, mobile hamburger, sidebar symbol tree with kind pills
+
+**`bin/gen-docs.js` — flag removal**
+- Removed `--theme` / `-T` flag and `VALID_THEMES` constant; theme option silently ignored if present in config file for backward compatibility
+
+---
+
+## [1.12.0] - 2026-06-30
+
+### Added — Phase E: Smart Comment Generation + CI tooling
+
+**`lib/inferrer.js` (new module)**
+Pure heuristic engine — no AI, no external calls. Maps camelCase names to natural English descriptions at build time.
+- `splitCamel(name)` — splits `getUserById` → `["get","user","by","id"]`, handles consecutive uppercase runs (`HTMLParser` → `["html","parser"]`)
+- `inferFunctionDescription(name, mods)` — 85+ verb-prefix templates covering `get/set/is/has/create/delete/validate/emit/handle/...`. `isUserActive` → "Returns whether the user is active." `createPaymentIntent` → "Creates a new payment intent."
+- `inferParamDescription(name)` — ~100 well-known parameter names mapped to concise descriptions. `userId` → "user unique identifier." `callback` → "callback function invoked on completion." `maxRetries` → "max number of retry attempts." Suffix matching handles compound names like `filePath` → `path to the file`.
+- `inferClassDescription(name)` — 50+ class-name suffix templates. `UserService` → "Service responsible for user operations." `ValidationError` → "Error thrown when validation related issues occur."
+
+**`lib/index.js` — smarter comment generation**
+- Generated function comments now open with a meaningful description line instead of a `[Description]` placeholder
+- `@param` lines now include inferred descriptions: `@param {string} userId - user unique identifier.`
+- `@throws` auto-detection: scans the function/method body AST for `throw new SomeError(...)` and adds `@throws {SomeError}` tags automatically — without descending into nested functions
+- Getter/setter accessors get natural descriptions: "Returns the X." / "Sets the X."
+- Removed redundant `@function`, `@class`, `@exported` tags from generated blocks
+- `void` return type no longer emitted on methods that have nothing to return
+- New `dryRun` option in `processFile()` — analyses without writing
+- New `analyseFile(filePath)` export — returns `{ documented, total, undocumented }` without modifying the file
+
+**`bin/cli.js` — new flags**
+- `--dry-run` / `-n`: shows which symbols would be documented (per file) without writing anything
+- `--check` / `-C`: like `--dry-run` but exits with code `1` if any symbols are undocumented — use as a CI gate to enforce coverage
+
+**Tests expanded from 25 → 30**
+- Verb-prefix description inference (`getUserById` → "Returns the user by id.")
+- `@throws` auto-detection from AST
+- Class-name description inference (`UserService` → "Service responsible for…")
+- `analyseFile()` returning correct undocumented count
+- `analyseFile()` returning 0 undocumented after `processFile`
+
+---
+
 ## [1.11.0] - 2026-06-30
 
 ### Changed — Code Quality (Phase D)

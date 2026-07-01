@@ -9,7 +9,6 @@ const { buildSite, moduleLabel, moduleHtmlPath } = require("../lib/renderer.js")
 const { loadConfig, mergeConfig } = require("../lib/config.js");
 const pkg = require("../package.json");
 
-const VALID_THEMES = ["default", "minimal", "dark"];
 
 function printHelp() {
     console.log(`
@@ -22,7 +21,6 @@ Usage:
 Options:
   --out <dir>,        -o <dir>   Output directory              (default: ./docs)
   --title <name>,     -t <name>  Project title                 (default: package name)
-  --theme <name>,     -T <name>  Theme: default|minimal|dark   (default: default)
   --json,             -j         Also write docs.json
   --readme,           -r         Also write README.md
   --ignore <glob>,    -I <glob>  Exclude files matching glob   (repeatable)
@@ -33,13 +31,12 @@ Options:
   --version,          -v         Show version.
 
 Config file (.jsdoc-scribe.json):
-  { "out": "docs", "title": "My API", "theme": "minimal", "json": true,
+  { "out": "docs", "title": "My API", "json": true,
     "readme": true, "sourceUrl": "https://github.com/user/repo/blob/main",
     "ignore": ["**/*.test.ts", "src/generated/"] }
 
 Examples:
   gen-docs src
-  gen-docs . --out site --json --readme --theme minimal
   gen-docs src --ignore "**/*.test.ts" --ignore "dist/"
   gen-docs src --source-url https://github.com/user/repo/blob/main
   gen-docs src --watch
@@ -48,7 +45,7 @@ Examples:
 
 function parseArgs(argv) {
     const args = {
-        inputs: [], out: undefined, title: undefined, theme: undefined,
+        inputs: [], out: undefined, title: undefined,
         json: undefined, readme: undefined, watch: false,
         ignore: [], sourceUrl: undefined, configPath: undefined,
         help: false, version: false,
@@ -66,11 +63,6 @@ function parseArgs(argv) {
         else if ((a === "--config"    || a === "-c") && argv[i+1]) { args.configPath= argv[++i]; }
         else if ((a === "--source-url"|| a === "-s") && argv[i+1]) { args.sourceUrl = argv[++i]; }
         else if ((a === "--ignore"    || a === "-I") && argv[i+1]) { args.ignore.push(argv[++i]); }
-        else if ((a === "--theme"     || a === "-T") && argv[i+1]) {
-            const t = argv[++i];
-            if (!VALID_THEMES.includes(t)) { console.error(`Unknown theme "${t}". Valid: ${VALID_THEMES.join(", ")}`); process.exit(1); }
-            args.theme = t;
-        }
         else if (!a.startsWith("-")) args.inputs.push(a);
         i++;
     }
@@ -182,7 +174,6 @@ function build(files, outDir, projectName, projectVersion, opts, silent) {
     const pages = buildSite(modules, {
         projectName,
         version: projectVersion,
-        theme: opts.theme,
         sourceUrl: opts.sourceUrl,
     });
     fs.mkdirSync(path.join(outDir, "modules"), { recursive: true });

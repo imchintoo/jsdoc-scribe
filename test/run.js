@@ -6,7 +6,7 @@
  * Pure assertions against deterministic output; never flakes.
  *
  * Suites:
- *   1. gen-comments (lib/index.js) — 7 tests
+ *   1. gen-comments (lib/index.js) — 12 tests
  *   2. extractor     (lib/extractor.js) — 10 tests
  *   3. renderer      (lib/renderer.js)  — 8 tests
  */
@@ -47,8 +47,9 @@ check("adds a function doc with correct param/return types (TS)", () => {
     const file = tmpFile("a.ts", "export function add(a: number, b: number): number {\n  return a + b;\n}\n");
     processFile(file, { write: false, silent: true });
     const out = fs.readFileSync(file, "utf8");
-    assert.match(out, /@function add/);
-    assert.match(out, /@param \{number\} a/);
+    // Phase E: description line replaces @function tag
+    assert.match(out, /Adds the/);          // inferred description from verb "add"
+    assert.match(out, /@param \{number\} a/);   // type preserved
     assert.match(out, /@returns \{number\}/);
 });
 
@@ -95,6 +96,50 @@ check("is idempotent: running twice adds 0 blocks the second time", () => {
     processFile(file, { write: true, silent: true });
     const second = processFile(file, { write: true, silent: true });
     assert.strictEqual(second, 0);
+});
+
+check("gen-comments: infers description from verb prefix", () => {
+    const file = tmpFile("verb.ts", "function getUserById(userId: string) { return null; }\n");
+    processFile(file, { write: false, silent: true });
+    const out = fs.readFileSync(file, "utf8");
+    assert.match(out, /Returns the user by id/);
+    assert.match(out, /user unique identifier/);   // param description
+});
+
+check("gen-comments: auto-detects @throws from AST throw statements", () => {
+    const file = tmpFile("throws.ts", [
+        "function validate(x: string): void {",
+        "  if (!x) throw new ValidationError('required');",
+        "}",
+    ].join("\n") + "\n");
+    processFile(file, { write: false, silent: true });
+    const out = fs.readFileSync(file, "utf8");
+    assert.match(out, /@throws \{ValidationError\}/);
+});
+
+check("gen-comments: infers class description from class name suffix", () => {
+    const file = tmpFile("cls.ts", "export class UserService {}\n");
+    processFile(file, { write: false, silent: true });
+    const out = fs.readFileSync(file, "utf8");
+    assert.match(out, /Service responsible for user operations/);
+});
+
+check("gen-comments: --check exits 1 when symbols undocumented", () => {
+    const { analyseFile } = require("../lib/index.js");
+    const file = tmpFile("chk.ts", "export function undocumented() {}\n");
+    const stats = analyseFile(file);
+    assert.strictEqual(stats.total, 1);
+    assert.strictEqual(stats.undocumented, 1);
+    assert.strictEqual(stats.documented, 0);
+});
+
+check("gen-comments: analyseFile returns 100% after processFile", () => {
+    const { analyseFile } = require("../lib/index.js");
+    const file = tmpFile("chk2.ts", "export function documented() {}\n");
+    processFile(file, { write: false, silent: true });
+    const stats = analyseFile(file);
+    assert.strictEqual(stats.undocumented, 0);
+    assert.strictEqual(stats.documented, stats.total);
 });
 
 // ---------------------------------------------------------------------------
