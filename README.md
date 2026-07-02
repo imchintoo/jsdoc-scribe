@@ -5,9 +5,15 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/node/v/jsdoc-scribe.svg)](https://nodejs.org)
 
-> Pure, deterministic, **AST-based** JSDoc comment generator and multi-page documentation site builder for JavaScript & TypeScript.  
+> Pure, deterministic, **AST-based** JSDoc comment generator and multi-page documentation site builder for JavaScript & TypeScript.
 > **No AI. No LLM. No surprises.** Same input always produces the same output.
 
+Two CLIs, one dependency (`typescript`, used purely as a syntax parser):
+
+| Tool | What it does |
+|---|---|
+| `gen-comments` | Inserts `/** */` JSDoc blocks into your source by reading the AST — no guessing |
+| `gen-docs` | Builds a static, multi-page HTML documentation site from your documented source |
 
 ---
 
@@ -15,110 +21,55 @@
 
 ![jsdoc-scribe docs preview](https://raw.githubusercontent.com/imchintoo/jsdoc-scribe/main/assets/preview.svg)
 
-The generated site features a sticky topnav with centered search, a white sidebar with smart module grouping, two-column symbol cards (prose left / dark code panel right), and a scroll-spy TOC on module pages.
+Sticky topnav with centered search, white sidebar with an N-level folder tree, two-column symbol cards (prose left / dark code panel right), and a scroll-spy TOC on module pages.
 
 ---
 
-## What it does
+## Benchmarks
 
-`jsdoc-scribe` ships two independent CLI tools:
+Measured directly against the CLIs, single Node process, no caching between runs.
 
-| Tool | What it does |
-|---|---|
-| `gen-comments` | Inserts `/** */` JSDoc blocks into your source files by reading the AST — no AI, no guessing |
-| `gen-docs` | Generates a multi-page HTML documentation site from your already-documented source |
+| Source size | `gen-comments --dry-run` | `gen-docs` (single file) |
+|---|---|---|
+| 231 LOC | 1.15s · 96 MB | 0.49s · 94 MB |
+| 2.3K LOC | 0.66s · 108 MB | 0.39s · 104 MB |
+| 23K LOC | 1.47s · 167 MB | 0.71s · 155 MB |
+| 117K LOC | 2.50s · 311 MB | 1.39s · 269 MB |
+| 233K LOC | 4.17s · 345 MB | 2.29s · 445 MB |
 
----
+Real multi-file project (1,000 files, 70K total LOC): `gen-comments --write` finishes in **1.03s at 115 MB**. Both CLIs scale close to linearly with source size — the ~300-500ms floor at small sizes is Node + TypeScript-parser startup, not per-line work.
 
-## Table of contents
-
-- [Install](#install)
-- [gen-comments — Add JSDoc to source files](#gen-comments--add-jsdoc-to-source-files)
-  - [Before / after example](#before--after-example)
-  - [CLI flags](#cli-flags)
-  - [How the algorithm works](#how-the-algorithm-works)
-- [gen-docs — Build a documentation site](#gen-docs--build-a-documentation-site)
-  - [Quick start](#quick-start)
-  - [CLI flags](#cli-flags-1)
-  - [Config file](#config-file)
-  - [Source links](#source-links)
-  - [Ignore patterns](#ignore-patterns)
-  - [Watch mode](#watch-mode)
-- [Programmatic API](#programmatic-api)
-- [GitHub Actions — auto-deploy docs](#github-actions--auto-deploy-docs)
-- [Known limitations](#known-limitations)
-- [License](#license)
+One known ceiling: `gen-docs` site generation slows superlinearly past ~300-500 source files (traced to redundant path-prefix recomputation in the sidebar/label logic) — tracked for a fix, see [Known limitations](#known-limitations).
 
 ---
 
 ## Install
 
 ```bash
-# run once without installing
-npx jsdoc-scribe . --write
-
-# add to your project
-npm install --save-dev jsdoc-scribe
-
-# or install globally
-npm install -g jsdoc-scribe
+npx jsdoc-scribe . --write            # run once, no install
+npm install --save-dev jsdoc-scribe   # add to project
+npm install -g jsdoc-scribe           # or install globally
 ```
 
 ---
 
-## gen-comments — Add JSDoc to source files
+## `gen-comments` — add JSDoc to source
 
-`gen-comments` walks your source tree, parses every `.js` / `.jsx` / `.ts` / `.tsx` file with the TypeScript compiler's AST parser, and inserts `/** */` blocks for every undocumented function, class, method, interface, enum, type alias, and variable.
+```bash
+gen-comments <path> [path2 ...] [options]
+```
 
-### Before / after example
-
-**Before** — a plain TypeScript file with no documentation:
+`<path>` can be a file or directory (scanned recursively; `node_modules`, `dist`, `build`, `.git`, dotfolders auto-skipped). Idempotent — a second run adds zero blocks. Nodes with an existing `/** */` block are left untouched unless `--force`.
 
 ```ts
-// src/auth.ts
-
+// before
 export async function login(username: string, password: string): Promise<User> {
     const user = await db.findByUsername(username);
-    if (!user || !verify(password, user.passwordHash)) {
-        throw new AuthError("Invalid credentials");
-    }
+    if (!user) throw new AuthError("Invalid credentials");
     return user;
 }
 
-export class TokenService {
-    private readonly secret: string;
-
-    constructor(secret: string) {
-        this.secret = secret;
-    }
-
-    sign(payload: Record<string, unknown>, expiresIn = "1h"): string {
-        return jwt.sign(payload, this.secret, { expiresIn });
-    }
-
-    verify(token: string): Record<string, unknown> | null {
-        try {
-            return jwt.verify(token, this.secret) as Record<string, unknown>;
-        } catch {
-            return null;
-        }
-    }
-}
-
-export type AuthRole = "admin" | "editor" | "viewer";
-
-export enum Permission {
-    Read = "read",
-    Write = "write",
-    Delete = "delete",
-}
-```
-
-**After** — run `gen-comments src/auth.ts --write`:
-
-```ts
-// src/auth.ts
-
+// after: gen-comments src/auth.ts --write
 /**
  * @async
  * @param {string} username
@@ -127,248 +78,89 @@ export enum Permission {
  */
 export async function login(username: string, password: string): Promise<User> {
     const user = await db.findByUsername(username);
-    if (!user || !verify(password, user.passwordHash)) {
-        throw new AuthError("Invalid credentials");
-    }
+    if (!user) throw new AuthError("Invalid credentials");
     return user;
 }
-
-/**
- * @class TokenService
- */
-export class TokenService {
-    /** @type {string} */
-    private readonly secret: string;
-
-    /**
-     * @constructor
-     * @param {string} secret
-     */
-    constructor(secret: string) {
-        this.secret = secret;
-    }
-
-    /**
-     * @param {Record<string, unknown>} payload
-     * @param {string} [expiresIn]
-     * @returns {string}
-     */
-    sign(payload: Record<string, unknown>, expiresIn = "1h"): string {
-        return jwt.sign(payload, this.secret, { expiresIn });
-    }
-
-    /**
-     * @param {string} token
-     * @returns {Record<string, unknown> | null}
-     */
-    verify(token: string): Record<string, unknown> | null {
-        try {
-            return jwt.verify(token, this.secret) as Record<string, unknown>;
-        } catch {
-            return null;
-        }
-    }
-}
-
-/**
- * @typedef {"admin" | "editor" | "viewer"} AuthRole
- */
-export type AuthRole = "admin" | "editor" | "viewer";
-
-/**
- * @enum {string}
- */
-export enum Permission {
-    Read = "read",
-    Write = "write",
-    Delete = "delete",
-}
 ```
 
-> The tool is **idempotent** — running it a second time adds zero blocks.  
-> Nodes that already have a `/** */` block are never touched unless you pass `--force`.
+Purely syntactic — explicit type annotations are used verbatim; without them, the tool infers from literal shape (`'x'` → `string`) and scans for a top-level `return <value>` statement. No type-checking, no evaluation.
 
-### CLI flags
-
-```bash
-gen-comments <path> [path2 ...] [options]
-```
-
-`<path>` can be a file or directory. Directories are recursively scanned. `node_modules`, `dist`, `build`, `.git`, and all dotfolders are skipped automatically.
+### Flags
 
 | Flag | Short | Description |
 |---|---|---|
-| `--write` | `-w` | Edit files **in place**. Without this flag, output goes to a sibling `<name>.out.<ext>` file so you can review the diff first. |
-| `--force` | `-f` | Re-insert blocks even on nodes that already have `/** */`. Useful for regenerating stale docs. |
-| `--dry-run` | `-n` | Show what would be documented without writing any files. |
-| `--check` | `-C` | Like `--dry-run` but exits with code `1` if any symbols are undocumented. Use in CI to enforce documentation coverage. |
-| `--check-drift` | | Compares existing JSDoc blocks against the current AST and flags missing params, removed (stale) params, and return-type mismatches. Read-only — never writes — and exits `1` if drift is found, so it's CI-gateable the same way `--check` is. |
-| `--coverage-badge <dir>` | | Aggregates documentation coverage across the target path and writes `coverage-badge.svg` (a self-contained, shields.io-style SVG) plus `coverage-summary.json` to `<dir>`. No network calls. Read-only with respect to your source files. |
-| `--help` | `-h` | Show usage. |
-| `--version` | `-v` | Show installed version. |
+| `--write` | `-w` | Edit files in place (otherwise writes a sibling `<name>.out.<ext>` for review). |
+| `--force` | `-f` | Re-insert blocks even where one already exists. |
+| `--dry-run` | `-n` | Preview only, no writes. |
+| `--check` | `-C` | Like `--dry-run`, exits `1` if anything's undocumented. CI coverage gate. |
+| `--check-drift` | | Compares existing JSDoc against the current AST — flags missing/removed params and return-type mismatches. Read-only, exits `1` on drift. |
+| `--coverage-badge <dir>` | | Writes an offline `coverage-badge.svg` + `coverage-summary.json` to `<dir>`. No network calls. |
+| `--help` / `--version` | `-h` / `-v` | |
 
 ```bash
-gen-comments src/utils.ts                # preview → writes utils.out.ts
-gen-comments .                           # scan whole project, preview only
-gen-comments . --write                   # scan and edit in place
-gen-comments src --write --force         # also re-document already-commented files
-gen-comments src --check                 # CI gate: exit 1 if any symbols undocumented
-gen-comments src --check-drift           # CI gate: exit 1 if JSDoc blocks have drifted from AST
-gen-comments src --coverage-badge docs   # write docs/coverage-badge.svg + coverage-summary.json
+gen-comments src --write --force            # re-document already-commented files
+gen-comments src --check                    # CI gate: undocumented symbols
+gen-comments src --check-drift              # CI gate: JSDoc drifted from AST
+gen-comments src --coverage-badge docs      # docs/coverage-badge.svg + coverage-summary.json
 ```
 
-> **Tip:** Commit your changes before running `--write`. The CLI reminds you if you're outside a git repo.
-
-### How the algorithm works
-
-1. **Parse** — uses `typescript` (the npm package) purely as a syntax parser. Works on `.js`/`.jsx` as well as `.ts`/`.tsx`. No type-checking, no compilation.
-2. **Walk** — visits `FunctionDeclaration`, `ClassDeclaration` (+ constructor / methods / properties / accessors), `VariableStatement` (including arrow functions and const objects), `InterfaceDeclaration`, `TypeAliasDeclaration`, `EnumDeclaration`.
-3. **Skip** — any node with an existing leading `/** */` block is left untouched (unless `--force`).
-4. **Build** — the comment block is built purely from syntax:
-   - Explicit type annotations are used verbatim.
-   - Without annotations, the tool infers from syntax: literal kind for variables (`'x'` → `string`, `[1,2]` → `Array`), and for function returns it scans for a top-level `return <value>` statement.
-   - Modifiers (`async`, `static`, `private`, `readonly`, `abstract`, `export`, generator `*`) are read from the AST.
-5. **Insert** — edits are collected and applied bottom-to-top so no byte offset shifts, and the rest of the file is never reprinted.
+> Commit before running `--write` — the CLI warns if you're outside a git repo.
 
 ---
 
-## gen-docs — Build a documentation site
-
-`gen-docs` reads your source files (or an entire directory), extracts the public API using the same AST engine, and outputs a multi-page HTML documentation site with a sticky topnav, white sidebar with smart module grouping, two-column symbol cards, a right-side scroll-spy TOC, client-side search, source links, and cross-references.
-
-### Quick start
+## `gen-docs` — build a documentation site
 
 ```bash
-# Generate docs for an entire directory
 gen-docs src --out docs --title "My Project"
-
-# Open docs/index.html in your browser
+# open docs/index.html
 ```
 
-The output is a self-contained static site — no server required. Output structure:
+Self-contained static output, no server required:
 
 ```
 docs/
-  index.html          # project index (module cards)
-  search-index.js     # shared search index (fetched once)
-  assets/
-    style.css         # shared CSS — cached after first page load
-    app.js            # shared JS (search, scroll-spy TOC, copy)
-  modules/
-    api.html
-    utils.html
-    ...
+  index.html            # module index
+  search-index.js       # client-side search
+  assets/{style.css,app.js}
+  modules/*.html
 ```
 
-### CLI flags
-
-```bash
-gen-docs <path> [path2 ...] [options]
-```
+### Flags
 
 | Flag | Short | Description |
 |---|---|---|
-| `--out <dir>` | `-o` | Output directory (default: `docs`). |
-| `--title <name>` | `-t` | Site title shown in the header and `<title>` tag. |
-| `--json` | `-j` | Also write a `docs.json` machine-readable export. |
-| `--readme` | `-r` | Also write a `README.md` with markdown tables of every module. |
-| `--source-url <url>` | `-s` | GitHub base URL for per-card source links (e.g. `https://github.com/org/repo/blob/main`). |
-| `--ignore <glob>` | `-I` | Glob pattern to exclude files. Repeatable. |
-| `--config <file>` | `-c` | Path to a `.jsdoc-scribe.json` config file. |
-| `--watch` | `-W` | Rebuild on file changes (150 ms debounce). |
-| `--help` | `-h` | Show usage. |
-| `--version` | `-v` | Show installed version. |
+| `--out <dir>` | `-o` | Output directory (default `docs`). |
+| `--title <name>` | `-t` | Site title. |
+| `--json` | `-j` | Also write `docs.json`. |
+| `--readme` | `-r` | Also write a markdown table README. |
+| `--source-url <url>` | `-s` | GitHub blob base URL — adds per-card "line N" source links. |
+| `--ignore <glob>` | `-I` | Exclude glob, repeatable. |
+| `--config <file>` | `-c` | Path to `.jsdoc-scribe.json`. |
+| `--watch` | `-W` | Rebuild on file change (150ms debounce). |
+| `--help` / `--version` | `-h` / `-v` | |
 
-```bash
-gen-docs src --out docs --title "My API"
-gen-docs src --json --readme --out _site
-gen-docs src --ignore "**/internal/**" --ignore "**/*.test.ts"
-gen-docs src --watch
-```
-
-### Config file
-
-Create `.jsdoc-scribe.json` in your project root to avoid repeating flags:
+### Config file (`.jsdoc-scribe.json`)
 
 ```json
 {
   "out": "docs",
   "title": "My Project",
-  "json": true,
-  "readme": false,
   "sourceUrl": "https://github.com/org/repo/blob/main",
-  "ignore": [
-    "**/internal/**",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ]
+  "ignore": ["**/internal/**", "**/*.test.ts"]
 }
 ```
 
-CLI flags always override config file values. Use `--config path/to/other.json` to point to a custom config path.
-
-### Source links
-
-Pass a GitHub blob base URL and every documented symbol card gets a clickable "line N" link straight to the source:
-
-```bash
-gen-docs src \
-  --source-url https://github.com/org/repo/blob/main \
-  --out docs
-```
-
-Each card then shows `line 42 ↗` linking to `https://github.com/org/repo/blob/main/src/utils.ts#L42`.
-
-### Ignore patterns
-
-```bash
-# Exclude test files and an entire folder
-gen-docs src \
-  --ignore "**/*.test.ts" \
-  --ignore "**/*.spec.ts" \
-  --ignore "**/internal/**"
-```
-
-Patterns support `**/` prefix and `*` wildcard. You can also specify them in `.jsdoc-scribe.json`.
-
-### Watch mode
-
-```bash
-gen-docs src --out docs --watch
-```
-
-The site rebuilds whenever any matching source file changes. Useful during active development — just refresh the browser.
+CLI flags override config values.
 
 ---
 
 ## Programmatic API
 
 ```js
-const {
-  collectFiles,
-  extractModule,
-  extractModules,
-  buildSite,
-  generateSite,
-  moduleLabel,
-  moduleHtmlPath,
-  DEFAULT_EXTENSIONS,
-  DEFAULT_IGNORE_DIRS,
-} = require('jsdoc-scribe/docs');
-```
-
-### One-shot generation
-
-```js
 const { generateSite } = require('jsdoc-scribe/docs');
 const fs = require('fs'), path = require('path');
 
-const pages = generateSite(['src'], {
-  projectName: 'My Project',
-  version: '1.0.0',
-});
-
-// pages = [{ path: 'index.html', html }, { path: 'assets/style.css', html }, ...]
+const pages = generateSite(['src'], { projectName: 'My Project', version: '1.0.0' });
 for (const p of pages) {
   const dest = path.join('docs', p.path);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
@@ -376,159 +168,47 @@ for (const p of pages) {
 }
 ```
 
-### Step-by-step
-
-```js
-const { collectFiles, extractModules, buildSite } = require('jsdoc-scribe/docs');
-const fs = require('fs');
-const path = require('path');
-
-// 1. Collect source files
-const files = collectFiles(['src'], {
-  extensions: ['.ts', '.tsx'],
-  ignore: ['**/*.test.ts'],
-});
-
-// 2. Extract the API model
-const modules = extractModules(files);
-
-// 3. Inspect the model
-modules.forEach(mod => {
-  console.log(mod.filePath, {
-    functions: mod.functions.length,
-    classes:   mod.classes.length,
-    description: mod.description,
-  });
-});
-
-// 4. Build the HTML site
-const pages = buildSite(modules, {
-  title: 'My Project',
-  sourceUrl: 'https://github.com/org/repo/blob/main',
-});
-
-// 5. Write all files
-// pages = [{ path, html }] and includes HTML pages + shared assets:
-//   assets/style.css, assets/app.js, search-index.js
-// Always use mkdirSync so assets/ and modules/ are created automatically.
-const outDir = 'docs';
-for (const p of pages) {
-  const dest = path.join(outDir, p.path);
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.writeFileSync(dest, p.html, 'utf8');
-}
-```
-
-### Extracted module shape
-
-Each module object returned by `extractModule(filePath)` has this structure:
-
-```ts
-{
-  filePath: string;
-  description: string | null;   // top-of-file @module description
-  since: string | null;         // @since from top-of-file block
-  functions: Array<{
-    name: string;
-    params: Array<{ name: string; type: string; optional: boolean }>;
-    returnType: string;
-    isAsync: boolean;
-    isExported: boolean;
-    line: number;               // 1-based line number
-    description: string | null;
-    jsdocParams: Array<{ name: string; type: string; description: string }>;
-    returns: { type: string; description: string } | null;
-    throws: Array<{ type: string; description: string }>;
-    since: string | null;
-    deprecated: string | null;
-  }>;
-  classes: Array<{ name: string; methods: [...]; properties: [...]; ... }>;
-  interfaces: Array<{ ... }>;
-  typeAliases: Array<{ ... }>;
-  enums: Array<{ ... }>;
-  variables: Array<{ ... }>;
-}
-```
+Also exported: `collectFiles`, `extractModule`, `extractModules`, `buildSite`, `moduleLabel`, `moduleHtmlPath`. `extractModule(filePath)` returns `{ filePath, description, functions[], classes[], interfaces[], typeAliases[], enums[], variables[] }` — each entry carries both the AST-inferred shape (`params`, `returnType`) and the parsed JSDoc (`jsdocParams`, `returns`, `throws`, `since`, `deprecated`).
 
 ---
 
-## GitHub Actions — auto-deploy docs
-
-Add this workflow to automatically publish your docs to GitHub Pages on every push to `main`:
+## CI — auto-deploy docs to GitHub Pages
 
 ```yaml
 # .github/workflows/docs.yml
 name: Deploy docs
-
-on:
-  push:
-    branches: [main]
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
+on: { push: { branches: [main] } }
+permissions: { contents: read, pages: write, id-token: write }
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    environment: { name: github-pages, url: ${{ steps.deployment.outputs.page_url }} }
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
+        with: { node-version: 20 }
       - run: npm ci
-
-      - name: Generate docs
-        run: |
-          npx gen-docs src \
-            --out _site \
-            --title "${{ github.event.repository.name }}" \
-            --source-url "https://github.com/${{ github.repository }}/blob/main" \
-            --json
-
+      - run: npx gen-docs src --out _site --title "${{ github.event.repository.name }}" --source-url "https://github.com/${{ github.repository }}/blob/main" --json
       - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
+        with: { path: _site }
       - id: deployment
         uses: actions/deploy-pages@v4
 ```
 
-Enable GitHub Pages in your repo settings (Settings → Pages → Source: GitHub Actions) and your docs will be live at `https://<org>.github.io/<repo>` after every push.
-
----
-
-## What's new
-
-### v1.16.0 — Drift detection, coverage badges, N-level tree navigation
-- **`--check-drift`**: a new CI-gateable flag for `gen-comments` that compares existing JSDoc blocks against the current code and reports missing params, removed (stale) params, and return-type mismatches — catching docs that fell out of sync with an edit, not just docs that were never written. Read-only, exits `1` on findings.
-- **`--coverage-badge <dir>`**: writes a self-contained, offline SVG coverage badge plus a JSON summary, ready to embed in a repo README or CI artifact.
-- **Sidebar navigation is now a real N-level tree**, superseding v1.15.0's 2-level-cap grouping below — any depth of nested folders renders as a proper collapsible tree, with every ancestor folder of the page you're on auto-expanded. Full keyboard (arrow-key) and screen-reader (ARIA tree) support.
-- **Index page module cards** now show a breadcrumb (e.g. `helpers / server`) for nested modules, using the same folder labels as the sidebar tree, so the two stay visually consistent.
-
-### v1.15.0 — Sidebar smart grouping
-Large projects with deeply-nested module paths (e.g. `applications/admin/modules/environment/foo`) previously showed the full path repeated as group labels. The sidebar now strips the longest shared prefix across all modules and shows only the last path segment as the toggle label. Individual module links show just the filename; hover for the full path. Empty modules (zero exports) show a "No exported items" placeholder instead of a blank card.
-
-*(Superseded by v1.16.0's N-level tree above — kept here for history.)*
-
-### v1.14.0 — Stripe-style layout
-Complete visual overhaul: sticky topnav bar (project name top-left, centered search with `Ctrl+K` shortcut), white sidebar with uppercase section headers and accent-colour active links, three-column CSS grid (sidebar 240 px | main 1 fr | TOC 200 px), and a right-side "On this page" TOC with IntersectionObserver scroll-spy.
+Enable GitHub Pages (Settings → Pages → Source: GitHub Actions).
 
 ---
 
 ## Known limitations
 
-- **Inline anonymous callbacks** passed directly as call arguments (`arr.map(x => x * 2)`) are not documented — inserting a multi-line block there would mangle the expression. Named declarations (functions, class members, variables, object properties) are all covered.
-- **Type inference is 100% syntactic.** The tool reads what your code *looks like*, not what it *means*. It never evaluates, imports, or type-checks.
-- **Multi-declarator statements** (`const a = 1, b = 2;`) get one combined block rather than per-declarator docs.
-- **`.d.ts` files** are skipped — no implementation to document.
-- **`gen-docs` does not serve** — the output is a static site. Use any static file server (`npx serve docs`) or deploy to GitHub Pages, Netlify, Vercel, etc.
+- Inline anonymous callbacks (`arr.map(x => x * 2)`) aren't documented — named declarations only.
+- Type inference is 100% syntactic — no evaluation, no imports, no type-checking.
+- Multi-declarator statements (`const a = 1, b = 2;`) get one combined block.
+- `.d.ts` files are skipped.
+- `gen-docs` doesn't serve — use `npx serve docs` or deploy statically.
+- `gen-docs` site generation degrades superlinearly past ~300-500 source files (redundant per-page path-prefix recomputation) — fix in progress, tracked in `docs/backlog/`.
+
+See [CHANGELOG.md](./CHANGELOG.md) for release history.
 
 ---
 
