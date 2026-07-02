@@ -172,6 +172,33 @@ module.exports = function runExtractorTests(check) {
         assert.ok(active && active.value && active.value.includes("active"), "member value wrong");
     });
 
+    check("extractor: @param and @returns with nested-brace object-literal type parsed correctly", () => {
+        // Regression for QA-found bug: extractBraced()'s old regex (^\{([^}]*)\}...)
+        // stopped at the FIRST '}', truncating nested-brace types like
+        // "{{ documented: number, total: number }[]}" and leaving garbage that
+        // broke name/description parsing downstream.
+        const f = tmp("nested.ts", [
+            "/**",
+            " * Aggregate coverage results.",
+            " * @param {{ documented: number, total: number }[]} fileResults - Per-file results.",
+            " * @returns {{ documented: number, total: number }} Aggregated totals.",
+            " */",
+            "export function aggregate(fileResults: any[]): any { return fileResults[0]; }",
+        ].join("\n"));
+        const mod = extractModule(f);
+        const fn  = mod.functions[0];
+        assert.ok(fn, "function not extracted");
+        assert.strictEqual(fn.jsdocParams.length, 1, "expected exactly one jsdoc param");
+        const p0 = fn.jsdocParams[0];
+        assert.strictEqual(p0.name, "fileResults", "param name mis-parsed due to nested braces");
+        assert.strictEqual(p0.type, "{ documented: number, total: number }[]", "nested-brace param type truncated");
+        assert.ok(p0.description && p0.description.includes("Per-file results"), "param description lost: " + p0.description);
+        assert.ok(fn.returns, "@returns not extracted");
+        assert.strictEqual(fn.returns.type, "{ documented: number, total: number }", "nested-brace return type truncated");
+        assert.ok(fn.returns.description && fn.returns.description.includes("Aggregated totals"),
+            "return description lost: " + fn.returns.description);
+    });
+
     check("extractor: type alias and exported const variable extracted", () => {
         const f = tmp("vars.ts", [
             "export type UserId = string | number;",

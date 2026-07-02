@@ -7,7 +7,7 @@
  */
 
 const assert  = require("assert");
-const { buildSite } = require("../lib/renderer.js");
+const { buildSite, pathTree, ancestorChain, cardBreadcrumb, CSS_STRUCTURE } = require("../lib/renderer.js");
 
 // ---------------------------------------------------------------------------
 // Mock helpers
@@ -260,5 +260,226 @@ module.exports = function runRendererTests(check) {
         assert.ok(utilPage && utilPage.html.includes("card-prose"), "utils card-prose missing");
     });
 
+    // -----------------------------------------------------------------------
+    // task-pi-05 — pathTree(modules) + ancestorChain(root, mod) data layer
+    // Mandatory edge-case gate per adr-phase-i-tree-nav.md (6 cases).
+    // -----------------------------------------------------------------------
+
+    check("pathTree: EC1 single module at root -> one file child, zero dir children", () => {
+        const mods = [makeMod("/proj/src/utils.ts")];
+        const tree = pathTree(mods);
+        assert.strictEqual(tree.children.length, 1);
+        assert.strictEqual(tree.children[0].type, "file");
+        assert.strictEqual(tree.children.filter(c => c.type === "dir").length, 0);
+    });
+
+    check("pathTree: EC2 zero-depth project (flat) -> root has only file children", () => {
+        const mods = [makeMod("/proj/src/a.ts"), makeMod("/proj/src/b.ts"), makeMod("/proj/src/c.ts")];
+        const tree = pathTree(mods);
+        assert.ok(tree.children.every(c => c.type === "file"));
+    });
+
+    check("pathTree: EC3 one deep outlier among mostly-flat modules", () => {
+        const mods = [
+            makeMod("/proj/src/a.ts"), makeMod("/proj/src/b.ts"), makeMod("/proj/src/c.ts"), makeMod("/proj/src/d.ts"),
+            makeMod("/proj/src/l1/l2/l3/l4/l5/deep.ts"),
+        ];
+        const tree = pathTree(mods);
+        const chain = ancestorChain(tree, mods[4]);
+        assert.strictEqual(chain.length, 5, "expected 5 dir nodes in ancestor chain");
+        assert.strictEqual(tree.children.filter(c => c.type === "file").length, 4);
+    });
+
+    check("pathTree/ancestorChain: EC4 4-level fixture a/b/c/d/mod.ts -> chain [a,b,c,d]", () => {
+        // needs a sibling module — with only 1 module, commonRoot() strips the whole dir
+        // path as the "common root", degenerating to a flat file (expected, pre-existing behavior).
+        const mods = [makeMod("/proj/a/b/c/d/mod.ts"), makeMod("/proj/other.ts")];
+        const tree = pathTree(mods);
+        const chain = ancestorChain(tree, mods[0]);
+        assert.strictEqual(chain.length, 4);
+        assert.deepStrictEqual(chain.map(n => n.name), ["a", "b", "c", "d"]);
+    });
+
+    check("pathTree: EC5 sort stability — dirs before files, alphabetical case-insensitive", () => {
+        const mods = [
+            makeMod("/proj/src/banana.ts"), makeMod("/proj/src/apple.ts"),
+            makeMod("/proj/src/Zebra/inner.ts"),
+        ];
+        const tree = pathTree(mods);
+        const names = tree.children.map(c => c.name);
+        assert.strictEqual(names[0], "Zebra", "dir should sort before files");
+        assert.strictEqual(names[1], "apple");
+        assert.strictEqual(names[2], "banana");
+    });
+
+    check("pathTree: EC6 shared deep prefix composes correctly with deeperCommonRoot", () => {
+        const mods = [
+            makeMod("/proj/a/b/c/mod1.ts"), makeMod("/proj/a/b/c/mod2.ts"), makeMod("/proj/a/b/d/mod3.ts"),
+        ];
+        const tree = pathTree(mods);
+        const dirNames = tree.children.filter(c => c.type === "dir").map(c => c.name).sort();
+        assert.deepStrictEqual(dirNames, ["c", "d"], "deepRoot should strip shared a/b, leaving two top dirs");
+    });
+
+    check("pathTree: empty module list -> root with zero children", () => {
+        assert.strictEqual(pathTree([]).children.length, 0);
+    });
+
+    check("pathTree/ancestorChain: 10-level-deep path -> 10-node ancestor chain, no truncation/crash", () => {
+        const deepPath = "/proj/" + Array.from({ length: 10 }, (_, i) => "l" + (i + 1)).join("/") + "/deep.ts";
+        const mods = [makeMod(deepPath), makeMod("/proj/other.ts")];
+        const tree = pathTree(mods);
+        const chain = ancestorChain(tree, mods[0]);
+        assert.strictEqual(chain.length, 10, "expected 10 ancestor dir nodes for a 10-level-deep module");
+        assert.deepStrictEqual(chain.map(n => n.name), Array.from({ length: 10 }, (_, i) => "l" + (i + 1)));
+    });
+
+    check("pathTree: unicode-style filenames and directory names sort and nest correctly", () => {
+        const mods = [
+            makeMod("/proj/src/cafe-unicode/nihongo-unicode.ts"),
+            makeMod("/proj/src/cafe-unicode/uber-unicode.ts"),
+            makeMod("/proj/src/zurich-unicode.ts"),
+        ];
+        const tree = pathTree(mods);
+        const dir = tree.children.find(c => c.type === "dir" && c.name === "cafe-unicode");
+        assert.ok(dir, "unicode-style directory name should be preserved as a dir node");
+        assert.strictEqual(dir.children.length, 2);
+        // moduleLabel() strips the .ts/.js extension by design (lib/renderer.js:870) — file
+        // node names in the tree are extension-less, matching existing, pre-sprint-9 behavior.
+        const fileNames = dir.children.map(c => c.name).sort();
+        assert.deepStrictEqual(fileNames, ["nihongo-unicode", "uber-unicode"].sort(), "filenames preserved, no corruption");
+        assert.ok(tree.children.some(c => c.type === "file" && c.name === "zurich-unicode"), "top-level filename preserved");
+    });
+
+    check("pathTree: true unicode (non-ASCII) filenames and dir names round-trip without corruption", () => {
+        const unicodeDir  = "café";
+        const unicodeFile = "日本";
+        const mods = [
+            makeMod("/proj/src/" + unicodeDir + "/" + unicodeFile + ".ts"),
+            makeMod("/proj/src/other.ts"),
+        ];
+        const tree = pathTree(mods);
+        const dir = tree.children.find(c => c.type === "dir" && c.name === unicodeDir);
+        assert.ok(dir, "non-ASCII directory name must be preserved exactly");
+        assert.strictEqual(dir.children[0].name, unicodeFile, "non-ASCII filename must be preserved exactly");
+    });
+
+    // -----------------------------------------------------------------------
+    // task-pi-05b — buildSidebar recursive N-level tree + ARIA + keyboard nav
+    // -----------------------------------------------------------------------
+
+    check("buildSidebar: AC1/AC2 4-level fixture renders 4 nested <details>", () => {
+        const mods = [makeMod("/proj/a/b/c/d/mod.ts", { functions: [makeFunc("fn1")] }), makeMod("/proj/other.ts")];
+        const modPage = buildSite(mods, { projectName: "Test" })
+            .find(p => p.path.startsWith("modules/") && p.path.includes("mod") && !p.path.includes("other"));
+        const detailsCount = (modPage.html.match(/<details class="sidebar-item-details"/g) || []).length;
+        assert.strictEqual(detailsCount, 4);
+    });
+
+    check("buildSidebar: AC3 every ancestor of the active module auto-expands", () => {
+        const mods = [makeMod("/proj/a/b/c/d/mod.ts", { functions: [makeFunc("fn1")] }), makeMod("/proj/other.ts")];
+        const modPage = buildSite(mods, { projectName: "Test" })
+            .find(p => p.path.startsWith("modules/") && p.path.includes("mod") && !p.path.includes("other"));
+        const openCount = (modPage.html.match(/<details class="sidebar-item-details"[^>]*\sopen[^>]*>/g) || []).length;
+        assert.strictEqual(openCount, 4, "all 4 ancestor dirs should carry the open attribute");
+    });
+
+    check("buildSidebar: ARIA tree semantics present (role/level/expanded/setsize/posinset)", () => {
+        const mods = [makeMod("/proj/a/b/mod.ts", { functions: [makeFunc("fn1")] }), makeMod("/proj/other.ts")];
+        const modPage = buildSite(mods, { projectName: "Test" }).find(p => p.path.startsWith("modules/"));
+        assert.ok(modPage.html.includes('role="tree"'));
+        assert.ok(modPage.html.includes('role="treeitem"'));
+        assert.ok(modPage.html.includes('aria-level='));
+        assert.ok(modPage.html.includes('aria-expanded='));
+        assert.ok(modPage.html.includes('aria-setsize='));
+        assert.ok(modPage.html.includes('aria-posinset='));
+    });
+
+    check("buildSidebar: AC5 flat/shallow project renders no <details> wrapper (no-regression)", () => {
+        const mods = [makeMod("/proj/lib/renderer.js"), makeMod("/proj/lib/index.js"), makeMod("/proj/lib/extractor.js")];
+        const modPage = buildSite(mods, { projectName: "Test" }).find(p => p.path.startsWith("modules/"));
+        assert.ok(!modPage.html.includes('<details class="sidebar-item-details"'), "flat project must not wrap in <details>");
+        assert.ok(modPage.html.includes('class="sidebar-link'), "flat links should still render");
+    });
+
+    check("buildSidebar: --depth CSS custom property applied inline at the right levels", () => {
+        const mods = [makeMod("/proj/a/b/mod.ts", { functions: [makeFunc("fn1")] }), makeMod("/proj/other.ts")];
+        const modPage = buildSite(mods, { projectName: "Test" })
+            .find(p => p.path.startsWith("modules/") && p.path.includes("mod") && !p.path.includes("other"));
+        assert.ok(modPage.html.includes('style="--depth:0"'));
+        assert.ok(modPage.html.includes('style="--depth:1"'));
+    });
+
+    check("CSS_STRUCTURE: indentation formula, sticky depth cap, focus-visible ring, legacy alias kept", () => {
+        assert.ok(CSS_STRUCTURE.includes("calc(16px + (var(--depth,0) * 14px))"), "indentation formula missing");
+        assert.ok(CSS_STRUCTURE.includes("min(var(--depth,0),3)"), "sticky depth cap missing");
+        assert.ok(CSS_STRUCTURE.includes(":focus-visible"), "focus-visible ring missing");
+        assert.ok(CSS_STRUCTURE.includes(".sidebar-link-indent{padding-left:28px}"), "legacy alias must remain in CSS");
+    });
+
+    // -----------------------------------------------------------------------
+    // task-pi-05c — cardBreadcrumb(sl) + buildIndexBody breadcrumb markup
+    // -----------------------------------------------------------------------
+
+    check("cardBreadcrumb: 1 level -> null (no breadcrumb)", () => {
+        assert.strictEqual(cardBreadcrumb("utils"), null);
+    });
+
+    check("cardBreadcrumb: 2 levels -> [helpers]", () => {
+        assert.deepStrictEqual(cardBreadcrumb("helpers/express"), ["helpers"]);
+    });
+
+    check("cardBreadcrumb: 3 levels -> [helpers,server]", () => {
+        assert.deepStrictEqual(cardBreadcrumb("helpers/server/express"), ["helpers", "server"]);
+    });
+
+    check("cardBreadcrumb: 4+ levels -> ellipsis + last 2 segments", () => {
+        assert.deepStrictEqual(cardBreadcrumb("helpers/server/auth/express"), ["…", "server", "auth"]);
+    });
+
+    check("buildIndexBody: AC2 top-level files render with no breadcrumb markup", () => {
+        const mods = [makeMod("/proj/src/utils.ts", { functions: [makeFunc("doIt")] })];
+        const idx = buildSite(mods, { projectName: "Test" }).find(p => p.path === "index.html");
+        assert.ok(!idx.html.includes("module-card-path"));
+    });
+
+    check("buildIndexBody: AC1 nested module shows breadcrumb, filename-only name, and title attr", () => {
+        const mods = [makeMod("/proj/helpers/server/express.ts", { functions: [makeFunc("run")] }), makeMod("/proj/other.ts")];
+        const idx = buildSite(mods, { projectName: "Test" }).find(p => p.path === "index.html");
+        assert.ok(idx.html.includes("module-card-path"));
+        assert.ok(idx.html.includes(">helpers<"));
+        assert.ok(idx.html.includes(">express<"), "card name should be filename only");
+        assert.ok(!idx.html.includes(">helpers/server/express<"), "card name must not be the full sl");
+        assert.ok(idx.html.includes('title="helpers/server/express"'), "title attr should carry the full sl");
+    });
+
+    check("buildIndexBody: AC4 breadcrumb segments match sidebar folder names (shared fixture)", () => {
+        const mods = [
+            makeMod("/proj/helpers/server/express.ts", { functions: [makeFunc("run")] }),
+            makeMod("/proj/other.ts"),
+        ];
+        const pages = buildSite(mods, { projectName: "Test" });
+        const idx = pages.find(p => p.path === "index.html");
+        const modPage = pages.find(p => p.path.includes("express"));
+        assert.ok(modPage.html.includes(">helpers<"));
+        assert.ok(modPage.html.includes(">server<"));
+        assert.ok(idx.html.includes(">helpers<"));
+        assert.ok(idx.html.includes(">server<"));
+    });
+
+    check("buildIndexBody: 4+ level path truncates to ellipsis + last 2 segments on index card", () => {
+        const mods = [
+            makeMod("/proj/helpers/server/auth/express.ts", { functions: [makeFunc("run")] }),
+            makeMod("/proj/other.ts"),
+        ];
+        const idx = buildSite(mods, { projectName: "Test" }).find(p => p.path === "index.html");
+        assert.ok(idx.html.includes("…"), "ellipsis should appear for a 4+ level path");
+        assert.ok(idx.html.includes(">server<"));
+        assert.ok(idx.html.includes(">auth<"));
+    });
+
+    check("CSS: .module-card-path uses --text2 (not --text3) per the AA contrast fix", () => {
+        assert.ok(CSS_STRUCTURE.includes(".module-card-path{font-size:11px;font-weight:500;color:var(--text2)"));
+    });
 
 };

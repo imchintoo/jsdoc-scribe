@@ -9,6 +9,9 @@
  *   1. gen-comments (lib/index.js) — 12 tests
  *   2. extractor     (lib/extractor.js) — 10 tests
  *   3. renderer      (lib/renderer.js)  — 8 tests
+ *   4. drift         (lib/drift.js)     — 9 tests
+ *   5. coverage      (lib/coverage.js)  — 5 tests
+ *   6. cli           (bin/cli.js)       — 8 tests
  */
 
 const fs   = require("fs");
@@ -153,6 +156,24 @@ require("./extractor.test.js")(check);
 // ---------------------------------------------------------------------------
 console.log("\n-- renderer --");
 require("./renderer.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 4 — drift (lib/drift.js)
+// ---------------------------------------------------------------------------
+console.log("\n-- drift --");
+require("./drift.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 5 — coverage (lib/coverage.js)
+// ---------------------------------------------------------------------------
+console.log("\n-- coverage --");
+require("./coverage.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 6 — cli (bin/cli.js)
+// ---------------------------------------------------------------------------
+console.log("\n-- cli --");
+require("./cli.test.js")(check);
 
 // ---------------------------------------------------------------------------
 // Summary

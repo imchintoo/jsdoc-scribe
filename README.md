@@ -200,6 +200,10 @@ gen-comments <path> [path2 ...] [options]
 |---|---|---|
 | `--write` | `-w` | Edit files **in place**. Without this flag, output goes to a sibling `<name>.out.<ext>` file so you can review the diff first. |
 | `--force` | `-f` | Re-insert blocks even on nodes that already have `/** */`. Useful for regenerating stale docs. |
+| `--dry-run` | `-n` | Show what would be documented without writing any files. |
+| `--check` | `-C` | Like `--dry-run` but exits with code `1` if any symbols are undocumented. Use in CI to enforce documentation coverage. |
+| `--check-drift` | | Compares existing JSDoc blocks against the current AST and flags missing params, removed (stale) params, and return-type mismatches. Read-only — never writes — and exits `1` if drift is found, so it's CI-gateable the same way `--check` is. |
+| `--coverage-badge <dir>` | | Aggregates documentation coverage across the target path and writes `coverage-badge.svg` (a self-contained, shields.io-style SVG) plus `coverage-summary.json` to `<dir>`. No network calls. Read-only with respect to your source files. |
 | `--help` | `-h` | Show usage. |
 | `--version` | `-v` | Show installed version. |
 
@@ -208,6 +212,9 @@ gen-comments src/utils.ts                # preview → writes utils.out.ts
 gen-comments .                           # scan whole project, preview only
 gen-comments . --write                   # scan and edit in place
 gen-comments src --write --force         # also re-document already-commented files
+gen-comments src --check                 # CI gate: exit 1 if any symbols undocumented
+gen-comments src --check-drift           # CI gate: exit 1 if JSDoc blocks have drifted from AST
+gen-comments src --coverage-badge docs   # write docs/coverage-badge.svg + coverage-summary.json
 ```
 
 > **Tip:** Commit your changes before running `--write`. The CLI reminds you if you're outside a git repo.
@@ -499,8 +506,16 @@ Enable GitHub Pages in your repo settings (Settings → Pages → Source: GitHub
 
 ## What's new
 
+### v1.16.0 — Drift detection, coverage badges, N-level tree navigation
+- **`--check-drift`**: a new CI-gateable flag for `gen-comments` that compares existing JSDoc blocks against the current code and reports missing params, removed (stale) params, and return-type mismatches — catching docs that fell out of sync with an edit, not just docs that were never written. Read-only, exits `1` on findings.
+- **`--coverage-badge <dir>`**: writes a self-contained, offline SVG coverage badge plus a JSON summary, ready to embed in a repo README or CI artifact.
+- **Sidebar navigation is now a real N-level tree**, superseding v1.15.0's 2-level-cap grouping below — any depth of nested folders renders as a proper collapsible tree, with every ancestor folder of the page you're on auto-expanded. Full keyboard (arrow-key) and screen-reader (ARIA tree) support.
+- **Index page module cards** now show a breadcrumb (e.g. `helpers / server`) for nested modules, using the same folder labels as the sidebar tree, so the two stay visually consistent.
+
 ### v1.15.0 — Sidebar smart grouping
 Large projects with deeply-nested module paths (e.g. `applications/admin/modules/environment/foo`) previously showed the full path repeated as group labels. The sidebar now strips the longest shared prefix across all modules and shows only the last path segment as the toggle label. Individual module links show just the filename; hover for the full path. Empty modules (zero exports) show a "No exported items" placeholder instead of a blank card.
+
+*(Superseded by v1.16.0's N-level tree above — kept here for history.)*
 
 ### v1.14.0 — Stripe-style layout
 Complete visual overhaul: sticky topnav bar (project name top-left, centered search with `Ctrl+K` shortcut), white sidebar with uppercase section headers and accent-colour active links, three-column CSS grid (sidebar 240 px | main 1 fr | TOC 200 px), and a right-side "On this page" TOC with IntersectionObserver scroll-spy.

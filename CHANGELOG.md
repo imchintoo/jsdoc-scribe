@@ -1,3 +1,17 @@
+## [1.16.0] - 2026-07-02
+
+### Added
+- **Drift detection**: new `--check-drift` flag for `gen-comments` compares existing JSDoc blocks against the current code and flags missing params, removed (stale) params, and return-type mismatches. Read-only and CI-friendly — exits 1 if drift is found, exits 0 otherwise, and never modifies source files.
+- **Coverage badges**: new `--coverage-badge <dir>` flag for `gen-comments` aggregates documentation coverage across a target path and writes a self-contained, shields.io-style `coverage-badge.svg` plus a `coverage-summary.json`. No network dependency — fully offline and deterministic.
+- **N-level sidebar navigation**: the generated docs site sidebar now renders an unbounded-depth collapsible folder tree (previously capped at 2 levels), with the active module's ancestor folders auto-expanded. Full keyboard navigation (arrow keys) and screen-reader support (ARIA tree semantics).
+- **Breadcrumb context on the index page**: module cards for nested files now show a directory breadcrumb (e.g. `helpers / server`) above the filename, so it's clear where a module lives at a glance. Deeply nested paths truncate to keep cards tidy.
+
+### Changed
+- Internal: `--check`'s coverage math now goes through a shared `aggregateCoverage()` helper (also used by `--coverage-badge`) instead of being computed inline — output is unchanged, this just avoids having the same math defined twice.
+
+### Fixed
+- Module cards on the documentation index page now include a `title` attribute with the full relative path on hover, matching the tooltip behavior individual symbols already had.
+
 ## [1.15.0] - 2026-07-01
 
 ### Changed
