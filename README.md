@@ -8,7 +8,7 @@
 > Pure, deterministic, **AST-based** JSDoc comment generator and multi-page documentation site builder for JavaScript & TypeScript.
 > **No AI. No LLM. No surprises.** Same input always produces the same output.
 
-Two CLIs, one dependency (`typescript`, used purely as a syntax parser):
+Two CLIs, one dependency (`typescript`, used purely as a syntax parser), **101 passing tests** (deterministic, zero network calls — same self-test suite runs on every `npm test` and before every `npm publish`):
 
 | Tool | What it does |
 |---|---|

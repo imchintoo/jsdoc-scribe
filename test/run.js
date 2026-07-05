@@ -12,6 +12,7 @@
  *   4. drift         (lib/drift.js)     — 9 tests
  *   5. coverage      (lib/coverage.js)  — 5 tests
  *   6. cli           (bin/cli.js)       — 8 tests
+ *   7. ast-utils     (lib/ast-utils.js) — 12 tests
  */
 
 const fs   = require("fs");
@@ -174,6 +175,12 @@ require("./coverage.test.js")(check);
 // ---------------------------------------------------------------------------
 console.log("\n-- cli --");
 require("./cli.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 7 — ast-utils (lib/ast-utils.js)
+// ---------------------------------------------------------------------------
+console.log("\n-- ast-utils --");
+require("./ast-utils.test.js")(check);
 
 // ---------------------------------------------------------------------------
 // Summary
