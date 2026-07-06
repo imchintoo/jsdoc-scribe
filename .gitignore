@@ -1,3 +1,6 @@
+# Secrets / local auth config — never commit
+.npmrc
+
 # Logs
 logs
 *.log

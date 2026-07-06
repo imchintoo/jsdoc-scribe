@@ -2,13 +2,21 @@
 
 [![npm version](https://img.shields.io/npm/v/jsdoc-scribe.svg)](https://www.npmjs.com/package/jsdoc-scribe)
 [![npm downloads](https://img.shields.io/npm/dm/jsdoc-scribe.svg)](https://www.npmjs.com/package/jsdoc-scribe)
+[![Test](https://github.com/imchintoo/jsdoc-scribe/actions/workflows/test.yml/badge.svg)](https://github.com/imchintoo/jsdoc-scribe/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/node/v/jsdoc-scribe.svg)](https://nodejs.org)
+[![Types: included](https://img.shields.io/badge/types-included-blue.svg)](./lib/index.d.ts)
 
 > Pure, deterministic, **AST-based** JSDoc comment generator and multi-page documentation site builder for JavaScript & TypeScript.
 > **No AI. No LLM. No surprises.** Same input always produces the same output.
 
 Two CLIs, one dependency (`typescript`, used purely as a syntax parser), **101 passing tests** (deterministic, zero network calls — same self-test suite runs on every `npm test` and before every `npm publish`):
+
+`typescript` is listed as a regular `dependency`, not a `peerDependency`, on purpose: it's the
+parser for *every* file this tool touches, `.js` included, not just `.ts` — so it can't be
+left for a consumer to optionally provide. The version range (`>=5.0.0`) is deliberately
+permissive so it resolves to whatever TS version a consuming project already has, without
+requiring one to be present at all.
 
 | Tool | What it does |
 |---|---|

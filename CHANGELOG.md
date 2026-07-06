@@ -1,3 +1,12 @@
+## [1.17.0] - 2026-07-05
+
+### Added
+- **Internal AST ergonomics layer**: new `lib/ast-utils.js` module with four small, purpose-built traversal/guard helpers built directly on the `typescript` Compiler API — `getDescendantsOfKind(node, kind)`, `findFirstDescendant(node, predicate, stopAt)`, `asClass(node)`, `asFunctionLike(node)`. Not part of the public API; internal-only.
+
+### Changed
+- Internal: `lib/extractor.js`'s traversal internals migrated onto the new helpers — `hasReturnWithValue`'s hand-rolled walk is now `findFirstDescendant` with a `stopAt` boundary, and the local `isFunctionLike`/class-dispatch checks now go through `asFunctionLike`/`asClass`. Zero output/behavior change (verified via a line-number-normalized diff of `extractModule()` across every file in `lib/` and `bin/`, plus a `gen-comments --dry-run` sanity check) — no new npm dependency, still just `typescript`.
+- Test suite grew from 88 to 101 assertions (13 new, covering the ast-utils helpers directly, including nested-function boundary behavior).
+
 ## [1.16.0] - 2026-07-02
 
 ### Added
