@@ -164,19 +164,43 @@ CLI flags override config values.
 
 ## Programmatic API
 
+Ships with hand-written TypeScript declarations (`lib/index.d.ts`, `lib/docs.d.ts`) — no
+`@types/jsdoc-scribe` package needed, autocomplete works out of the box in both `.js` and
+`.ts` consumers.
+
+### `require('jsdoc-scribe')` — JSDoc insertion
+
+```js
+const { processFile, analyseFile, collectFiles } = require('jsdoc-scribe');
+
+const files = collectFiles('src');                       // recurse a directory
+for (const f of files) {
+  const added = processFile(f, { write: true });          // insert missing JSDoc blocks
+  console.log(f, added);
+}
+
+const coverage = analyseFile('src/auth.ts');              // { documented, total, undocumented }
+```
+
+### `require('jsdoc-scribe/docs')` — doc-site generation
+
 ```js
 const { generateSite } = require('jsdoc-scribe/docs');
 const fs = require('fs'), path = require('path');
 
-const pages = generateSite(['src'], { projectName: 'My Project', version: '1.0.0' });
-for (const p of pages) {
-  const dest = path.join('docs', p.path);
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.writeFileSync(dest, p.html, 'utf8');
-}
+(async () => {
+  const pages = await generateSite(['src'], { projectName: 'My Project', version: '1.0.0' });
+  for (const p of pages) {
+    const dest = path.join('docs', p.path);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, p.html, 'utf8');
+  }
+})();
 ```
 
-Also exported: `collectFiles`, `extractModule`, `extractModules`, `buildSite`, `moduleLabel`, `moduleHtmlPath`. `extractModule(filePath)` returns `{ filePath, description, functions[], classes[], interfaces[], typeAliases[], enums[], variables[] }` — each entry carries both the AST-inferred shape (`params`, `returnType`) and the parsed JSDoc (`jsdocParams`, `returns`, `throws`, `since`, `deprecated`).
+`generateSite` is `async` (it batches file extraction with `Promise.allSettled` internally) — call it from inside an `async` function or wrap it, as above; it does not return the pages array directly.
+
+Also exported from `jsdoc-scribe/docs`: `collectFiles`, `extractModule`, `extractModules`, `buildSite`, `moduleLabel`, `moduleHtmlPath`. `extractModule(filePath)` returns `{ filePath, description, functions[], classes[], interfaces[], typeAliases[], enums[], variables[] }` — each entry carries both the AST-inferred shape (`params`, `returnType`) and the parsed JSDoc (`jsdocParams`, `returns`, `throws`, `since`, `deprecated`).
 
 ---
 
@@ -204,6 +228,21 @@ jobs:
 ```
 
 Enable GitHub Pages (Settings → Pages → Source: GitHub Actions).
+
+This repo's own CI (`.github/workflows/test.yml`) runs the 101-test suite on Node 18/20/22
+for every push and PR — that's the badge at the top of this README. Releases publish via
+`.github/workflows/publish.yml` using npm's OIDC trusted publishing (no stored token; every
+published version carries verifiable provenance).
+
+---
+
+## Contributing
+
+Bug reports and PRs welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md) for dev setup and
+guidelines (determinism is non-negotiable, no new runtime dependency without discussion
+first). This project follows the [Code of Conduct](./CODE_OF_CONDUCT.md). Found a security
+issue? See [SECURITY.md](./SECURITY.md) rather than opening a public issue with exploit
+details.
 
 ---
 
