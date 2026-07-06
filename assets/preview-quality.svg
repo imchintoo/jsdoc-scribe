@@ -1,0 +1,112 @@
+<svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+  <title>jsdoc-scribe Code Health dashboard preview</title>
+  <desc>gen-docs --quality: the index page becomes a Code Health dashboard -- 7 stat cards plus 4 summary cards (Files needing attention, Duplicate code, Most-imported files, Orphan files), each linking to its own full-list detail page. The Modules grid is not shown on this page; module navigation stays in the sidebar.</desc>
+  <!-- outer frame -->
+  <rect width="900" height="520" rx="10" fill="#e8e8e8"/>
+  <rect x="2" y="2" width="896" height="516" rx="9" fill="#ffffff" stroke="#d0d0d0" stroke-width="1"/>
+  <!-- TOPNAV -->
+  <rect x="2" y="2" width="896" height="44" rx="9" fill="#ffffff"/>
+  <rect x="2" y="38" width="896" height="1" fill="#e6ebf1"/>
+  <rect x="16" y="17" width="16" height="2" rx="1" fill="#0a2540"/>
+  <rect x="16" y="22" width="12" height="2" rx="1" fill="#0a2540"/>
+  <rect x="16" y="27" width="16" height="2" rx="1" fill="#0a2540"/>
+  <text x="40" y="28" font-size="13" font-weight="700" fill="#0a2540">jsdoc-scribe</text>
+  <text x="126" y="28" font-size="10" fill="#697386" font-family="monospace">v1.21.1</text>
+  <text x="176" y="28" font-size="12" font-weight="700" fill="#625bf6">Code Health</text>
+  <rect x="310" y="12" width="280" height="22" rx="5" fill="#f6f9fc" stroke="#e6ebf1" stroke-width="1"/>
+  <circle cx="323" cy="23" r="4" fill="none" stroke="#aab" stroke-width="1.2"/>
+  <line x1="326" y1="26" x2="329" y2="29" stroke="#aab" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="334" y="27" font-size="11" fill="#aab" font-style="italic">Search...  (Ctrl+K)</text>
+  <rect x="575" y="15" width="10" height="13" rx="2" fill="#e6ebf1"/>
+  <text x="577" y="25" font-size="9" fill="#697386" font-family="monospace">/</text>
+  <!-- SIDEBAR (module navigation stays here, unaffected) -->
+  <rect x="2" y="43" width="168" height="475" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="14" y="64" font-size="9" font-weight="700" fill="#8898aa" letter-spacing="1">MODULES</text>
+  <text x="14" y="83" font-size="9" fill="#5c5c5c">&#9658;</text>
+  <text x="24" y="83" font-size="11" font-weight="600" fill="#8898aa" letter-spacing=".5">LIB</text>
+  <text x="14" y="100" font-size="9" fill="#5c5c5c">&#9658;</text>
+  <text x="24" y="100" font-size="11" font-weight="600" fill="#8898aa" letter-spacing=".5">BIN</text>
+  <text x="14" y="117" font-size="12" fill="#425466">extractor</text>
+  <text x="14" y="134" font-size="12" fill="#425466">renderer</text>
+  <text x="14" y="151" font-size="12" fill="#425466">quality</text>
+  <text x="14" y="168" font-size="12" fill="#425466">import-graph</text>
+  <text x="14" y="185" font-size="10" fill="#aab" font-style="italic">(full tree, same as always)</text>
+  <!-- MAIN CONTENT -->
+  <rect x="170" y="43" width="556" height="475" fill="#f6f9fc"/>
+  <rect x="170" y="43" width="556" height="60" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="186" y="68" font-size="18" font-weight="700" fill="#0a2540">jsdoc-scribe</text>
+  <text x="186" y="87" font-size="10" fill="#697386" font-family="monospace">14 module(s) &#183; 312 function(s) &#183; 22 class(es)</text>
+  <!-- Code Health section title -->
+  <rect x="170" y="103" width="556" height="22" fill="#f9fbfd" stroke="#e6ebf1" stroke-width="0.5"/>
+  <text x="186" y="118" font-size="9" font-weight="700" fill="#697386" letter-spacing="1">CODE HEALTH <tspan fill="#b0bec8" font-family="monospace" letter-spacing="0">(code-multivitals)</tspan></text>
+  <!-- STAT CARDS: row 1 -->
+  <g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+    <rect x="178" y="133" width="129" height="52" rx="6" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+    <text x="188" y="150" font-size="8" font-weight="700" fill="#697386" letter-spacing=".5">HEALTH SCORE</text>
+    <text x="188" y="174" font-size="19" font-weight="700" fill="#cf222e">41</text>
+    <rect x="315" y="133" width="129" height="52" rx="6" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+    <text x="325" y="150" font-size="8" font-weight="700" fill="#697386" letter-spacing=".5">MAINTAINABILITY</text>
+    <text x="325" y="174" font-size="19" font-weight="700" fill="#9a6700">38</text>
+    <rect x="452" y="133" width="129" height="52" rx="6" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+    <text x="462" y="150" font-size="8" font-weight="700" fill="#697386" letter-spacing=".5">FILES</text>
+    <text x="462" y="174" font-size="19" font-weight="700" fill="#0a2540">14</text>
+    <rect x="589" y="133" width="129" height="52" rx="6" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+    <text x="599" y="150" font-size="8" font-weight="700" fill="#697386" letter-spacing=".5">FUNCTIONS</text>
+    <text x="599" y="174" font-size="19" font-weight="700" fill="#0a2540">312</text>
+    <!-- STAT CARDS: row 2 -->
+    <rect x="178" y="193" width="129" height="52" rx="6" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+    <text x="188" y="210" font-size="8" font-weight="700" fill="#697386" letter-spacing=".5">ERRORS</text>
+    <text x="188" y="234" font-size="19" font-weight="700" fill="#cf222e">18</text>
+    <rect x="315" y="193" width="129" height="52" rx="6" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+    <text x="325" y="210" font-size="8" font-weight="700" fill="#697386" letter-spacing=".5">WARNINGS</text>
+    <text x="325" y="234" font-size="19" font-weight="700" fill="#9a6700">202</text>
+    <rect x="452" y="193" width="129" height="52" rx="6" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+    <text x="462" y="210" font-size="8" font-weight="700" fill="#697386" letter-spacing=".5">CLONE PAIRS</text>
+    <text x="462" y="234" font-size="19" font-weight="700" fill="#cf222e">10</text>
+  </g>
+  <!-- SUMMARY CARDS: 2x2 grid, each with a View more link -->
+  <g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+    <!-- Files needing attention -->
+    <rect x="178" y="261" width="262" height="110" rx="8" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+    <text x="190" y="280" font-size="12" font-weight="700" fill="#0a2540">Files needing attention</text>
+    <text x="190" y="295" font-size="9" fill="#697386">Worst: <tspan font-weight="700" fill="#0a2540">lib/renderer.js</tspan> (41)</text>
+    <line x1="190" y1="303" x2="428" y2="303" stroke="#f1f5f9" stroke-width="1"/>
+    <text x="190" y="317" font-size="9" fill="#425466">lib/renderer.js</text>
+    <text x="420" y="317" font-size="8.5" fill="#697386" font-family="monospace" text-anchor="end">41</text>
+    <line x1="190" y1="323" x2="428" y2="323" stroke="#f1f5f9" stroke-width="1"/>
+    <text x="190" y="337" font-size="9" fill="#425466">lib/quality.js</text>
+    <text x="420" y="337" font-size="8.5" fill="#697386" font-family="monospace" text-anchor="end">52</text>
+    <text x="190" y="360" font-size="10" font-weight="700" fill="#625bf6">View all 14 files &#8594;</text>
+    <!-- Duplicate code -->
+    <rect x="456" y="261" width="262" height="110" rx="8" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+    <text x="468" y="280" font-size="12" font-weight="700" fill="#0a2540">Duplicate code</text>
+    <text x="468" y="295" font-size="9" fill="#697386"><tspan font-weight="700" fill="#0a2540">10</tspan> clone pairs found</text>
+    <line x1="468" y1="303" x2="706" y2="303" stroke="#f1f5f9" stroke-width="1"/>
+    <text x="468" y="317" font-size="9" fill="#425466">extractor.js &#8596; import-graph.js</text>
+    <text x="698" y="317" font-size="8.5" fill="#697386" font-family="monospace" text-anchor="end">92%</text>
+    <line x1="468" y1="323" x2="706" y2="323" stroke="#f1f5f9" stroke-width="1"/>
+    <text x="468" y="337" font-size="9" fill="#425466">cli.js &#8596; gen-docs.js</text>
+    <text x="698" y="337" font-size="8.5" fill="#697386" font-family="monospace" text-anchor="end">78%</text>
+    <text x="468" y="360" font-size="10" font-weight="700" fill="#625bf6">View all 10 pairs &#8594;</text>
+    <!-- Most-imported files -->
+    <rect x="178" y="387" width="262" height="110" rx="8" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+    <text x="190" y="406" font-size="12" font-weight="700" fill="#0a2540">Most-imported files</text>
+    <text x="190" y="421" font-size="9" fill="#697386">Top: <tspan font-weight="700" fill="#0a2540">lib/extractor.js</tspan></text>
+    <line x1="190" y1="429" x2="428" y2="429" stroke="#f1f5f9" stroke-width="1"/>
+    <text x="190" y="443" font-size="9" fill="#425466">lib/extractor.js</text>
+    <text x="420" y="443" font-size="8.5" fill="#697386" font-family="monospace" text-anchor="end">9x</text>
+    <line x1="190" y1="449" x2="428" y2="449" stroke="#f1f5f9" stroke-width="1"/>
+    <text x="190" y="463" font-size="9" fill="#425466">lib/renderer.js</text>
+    <text x="420" y="463" font-size="8.5" fill="#697386" font-family="monospace" text-anchor="end">6x</text>
+    <text x="190" y="486" font-size="10" font-weight="700" fill="#625bf6">View all imports &#8594;</text>
+    <!-- Orphan files -->
+    <rect x="456" y="387" width="262" height="110" rx="8" fill="#ffffff" stroke="#e6ebf1" stroke-width="0.5"/>
+    <text x="468" y="406" font-size="12" font-weight="700" fill="#0a2540">Orphan files</text>
+    <text x="468" y="421" font-size="9" fill="#9a6700" font-weight="700">2 found</text>
+    <line x1="468" y1="429" x2="706" y2="429" stroke="#f1f5f9" stroke-width="1"/>
+    <text x="468" y="443" font-size="9" fill="#425466">test/fixtures/old.js</text>
+    <line x1="468" y1="449" x2="706" y2="449" stroke="#f1f5f9" stroke-width="1"/>
+    <text x="468" y="463" font-size="9" fill="#425466">sample/legacy/util.js</text>
+    <text x="468" y="486" font-size="10" font-weight="700" fill="#625bf6">View all 2 orphans &#8594;</text>
+  </g>
+</svg>

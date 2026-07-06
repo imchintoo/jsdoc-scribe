@@ -108,6 +108,10 @@ export class Container {
   * Factory.
   * @returns {any}
   */
+ /**
+  * Factory.
+  * @returns {any}
+  */
  factory: () => value as unknown, lifetime: "singleton", instance: value as unknown });
         return this;
     }

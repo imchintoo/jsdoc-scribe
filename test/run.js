@@ -15,6 +15,9 @@
  *   7. ast-utils     (lib/ast-utils.js) — 12 tests
  *   8. lint          (lib/lint.js)      — new in v1.18.0
  *   9. fix           (lib/fix.js)       — new in v1.19.0 (--lint --fix)
+ *  10. import-graph  (lib/import-graph.js) — new in v1.20.0 (project dashboard)
+ *  11. project-facts (lib/project-facts.js) — new in v1.20.0 (project dashboard)
+ *  12. quality       (lib/quality.js) — new in v1.20.0 (code-multivitals integration)
  */
 
 const fs   = require("fs");
@@ -195,6 +198,24 @@ require("./lint.test.js")(check);
 // ---------------------------------------------------------------------------
 console.log("\n-- fix --");
 require("./fix.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 10 — import-graph (lib/import-graph.js) — new in v1.20.0
+// ---------------------------------------------------------------------------
+console.log("\n-- import-graph --");
+require("./import-graph.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 11 — project-facts (lib/project-facts.js) — new in v1.20.0
+// ---------------------------------------------------------------------------
+console.log("\n-- project-facts --");
+require("./project-facts.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 12 — quality (lib/quality.js) — new in v1.20.0
+// ---------------------------------------------------------------------------
+console.log("\n-- quality --");
+require("./quality.test.js")(check);
 
 // ---------------------------------------------------------------------------
 // Summary

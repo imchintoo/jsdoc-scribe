@@ -1,0 +1,59 @@
+name: Code Quality
+
+# Reports code-multivitals findings (complexity, maintainability, smells,
+# duplicate code) for lib/, bin/, and the eslint plugin package -- see
+# docs/backlog/adr-phase-j-project-dashboard.md and
+# docs/backlog/epic-project-dashboard.md.
+#
+# Deliberately NON-BLOCKING for now (continue-on-error on the analysis step):
+# this repo has never run code-multivitals in CI before, so there is no
+# team-agreed error/warning threshold to gate merges on yet. Report-only via
+# GitHub Code Scanning until the team has looked at a few runs and picked
+# real numbers -- see the engineering-manager rollup in
+# docs/backlog/adr-phase-j-project-dashboard.md for why this is deliberate,
+# not an oversight. Flip `continue-on-error: false` (and consider adding
+# `--quality-baseline`) once that decision is made.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write   # required to upload SARIF to the Security tab
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history -- code-multivitals's hotspot/churn data reads `git log`
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (includes code-multivitals devDependency)
+        run: npm ci
+
+      - name: Run code-multivitals quality analysis (report-only, non-blocking)
+        id: quality
+        continue-on-error: true
+        run: node bin/gen-docs.js lib bin packages/eslint-plugin-jsdoc-scribe --quality --quality-reporter sarif --out quality-results
+
+      - name: Upload SARIF to Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: quality-results/quality-report.sarif
+
+      - name: Also generate console summary in the job log
+        if: always()
+        run: node bin/gen-docs.js lib bin packages/eslint-plugin-jsdoc-scribe --quality || true

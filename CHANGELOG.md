@@ -1,3 +1,58 @@
+## [1.21.1] - 2026-07-06
+
+### Changed
+- **Code Health-only index under `--quality`** (same-day follow-up to v1.21.0, `docs/backlog/story-code-health-drilldown.md`): when `--quality` is passed, the index page's Modules grid is no longer rendered — the Code Health dashboard (7 stat cards + 4 summary cards) is the only content section on the page, instead of sitting alongside the module grid. Module navigation is unaffected: the full module tree remains in the sidebar on the index page (and every page) regardless of this flag. Plain `gen-docs` with no `--quality` is unaffected — the Modules grid renders exactly as before.
+- `lib/renderer.js`'s `buildSite()`: the index body now conditionally skips `buildIndexBody(modules)` when `options.quality` is set — a one-line change, additive/conditional only, no other index-page markup touched.
+- `README.md`: added a "Code Health dashboard (`--quality`)" preview (`assets/preview-quality.svg`) and rewrote the `### Quality reporting` description to reflect the card layout, the 4 detail pages, the per-module health strip, and that the dashboard replaces (not sits alongside) the Modules grid on the index page. Also corrected the stale "152 passing tests" figure to the current 201.
+
+### Added
+- `assets/preview-quality.svg`: new hand-crafted mockup (same style/size convention as `assets/preview.svg`) depicting the `--quality` index page — stat cards, the 4 summary cards with "View all →" links, no Modules grid.
+
+### Tests
+- Test suite grew from 195 to 201 assertions: 3 new tests cover (1) Modules grid removed from index body when `--quality` is active, (2) Modules grid still renders when `--quality` is absent (regression), and (3) sidebar module navigation is unaffected either way.
+
+## [1.21.0] - 2026-07-06
+
+### Added
+- **Code Health card layout + drill-down detail pages** (fast-follow to v1.20.1's embedded section, `docs/backlog/story-code-health-drilldown.md`): the index page's 4 full inline tables (files needing attention, duplicate code, most-imported files, orphan files) are now compact summary cards (top 3-5 rows + a "View more" link), each linking to its own full, uncapped detail page at the output root: `health-attention.html`, `health-duplicates.html`, `health-imports.html`, `health-orphans.html`. The 7 stat cards above them are unchanged.
+- **Per-module health strip**: every generated module page now shows a health-metrics strip (`<aside aria-label="Code health summary">`) directly below its header — Health Score, Maintainability, Functions, Errors, Warnings, Clone involvement, Worst severity, Code smells — so a reader lands on a file's health context without cross-referencing the index. Modules with no code-multivitals entry show a single muted "No code health data for this file." row instead of throwing or omitting the strip.
+- Both are additive to the existing `--quality` flag — no new CLI flag, and default (`--quality`-less) `gen-docs` output is unaffected (verified: 0 occurrences of the new markup, 0 new files, when `--quality` isn't passed).
+
+### Changed
+- `lib/renderer.js`: `buildQualitySection()` now renders `qCard`-based summary cards instead of full inline tables; new `buildHealthDetailPages()`, `buildFileHealthLookup()`, and `buildHealthStrip()`. Per-file error/warning/function counts for the strip are derived from existing `FileReport.functions[].metrics[].severity` data (code-multivitals's `FileSummary` doesn't carry them directly) — no new metrics, no new dependency.
+- Test suite grew from 187 to 195 assertions. One existing regression test's contract deliberately changed: `buildSite()` under `--quality` now returns 9 pages (5 base + 4 health detail pages), not the prior "still exactly 5" — documented inline in `test/renderer.test.js` as a sanctioned exception to the single-artifact principle, not a silent regression (the 4 new pages are extensions of the doc site's pre-existing multi-page nature, same category as the one-page-per-module pages that have always existed).
+
+### Correction (caught during design review, before implementation)
+- The initial architecture pass assumed the 4 new detail pages should live "in the same output directory as module pages." That's incorrect against the actual code — module pages live in a `modules/` subdirectory (`moduleHtmlPath()`), while `index.html` is written at the output root. Corrected before implementation: the 4 detail pages live at the output root, sibling to `index.html`, since they're extensions of the index page's Code Health section, not per-module content. See `docs/backlog/story-code-health-drilldown.md`.
+
+## [1.20.1] - 2026-07-06
+
+### Fixed
+- **`gen-docs --quality` now embeds its findings directly into `index.html`** instead of writing (or, in the internal-only path, requiring) a separate file. Chintan's direct feedback after reviewing the generated `docs/index.html`: the code-multivitals statistics belonged in the same page as the API docs, not off in a second artifact. `--quality` with no `--quality-reporter` now computes the code-multivitals analysis + the import-graph/orphan-file findings and passes them into the normal doc-site build, which renders a new "Code Health" section (stat cards, files-needing-attention table, duplicate-code pairs, most-imported files, orphan files) on the index page, with a "Code Health" link in the top nav. `--quality-reporter <console|json|html|sarif|badge|dashboard>` is still available and unchanged for anyone who explicitly wants a standalone report file instead (CI/export use cases) — it still skips the doc-site build, same as before.
+- **Retired `scripts/gen-dashboard.js`** (and the `npm run dashboard` / `npm run quality:dashboard` scripts) — the separate internal `docs/dashboard.html` + `docs/dashboard-quality.html` pair it produced is now redundant with the embedded section above. New `npm run docs:internal` script documents jsdoc-scribe's own `lib/`/`bin/`/plugin source with `--quality`, producing the same one-file result contributors get from any project. `npm run quality` now explicitly passes `--quality-reporter console` (previously the implicit default) so it keeps its old plain-console behavior now that the flag's un-reportered default means something different.
+
+### Changed
+- `lib/renderer.js`: `buildSite(modules, options)` accepts an optional `options.quality` (`{ result, graph, orphans }`); when present, `buildQualitySection()` renders the Code Health section on the index page only — module pages are unaffected, and no new page is added to the site (still exactly `3 assets + index.html + one page per module`, verified by the existing "5 pages total" regression test).
+- `.gitignore`: added `docs-internal` (the new script's generated output, never committed — same treatment as `docs`).
+
+## [1.20.0] - 2026-07-06
+
+### Added
+- **Project dashboard (internal, repo-only)**: `npm run dashboard` generates `docs/dashboard.html` (onboarding facts — Node version vs. CI-tested matrix, package manager, project structure, global dependencies, test tooling — plus a project-wide import graph and orphan-file report) and `docs/dashboard-quality.html` (embedded code-multivitals dashboard). New modules `lib/project-facts.js` and `lib/import-graph.js` (the latter does its own lightweight import/export extraction via the `typescript` compiler API — no new dependency, but see Correction below), new repo-only `scripts/gen-dashboard.js` (not part of the published package). See `docs/backlog/epic-project-dashboard.md` / `adr-phase-j-project-dashboard.md`.
+- **Quality reporting for `gen-docs`** (`--quality`, `--quality-reporter`, `--quality-profile`, `--quality-config`, `--quality-baseline`/`--quality-save-baseline`, `--quality-snapshot`/`--quality-trend`): opt-in [code-multivitals](https://www.npmjs.com/package/code-multivitals) integration (cyclomatic/cognitive complexity, Halstead volume, maintainability index, health score, compound smells, duplicate-code detection, all 6 reporters, baseline/diff mode, snapshots/trends/hotspots). `code-multivitals` is an **optional peerDependency** (`peerDependenciesMeta.optional: true`) — never installed by `npm install jsdoc-scribe`, never affects default `gen-docs` behavior, and produces a clear install-instruction error (not a crash) if used without it installed. New shared module `lib/quality.js` (dynamic `require`, never a top-level import, so the optional-dependency contract holds).
+- `code-multivitals` also added as this repo's **first-ever `devDependency`** (distinct from the peerDependency above), used by the internal dashboard. Committed `.code-multivitals.json` (the `default` threshold profile).
+- New npm scripts: `dashboard`, `quality`, `quality:dashboard`.
+
+### Correction (caught during implementation)
+- The original design (`adr-phase-j-project-dashboard.md`, `story-code-health-dashboard.md`) assumed `lib/import-graph.js` could reuse `lib/extractor.js`'s existing per-file import/export data, the same way `lib/drift.js`/`lib/coverage.js` reuse `extractModule()`'s output. That data does not exist — `extractModule()` has never extracted imports/exports. `lib/import-graph.js` does its own lightweight extraction instead, using the `typescript` compiler API (the project's existing one runtime dependency) — zero new dependency, but genuinely new parsing, not zero-new-parsing as originally assumed. Corrected in the ADR/story rather than shipped against the false premise.
+
+### Changed
+- Test suite grew from 152 to 181 assertions (10 new import-graph tests, 12 new project-facts tests, 9 new quality-module tests — the last including a real clean-room "package not installed" repro via a child process, not just a cache-eviction approximation).
+- `package.json`: `files`/`bin` unchanged (still only `bin/cli.js` and `bin/gen-docs.js`) — the new internal dashboard script lives in `scripts/`, outside the published `files` glob, on purpose (verified via `npm pack --dry-run`).
+
+### Design note
+- Two different, deliberately separate dependency relationships to `code-multivitals` in the same release: a `devDependency` (internal dashboard, always present in this repo) and an optional `peerDependency` (end-user `gen-docs --quality*`, never forced on anyone). Conflating the two — e.g. making it a plain runtime dependency so end users get it "for free" — was considered and rejected; see `adr-phase-j-project-dashboard.md` Decision 10 and its Alternatives Considered section.
+
 ## [1.19.0] - 2026-07-06
 
 ### Added

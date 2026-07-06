@@ -1,0 +1,9 @@
+{
+    "thresholds": {
+        "cyclomaticComplexity": { "warn": 10, "error": 20 },
+        "cognitiveComplexity": { "warn": 15, "error": 30 },
+        "functionLength": { "warn": 40, "error": 80 },
+        "nestingDepth": { "warn": 3, "error": 5 },
+        "halsteadVolume": { "warn": 500, "error": 1000 }
+    }
+}

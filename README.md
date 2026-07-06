@@ -11,7 +11,7 @@
 > **No AI. No LLM. No surprises.** Same input always produces the same output.
 
 
-Two CLIs, one dependency (`typescript`, used purely as a syntax parser), **152 passing tests** (deterministic, zero network calls — same self-test suite runs on every `npm test` and before every `npm publish`):
+Two CLIs, one dependency (`typescript`, used purely as a syntax parser), **201 passing tests** (deterministic, zero network calls — same self-test suite runs on every `npm test` and before every `npm publish`):
 
 `typescript` is listed as a regular `dependency`, not a `peerDependency`, on purpose: it's the
 parser for *every* file this tool touches, `.js` included, not just `.ts` — so it can't be
@@ -31,6 +31,19 @@ requiring one to be present at all.
 ![jsdoc-scribe docs preview](https://raw.githubusercontent.com/imchintoo/jsdoc-scribe/main/assets/preview.svg)
 
 Sticky topnav with centered search, white sidebar with an N-level folder tree, two-column symbol cards (prose left / dark code panel right), and a scroll-spy TOC on module pages.
+
+### Code Health dashboard (`--quality`)
+
+![jsdoc-scribe Code Health dashboard preview](https://raw.githubusercontent.com/imchintoo/jsdoc-scribe/main/assets/preview-quality.svg)
+
+With `--quality`, the index page becomes a Code Health dashboard: 7 stat cards (health
+score, maintainability, files, functions, errors, warnings, clone pairs) followed by 4
+summary cards — Files needing attention, Duplicate code, Most-imported files, Orphan files —
+each with a short preview and a "View all →" link to its own full-list detail page. The
+Modules grid is replaced by this dashboard on the index page; module navigation itself is
+unaffected and stays in the sidebar on every page. Every module page also gets a compact
+health strip (Health Score, Maintainability, Functions, Errors, Warnings, Clone part, Worst,
+Code smells) for that file.
 
 ---
 
@@ -337,6 +350,58 @@ docs/
 ```
 
 CLI flags override config values.
+
+### Quality reporting (optional)
+
+`gen-docs` can also run [code-multivitals](https://www.npmjs.com/package/code-multivitals)
+(cyclomatic/cognitive complexity, maintainability index, health score, compound smells,
+duplicate-code detection) against the same files it documents, plus a built-in
+import-graph/orphan-file check — a separate, **entirely optional** install, not part of
+jsdoc-scribe itself:
+
+```bash
+npm install --save-dev code-multivitals
+```
+
+`code-multivitals` is listed as an optional `peerDependency` — `npm install jsdoc-scribe`
+never installs it, and default `gen-docs` behavior is completely unaffected whether it's
+present or not. If you use `--quality` without it installed, you get a clear
+install-instruction error, not a crash.
+
+```bash
+gen-docs src --quality                                  # index.html becomes the Code Health dashboard
+gen-docs src --quality --quality-reporter console        # console-only report, no site changes
+gen-docs src --quality --quality-reporter sarif --out ci # standalone SARIF file for CI (no site build)
+gen-docs src --quality --quality-profile strict
+```
+
+By default, `--quality` doesn't produce a separate file at all — it turns `index.html`
+into a Code Health dashboard: 7 stat cards (health score, maintainability index,
+files, functions, errors, warnings, clone pairs), then 4 summary cards — Files needing
+attention, Duplicate code, Most-imported files, Orphan files — each with a short preview
+and a "View all →" link to a dedicated full-list detail page for that category. The
+Modules grid that normally lives on the index page is replaced by this dashboard; the
+full module tree is unaffected and stays available in the sidebar on every page,
+including the index. Every module page also gets a per-file health strip (Health Score,
+Maintainability, Functions, Errors, Warnings, Clone part, Worst, Code smells) at the top.
+Pass an explicit `--quality-reporter` only when you want a standalone artifact instead
+(e.g. a SARIF file for GitHub code scanning, or a JSON export for other tooling) — that
+mode skips the doc-site build entirely, same as before.
+
+| Flag | Description |
+|---|---|
+| `--quality` | Analyse the documented files with code-multivitals. Turns `index.html` into a Code Health dashboard (replacing the Modules grid there) and adds a health strip to every module page, unless `--quality-reporter` is also given. |
+| `--quality-reporter <type>` | `console` \| `json` \| `html` \| `sarif` \| `badge` \| `dashboard`. When given, writes ONE standalone report file in this format instead of embedding, and skips the doc-site build. |
+| `--quality-profile <name>` | `strict` \| `default` \| `relaxed` (default `default`). |
+| `--quality-config <path>` | Path to a `.code-multivitals.json` threshold-overrides file. |
+| `--quality-baseline <path>` | Only report regressions vs. a saved baseline. |
+| `--quality-save-baseline <path>` | Save the current analysis as a baseline JSON file. |
+| `--quality-snapshot <dir>` | Save a timestamped snapshot for trend tracking. |
+| `--quality-trend <dir>` | Load snapshots and include trend/hotspot data (with `--quality-reporter dashboard`). |
+
+Metric definitions, threshold profiles, and reporter formats are documented in
+[code-multivitals's own README](https://www.npmjs.com/package/code-multivitals) — jsdoc-scribe
+passes flags straight through rather than re-documenting them.
 
 ---
 

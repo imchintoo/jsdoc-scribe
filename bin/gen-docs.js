@@ -7,6 +7,8 @@ const { collectFiles }   = require("../lib/index.js");
 const { extractModule }  = require("../lib/extractor.js");
 const { buildSite, moduleLabel, moduleHtmlPath } = require("../lib/renderer.js");
 const { loadConfig, mergeConfig } = require("../lib/config.js");
+const { buildImportGraph, findOrphanFiles } = require("../lib/import-graph.js");
+const quality = require("../lib/quality.js");
 const pkg = require("../package.json");
 
 
@@ -30,6 +32,27 @@ Options:
   --help,             -h         Show this help.
   --version,          -v         Show version.
 
+Quality reporting (optional -- requires a separate install):
+  --quality                       Analyse the same files with code-multivitals and
+                                   embed a "Code Health" section directly into the
+                                   generated index.html. No extra file is written.
+  --quality-reporter <type>       console|json|html|sarif|badge|dashboard
+                                   Opt out of the embedded section above and instead
+                                   write ONE standalone report in this format (useful
+                                   for CI: SARIF for code scanning, JSON/badge for
+                                   automation). Skips the doc-site build.
+  --quality-profile <name>        strict|default|relaxed                   (default: default)
+  --quality-config <path>         Path to a .code-multivitals.json file
+  --quality-baseline <path>       Only report regressions vs. a saved baseline
+  --quality-save-baseline <path>  Save current analysis as a baseline JSON file
+  --quality-snapshot <dir>        Save a timestamped snapshot for trend tracking
+  --quality-trend <dir>           Load snapshots and include trend/hotspot data
+                                   (only with --quality-reporter dashboard)
+
+  Quality reporting requires code-multivitals as a separate, optional install
+  (npm install --save-dev code-multivitals) -- it is NOT installed by
+  "npm install jsdoc-scribe" and never affects default gen-docs behavior.
+
 Config file (.jsdoc-scribe.json):
   { "out": "docs", "title": "My API", "json": true,
     "readme": true, "sourceUrl": "https://github.com/user/repo/blob/main",
@@ -40,6 +63,10 @@ Examples:
   gen-docs src --ignore "**/*.test.ts" --ignore "dist/"
   gen-docs src --source-url https://github.com/user/repo/blob/main
   gen-docs src --watch
+  gen-docs src --quality                                  # index.html gets an embedded Code Health section
+  gen-docs src --quality --quality-reporter console        # console-only report, no site changes
+  gen-docs src --quality --quality-reporter sarif --out ci # standalone SARIF file for CI (no site build)
+  gen-docs src --quality --quality-profile strict
 `);
 }
 
@@ -49,6 +76,9 @@ function parseArgs(argv) {
         json: undefined, readme: undefined, watch: false,
         ignore: [], sourceUrl: undefined, configPath: undefined,
         help: false, version: false,
+        quality: false, qualityReporter: undefined, qualityProfile: undefined,
+        qualityConfig: undefined, qualityBaseline: undefined, qualitySaveBaseline: undefined,
+        qualitySnapshot: undefined, qualityTrend: undefined,
     };
     let i = 0;
     while (i < argv.length) {
@@ -58,6 +88,14 @@ function parseArgs(argv) {
         else if (a === "--watch"      || a === "-W") { args.watch   = true; }
         else if (a === "--json"       || a === "-j") { args.json    = true; }
         else if (a === "--readme"     || a === "-r") { args.readme  = true; }
+        else if (a === "--quality") { args.quality = true; }
+        else if (a === "--quality-reporter"      && argv[i+1]) { args.qualityReporter     = argv[++i]; }
+        else if (a === "--quality-profile"       && argv[i+1]) { args.qualityProfile      = argv[++i]; }
+        else if (a === "--quality-config"        && argv[i+1]) { args.qualityConfig       = argv[++i]; }
+        else if (a === "--quality-baseline"      && argv[i+1]) { args.qualityBaseline     = argv[++i]; }
+        else if (a === "--quality-save-baseline" && argv[i+1]) { args.qualitySaveBaseline = argv[++i]; }
+        else if (a === "--quality-snapshot"      && argv[i+1]) { args.qualitySnapshot     = argv[++i]; }
+        else if (a === "--quality-trend"         && argv[i+1]) { args.qualityTrend        = argv[++i]; }
         else if ((a === "--out"       || a === "-o") && argv[i+1]) { args.out       = argv[++i]; }
         else if ((a === "--title"     || a === "-t") && argv[i+1]) { args.title     = argv[++i]; }
         else if ((a === "--config"    || a === "-c") && argv[i+1]) { args.configPath= argv[++i]; }
@@ -67,6 +105,173 @@ function parseArgs(argv) {
         i++;
     }
     return args;
+}
+
+// ---------------------------------------------------------------------------
+// Quality reporting (Track C -- see docs/backlog/adr-phase-j-project-dashboard.md)
+//
+// Two modes:
+//   1. Embedded (default, no --quality-reporter given): compute quality +
+//      import-graph data and pass it into the normal doc-site build so
+//      index.html gets a "Code Health" section. No extra file is written --
+//      this is the mode most users want and the one gen-docs now defaults to.
+//   2. Standalone (--quality-reporter <type> explicitly given): unchanged
+//      from the original design -- skips the doc-site build entirely and
+//      writes one report file in the requested format. Kept for CI/tooling
+//      use cases (SARIF upload, JSON export, badge SVGs) where a dedicated
+//      artifact, not a doc page, is what's actually needed.
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves a project's own entry points (bin/main/exports) from the
+ * package.json in the current working directory, if any. Used to keep
+ * findOrphanFiles from flagging a project's own public entry points.
+ * @returns {string[]} absolute file paths, deduplicated.
+ */
+function resolveEntryPoints() {
+    let pkgJson;
+    try {
+        pkgJson = JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf8"));
+    } catch (_) {
+        return [];
+    }
+    const rootDir = process.cwd();
+    const points = [];
+    if (pkgJson.bin) {
+        const binVal = typeof pkgJson.bin === "string" ? { _: pkgJson.bin } : pkgJson.bin;
+        Object.values(binVal).forEach((p) => points.push(path.resolve(rootDir, p)));
+    }
+    if (pkgJson.main) points.push(path.resolve(rootDir, pkgJson.main));
+    if (pkgJson.exports) {
+        Object.values(pkgJson.exports).forEach((entry) => {
+            const target = typeof entry === "string" ? entry : (entry && entry.default);
+            if (target) points.push(path.resolve(rootDir, target.replace(/\.d\.ts$/, ".js")));
+        });
+    }
+    return [...new Set(points)];
+}
+
+/**
+ * Runs code-multivitals + the import-graph analysis for embedding into the
+ * doc site. Applies baseline/snapshot side effects (these are meaningful
+ * regardless of embedded vs. standalone mode) before returning the data
+ * buildSite() needs.
+ * @param {string[]} files
+ * @param {object} cliArgs
+ * @returns {{result: object, graph: object, orphans: string[]}}
+ */
+function computeQualityEmbedData(files, cliArgs) {
+    let result = quality.runQuality(files, { profile: cliArgs.qualityProfile, configPath: cliArgs.qualityConfig });
+
+    if (cliArgs.qualityBaseline) {
+        const baseline = JSON.parse(fs.readFileSync(cliArgs.qualityBaseline, "utf8"));
+        result = quality.applyQualityBaseline(result, baseline);
+    }
+    if (cliArgs.qualitySaveBaseline) {
+        fs.mkdirSync(path.dirname(path.resolve(cliArgs.qualitySaveBaseline)), { recursive: true });
+        fs.writeFileSync(cliArgs.qualitySaveBaseline, JSON.stringify(result, null, 2), "utf8");
+        console.log(`Wrote quality baseline: ${cliArgs.qualitySaveBaseline}`);
+    }
+    if (cliArgs.qualitySnapshot) {
+        const snapPath = quality.saveQualitySnapshot(cliArgs.qualitySnapshot, result);
+        console.log(`Saved quality snapshot: ${snapPath}`);
+    }
+
+    const graph = buildImportGraph(files);
+    const orphans = findOrphanFiles(graph, resolveEntryPoints());
+
+    if (result.errorCount > 0) process.exitCode = 1;
+    return { result, graph, orphans };
+}
+
+/**
+ * Handles the standalone/export --quality-reporter modes (console, json,
+ * sarif, badge, html, dashboard) -- entirely separate from the doc-site
+ * build, same contract as the original design. Only invoked when the user
+ * explicitly passes --quality-reporter; the plain `--quality` case is
+ * handled by computeQualityEmbedData() + the normal build() call instead.
+ * @param {string[]} files
+ * @param {object} cliArgs
+ * @param {string} outDir
+ * @returns {boolean} true (always handles the run when called).
+ */
+function runQualityStandalone(files, cliArgs, outDir) {
+    let result;
+    try {
+        result = quality.runQuality(files, { profile: cliArgs.qualityProfile, configPath: cliArgs.qualityConfig });
+    } catch (err) {
+        console.error(err.message);
+        process.exitCode = 1;
+        return true;
+    }
+
+    if (cliArgs.qualityBaseline) {
+        let baseline;
+        try {
+            baseline = JSON.parse(fs.readFileSync(cliArgs.qualityBaseline, "utf8"));
+        } catch (err) {
+            console.error(`Failed to read quality baseline at ${cliArgs.qualityBaseline}: ${err.message}`);
+            process.exitCode = 1;
+            return true;
+        }
+        result = quality.applyQualityBaseline(result, baseline);
+    }
+
+    if (cliArgs.qualitySaveBaseline) {
+        fs.mkdirSync(path.dirname(path.resolve(cliArgs.qualitySaveBaseline)), { recursive: true });
+        fs.writeFileSync(cliArgs.qualitySaveBaseline, JSON.stringify(result, null, 2), "utf8");
+        console.log(`Wrote quality baseline: ${cliArgs.qualitySaveBaseline}`);
+    }
+
+    if (cliArgs.qualitySnapshot) {
+        const snapPath = quality.saveQualitySnapshot(cliArgs.qualitySnapshot, result);
+        console.log(`Saved quality snapshot: ${snapPath}`);
+    }
+
+    const reporterName = cliArgs.qualityReporter;
+
+    if (cliArgs.qualityTrend && reporterName === "dashboard") {
+        const snapshots = quality.loadQualitySnapshots(cliArgs.qualityTrend);
+        const trends = quality.computeQualityTrends(snapshots);
+        const churnMap = quality.getQualityChurnMap(files);
+        const hotspots = quality.rankQualityHotspots(trends, churnMap, 10);
+        const cm = quality.loadCodeMultivitals();
+        const html = cm.reportDashboard(result, snapshots, trends, hotspots);
+        const outPath = path.join(outDir, "quality-dashboard.html");
+        fs.mkdirSync(outDir, { recursive: true });
+        fs.writeFileSync(outPath, html, "utf8");
+        console.log(`Wrote ${path.relative(process.cwd(), outPath)}`);
+        if (result.errorCount > 0) process.exitCode = 1;
+        return true;
+    }
+
+    if (reporterName === "console") {
+        quality.renderQualityReport(result, "console");
+        if (result.errorCount > 0) process.exitCode = 1;
+        return true;
+    }
+
+    if (reporterName === "badge") {
+        fs.mkdirSync(outDir, { recursive: true });
+        quality.renderQualityReport(result, "badge", { outputDir: outDir });
+        console.log(`Wrote quality badges to ${path.relative(process.cwd(), outDir)}`);
+        if (result.errorCount > 0) process.exitCode = 1;
+        return true;
+    }
+
+    const ext = { json: "json", sarif: "sarif", html: "html", dashboard: "html" }[reporterName];
+    if (!ext) {
+        console.error(`Unknown --quality-reporter: ${reporterName}`);
+        process.exitCode = 1;
+        return true;
+    }
+    const output = quality.renderQualityReport(result, reporterName);
+    const outPath = path.join(outDir, `quality-report.${ext}`);
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(outPath, output, "utf8");
+    console.log(`Wrote ${path.relative(process.cwd(), outPath)}`);
+    if (result.errorCount > 0) process.exitCode = 1;
+    return true;
 }
 
 function resolveTitle(titleArg) {
@@ -164,7 +369,7 @@ function generateReadme(modules, projectName, version, outDir) {
 // Build
 // ---------------------------------------------------------------------------
 
-function build(files, outDir, projectName, projectVersion, opts, silent) {
+function build(files, outDir, projectName, projectVersion, opts, silent, qualityData) {
     const modules = [];
     for (const file of files) {
         try { modules.push(extractModule(file)); }
@@ -175,6 +380,7 @@ function build(files, outDir, projectName, projectVersion, opts, silent) {
         projectName,
         version: projectVersion,
         sourceUrl: opts.sourceUrl,
+        quality: qualityData || null,
     });
     fs.mkdirSync(path.join(outDir, "modules"), { recursive: true });
 
@@ -237,11 +443,35 @@ function main() {
     const extras = [opts.json && "docs.json", opts.readme && "README.md"].filter(Boolean);
     const extraStr = extras.length ? " + " + extras.join(" + ") : "";
 
+    // --quality: default (no --quality-reporter) embeds a Code Health section
+    // into the normal doc-site build below -- no extra file, no skipped
+    // build. --quality-reporter <type> explicitly opts into the old
+    // standalone-file behavior instead (CI/export use cases), which DOES
+    // skip the doc-site build, same as before.
+    let qualityEmbedData = null;
+    if (cliArgs.quality) {
+        if (cliArgs.qualityReporter) {
+            if (runQualityStandalone(files, cliArgs, outDir)) return;
+        } else {
+            try {
+                qualityEmbedData = computeQualityEmbedData(files, cliArgs);
+            } catch (err) {
+                console.error(err.message);
+                process.exitCode = 1;
+                return;
+            }
+        }
+    }
+
     if (!cliArgs.watch) {
         console.log(`Extracting ${files.length} file(s)...`);
         if (opts.ignore.length) console.log(`  ignoring: ${opts.ignore.join(", ")}`);
-        const n = build(files, outDir, projectName, projectVersion, opts, false);
+        const n = build(files, outDir, projectName, projectVersion, opts, false, qualityEmbedData);
         console.log(`\nDone. ${n} page(s)${extraStr} written to ${path.relative(process.cwd(), outDir) || outDir}`);
+        if (qualityEmbedData) {
+            const r = qualityEmbedData.result;
+            console.log(`  code health: avg score ${r.averageHealthScore}, avg MI ${r.averageMI}, ${r.errorCount} error(s), ${r.warnCount} warning(s) -- see index.html#code-health`);
+        }
         console.log(`Open ${path.join(path.relative(process.cwd(), outDir) || outDir, "index.html")} in a browser.`);
         return;
     }
@@ -253,7 +483,7 @@ function main() {
     console.log(`[watch] Press Ctrl+C to stop.\n`);
 
     try {
-        const n = build(files, outDir, projectName, projectVersion, opts, true);
+        const n = build(files, outDir, projectName, projectVersion, opts, true, qualityEmbedData);
         console.log(`[${stamp()}] Built ${n} page(s)${extraStr}`);
     } catch (err) { console.error(`[${stamp()}] Build failed: ${err.message}`); }
 
@@ -264,7 +494,12 @@ function main() {
             timer = null;
             try {
                 const freshFiles = collectAllFiles(cliArgs.inputs, opts.ignore);
-                const n = build(freshFiles, outDir, projectName, projectVersion, opts, true);
+                let freshQualityData = null;
+                if (cliArgs.quality && !cliArgs.qualityReporter) {
+                    try { freshQualityData = computeQualityEmbedData(freshFiles, cliArgs); }
+                    catch (err) { console.error(`[${stamp()}] Quality analysis failed: ${err.message}`); }
+                }
+                const n = build(freshFiles, outDir, projectName, projectVersion, opts, true, freshQualityData);
                 console.log(`[${stamp()}] Rebuilt ${n} page(s)${extraStr}`);
             } catch (err) { console.error(`[${stamp()}] Rebuild failed: ${err.message}`); }
         }, 150);

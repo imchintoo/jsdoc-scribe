@@ -482,4 +482,283 @@ module.exports = function runRendererTests(check) {
         assert.ok(CSS_STRUCTURE.includes(".module-card-path{font-size:11px;font-weight:500;color:var(--text2)"));
     });
 
+    // -----------------------------------------------------------------------
+    // v1.20.1 — buildQualitySection() embedded directly into index.html
+    // (no separate dashboard file; see docs/backlog/adr-phase-j-project-dashboard.md,
+    // "single-artifact" revision).
+    // -----------------------------------------------------------------------
+
+    function makeQuality(overrides) {
+        return Object.assign({
+            result: {
+                averageHealthScore: 67, averageMI: 55.4,
+                totalFiles: 2, totalFunctions: 10,
+                errorCount: 1, warnCount: 3,
+                clones: [],
+                files: [],
+            },
+        }, overrides);
+    }
+
+    check("buildQualitySection: no quality option -> buildSite output unaffected (no section, still 5 pages)", () => {
+        const modules = [makeMod("/proj/src/a.ts")];
+        const pages = buildSite(modules, { projectName: "Test" });
+        assert.strictEqual(pages.length, 5, "no new page should be added when quality is absent");
+        const idx = pages.find(p => p.path === "index.html");
+        assert.ok(!idx.html.includes("id=\"code-health\""), "code-health section should not appear without options.quality");
+        assert.ok(!idx.html.includes("topnav-quality-link"), "quality nav link should not appear without options.quality");
+    });
+
+    check("buildQualitySection: options.quality present -> embedded section on index.html + 4 detail pages (9 total)", () => {
+        // story-code-health-drilldown (2026-07-06) revises the prior "still exactly
+        // 5 pages" contract: the index section now renders summary cards instead of
+        // full tables, each linking to its own full-list detail page. This is a
+        // deliberate, approved exception to the single-artifact principle (see
+        // docs/backlog/story-code-health-drilldown.md's Constraints section) — the
+        // 4 new pages are extensions of the doc site's pre-existing multi-page
+        // nature (one page per module has always existed), not a new dashboard file.
+        const modules = [makeMod("/proj/src/a.ts")];
+        const quality = makeQuality();
+        const pages = buildSite(modules, { projectName: "Test", quality });
+        assert.strictEqual(pages.length, 9, "expected 5 base pages + 4 health detail pages");
+        const paths = pages.map(p => p.path);
+        ["health-attention.html", "health-duplicates.html", "health-imports.html", "health-orphans.html"]
+            .forEach(p => assert.ok(paths.includes(p), `missing detail page ${p}`));
+        const idx = pages.find(p => p.path === "index.html");
+        assert.ok(idx.html.includes('id="code-health"'), "code-health section missing from index.html");
+        assert.ok(idx.html.includes("topnav-quality-link"), "Code Health nav link missing from topnav");
+        assert.ok(idx.html.includes(">67<"), "average health score not rendered");
+        assert.ok(idx.html.includes("qcard-grid"), "summary card grid missing from index page");
+    });
+
+    check("buildQualitySection: index cards link to their detail pages with a View more label", () => {
+        const modules = [makeMod("/proj/src/a.ts")];
+        const quality = makeQuality();
+        const idx = buildSite(modules, { projectName: "Test", quality }).find(p => p.path === "index.html");
+        assert.ok(idx.html.includes('href="health-attention.html"'), "attention card missing view-more link");
+        assert.ok(idx.html.includes('href="health-duplicates.html"'), "duplicates card missing view-more link");
+        assert.ok(idx.html.includes("qcard-more"), "qcard-more class missing");
+    });
+
+    check("health detail pages: full uncapped lists, even beyond the 5-row card preview", () => {
+        const files = Array.from({ length: 8 }, (_, i) => ({
+            filePath: `file${i}.js`,
+            summary: { weightedHealthScore: 30 + i, weightedMI: 40, worstSeverity: "warn", smellIds: [] },
+        }));
+        const quality = makeQuality({ result: Object.assign({}, makeQuality().result, { files }) });
+        const modules = [makeMod("/proj/src/a.ts")];
+        const pages = buildSite(modules, { projectName: "Test", quality });
+        const idx = pages.find(p => p.path === "index.html");
+        const detail = pages.find(p => p.path === "health-attention.html");
+        assert.ok(detail, "health-attention.html not generated");
+        files.forEach(f => assert.ok(detail.html.includes(f.filePath), `${f.filePath} missing from detail page`));
+        // Card preview is capped at 5 — not every file needs to appear on the index page.
+        const missingFromCard = files.filter(f => !idx.html.includes(f.filePath));
+        assert.ok(missingFromCard.length > 0, "expected the index card preview to be capped, unlike the detail page");
+        assert.ok(detail.html.includes("qback"), "back-to-index link missing on detail page");
+        assert.ok(detail.html.includes('href="index.html#code-health"'), "back link should point to index.html#code-health");
+    });
+
+    check("buildHealthDetailPages / smell ids render on the full detail page, not the index summary card", () => {
+        const quality = makeQuality({
+            result: Object.assign({}, makeQuality().result, {
+                files: [
+                    { filePath: "good.js", summary: { weightedHealthScore: 90, weightedMI: 80, worstSeverity: "ok", smellIds: [] } },
+                    { filePath: "bad.js", summary: { weightedHealthScore: 20, weightedMI: 15, worstSeverity: "error", smellIds: ["fragile"] } },
+                ],
+            }),
+        });
+        const modules = [makeMod("/proj/src/a.ts")];
+        const pages = buildSite(modules, { projectName: "Test", quality });
+        const idx = pages.find(p => p.path === "index.html");
+        const detail = pages.find(p => p.path === "health-attention.html");
+        assert.ok(!idx.html.includes("fragile"), "smell id should no longer render on the index summary card");
+        assert.ok(detail.html.includes("fragile"), "smell id should render on the full detail page");
+    });
+
+    check("buildQualitySection: module pages link back to index.html#code-health when quality is present", () => {
+        const modules = [makeMod("/proj/src/svc.ts", { functions: [makeFunc("run")] })];
+        const quality = makeQuality();
+        const modPage = buildSite(modules, { projectName: "Test", quality }).find(p => p.path.startsWith("modules/"));
+        assert.ok(modPage.html.includes('href="../index.html#code-health"'), "module page quality link should point back to index.html#code-health");
+    });
+
+    check("buildQualitySection: hotspot files sorted ascending by weightedHealthScore, worst first", () => {
+        const quality = makeQuality({
+            result: Object.assign({}, makeQuality().result, {
+                files: [
+                    { filePath: "good.js", summary: { weightedHealthScore: 90, weightedMI: 80, worstSeverity: "ok", smellIds: [] } },
+                    { filePath: "bad.js", summary: { weightedHealthScore: 20, weightedMI: 15, worstSeverity: "error", smellIds: ["fragile"] } },
+                ],
+            }),
+        });
+        const { buildQualitySection } = require("../lib/renderer.js");
+        const html = buildQualitySection(quality);
+        assert.ok(html.indexOf("bad.js") < html.indexOf("good.js"), "worse-health file should be listed before the better one");
+        // Smell ids now render on the full health-attention.html detail page, not
+        // this index-page summary card — see the dedicated detail-page test below.
+    });
+
+    check("buildQualitySection: clone pairs and import-graph orphan files rendered when present", () => {
+        const quality = makeQuality({
+            result: Object.assign({}, makeQuality().result, {
+                clones: [{ similarity: 0.87, blockA: { filePath: "a.js", functionName: "f", startLine: 1, endLine: 5 }, blockB: { filePath: "b.js", functionName: "g", startLine: 1, endLine: 5 } }],
+            }),
+            graph: { edges: [], inDegree: { "a.js": 4 } },
+            orphans: ["unused.js"],
+        });
+        const { buildQualitySection } = require("../lib/renderer.js");
+        const html = buildQualitySection(quality);
+        assert.ok(html.includes("Duplicate code"), "clone section heading missing");
+        assert.ok(html.includes("87%"), "similarity percentage not rendered");
+        assert.ok(html.includes("unused.js"), "orphan file not rendered");
+        assert.ok(html.includes("a.js"), "most-imported file not rendered");
+    });
+
+    check("buildQualitySection: returns empty string when quality is null/undefined (defensive)", () => {
+        const { buildQualitySection } = require("../lib/renderer.js");
+        assert.strictEqual(buildQualitySection(null), "");
+        assert.strictEqual(buildQualitySection(undefined), "");
+        assert.strictEqual(buildQualitySection({}), "");
+    });
+
+    // -----------------------------------------------------------------------
+    // story-code-health-drilldown (2026-07-06) — module-page health strip.
+    // -----------------------------------------------------------------------
+
+    check("module page: no --quality -> no health strip rendered at all (regression)", () => {
+        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] })];
+        const modPage = buildSite(modules, { projectName: "Test" }).find(p => p.path.startsWith("modules/"));
+        assert.ok(!modPage.html.includes("qstrip"), "qstrip should not render without options.quality");
+    });
+
+    check("module page: --quality present -> health strip renders with all 8 fields for a matched file", () => {
+        const quality = makeQuality({
+            result: Object.assign({}, makeQuality().result, {
+                files: [{
+                    filePath: "/proj/src/a.ts",
+                    functions: [
+                        { name: "f1", metrics: [{ name: "cyclomatic", value: 20, threshold: 10, severity: "error" }] },
+                        { name: "f2", metrics: [{ name: "cyclomatic", value: 8, threshold: 10, severity: "warn" }] },
+                    ],
+                    summary: { weightedHealthScore: 41, weightedMI: 34, worstSeverity: "error", smellIds: ["god-function"] },
+                }],
+                clones: [{ similarity: 0.9, blockA: { filePath: "/proj/src/a.ts", functionName: "f1", startLine: 1, endLine: 5 }, blockB: { filePath: "/proj/src/other.ts", functionName: "g", startLine: 1, endLine: 5 } }],
+            }),
+        });
+        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("f1"), makeFunc("f2")] })];
+        const modPage = buildSite(modules, { projectName: "Test", quality }).find(p => p.path.startsWith("modules/"));
+        assert.ok(modPage.html.includes('aria-label="Code health summary"'), "strip landmark missing");
+        assert.ok(modPage.html.includes(">41<"), "health score chip missing");
+        assert.ok(modPage.html.includes(">34<"), "maintainability chip missing");
+        assert.ok(modPage.html.includes(">2<"), "functions chip (count 2) missing");
+        assert.ok(modPage.html.includes(">error<"), "worst severity chip missing");
+        assert.ok(modPage.html.includes("god-function"), "smells chip missing");
+        // 1 error metric, 1 warn metric across the file's two functions
+        assert.ok(modPage.html.includes(">1<"), "errors/warnings chip value (1) missing");
+        // Clone involvement: this file appears in one clone pair -> chip should link to the duplicates page
+        assert.ok(modPage.html.includes('href="../health-duplicates.html"'), "clone-count chip should link to health-duplicates.html when count > 0");
+    });
+
+    check("module page: --quality present but this file has no code-multivitals entry -> muted fallback row, never throws", () => {
+        const quality = makeQuality({
+            result: Object.assign({}, makeQuality().result, { files: [{ filePath: "/proj/src/other-file.ts", functions: [], summary: { weightedHealthScore: 90, weightedMI: 80, worstSeverity: "ok", smellIds: [] } }] }),
+        });
+        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] })];
+        assert.doesNotThrow(() => buildSite(modules, { projectName: "Test", quality }));
+        const modPage = buildSite(modules, { projectName: "Test", quality }).find(p => p.path.startsWith("modules/"));
+        assert.ok(modPage.html.includes("qstrip"), "strip container should still render");
+        assert.ok(modPage.html.includes("No code health data for this file."), "fallback text missing");
+        assert.ok(!modPage.html.includes("qchip-label"), "no real chips should render in the fallback state");
+    });
+
+    check("buildFileHealthLookup: derives per-file error/warning/function counts from existing metrics, no new fields required", () => {
+        const { buildFileHealthLookup } = require("../lib/renderer.js");
+        const quality = {
+            result: {
+                files: [{
+                    filePath: "/proj/x.js",
+                    functions: [
+                        { name: "a", metrics: [{ severity: "error" }, { severity: "warn" }] },
+                        { name: "b", metrics: [{ severity: "ok" }] },
+                    ],
+                    summary: { weightedHealthScore: 55, weightedMI: 44, worstSeverity: "error", smellIds: [] },
+                }],
+                clones: [],
+            },
+        };
+        const map = buildFileHealthLookup(quality);
+        const path = require("path");
+        const entry = map[path.resolve("/proj/x.js")];
+        assert.ok(entry, "lookup entry missing for known file");
+        assert.strictEqual(entry.functions, 2);
+        assert.strictEqual(entry.errors, 1);
+        assert.strictEqual(entry.warnings, 1);
+        assert.strictEqual(entry.healthScore, 55);
+    });
+
+    check("index page: --quality present -> Modules grid is removed, Code Health is the only content section", () => {
+        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] }), makeMod("/proj/src/b.ts")];
+        const quality = makeQuality();
+        const idx = buildSite(modules, { projectName: "Test", quality }).find(p => p.path === "index.html");
+        assert.ok(!idx.html.includes("module-grid"), "Modules grid should be removed from the index page when --quality is active");
+        // The sidebar's own "Modules" nav-section label (`sidebar-section-title`) is a
+        // separate, always-present element -- only the index-BODY heading is checked here.
+        assert.ok(!idx.html.includes('<div class="section-title">Modules</div>'), "Modules section heading should not render in the index body when --quality is active");
+        assert.ok(idx.html.includes('id="code-health"'), "Code Health section should still render");
+        // Header/title/subtitle stay -- only the Modules grid itself is dropped.
+        assert.ok(idx.html.includes("page-title"), "page title should remain");
+    });
+
+    check("index page: no --quality -> Modules grid still renders (regression, unaffected by the drilldown follow-up)", () => {
+        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] })];
+        const idx = buildSite(modules, { projectName: "Test" }).find(p => p.path === "index.html");
+        assert.ok(idx.html.includes("module-grid"), "Modules grid must still render when --quality is not used");
+        assert.ok(idx.html.includes('<div class="section-title">Modules</div>'), "Modules section heading must still render in the index body when --quality is not used");
+    });
+
+    check("sidebar module navigation is unaffected when the index Modules grid is removed under --quality", () => {
+        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] }), makeMod("/proj/src/b.ts", { functions: [makeFunc("go")] })];
+        const quality = makeQuality();
+        const idx = buildSite(modules, { projectName: "Test", quality }).find(p => p.path === "index.html");
+        // The full module tree lives in the sidebar (always rendered), independent of the index body content.
+        assert.ok(idx.html.includes("sidebar-inner"), "sidebar should still be present");
+        assert.ok(idx.html.includes(">a<") || idx.html.includes("modules/"), "sidebar should still link to module pages");
+    });
+
+    check("CSS_STRUCTURE: card/detail-page/strip selectors present (story-code-health-drilldown)", () => {
+        assert.ok(CSS_STRUCTURE.includes(".qcard-grid"), ".qcard-grid missing");
+        assert.ok(CSS_STRUCTURE.includes(".qcard-more"), ".qcard-more missing");
+        assert.ok(CSS_STRUCTURE.includes(".qback"), ".qback missing");
+        assert.ok(CSS_STRUCTURE.includes(".qstrip"), ".qstrip missing");
+        assert.ok(CSS_STRUCTURE.includes(".qchip-label"), ".qchip-label missing");
+        assert.ok(CSS_STRUCTURE.includes(".qchip-empty"), ".qchip-empty missing");
+        assert.ok(CSS_STRUCTURE.includes("max-width:720px"), "mobile 2-column strip media query missing");
+    });
+
+    check("index page: --quality present -> Modules grid is removed, Code Health is the only content section", () => {
+        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] }), makeMod("/proj/src/b.ts")];
+        const quality = makeQuality();
+        const idx = buildSite(modules, { projectName: "Test", quality }).find(p => p.path === "index.html");
+        assert.ok(!idx.html.includes("module-grid"), "Modules grid should be removed from the index page when --quality is active");
+        assert.ok(!idx.html.includes('<div class="section-title">Modules</div>'), "Modules section heading should not render in the index body when --quality is active");
+        assert.ok(idx.html.includes('id="code-health"'), "Code Health section should still render");
+        assert.ok(idx.html.includes("page-title"), "page title should remain");
+    });
+
+    check("index page: no --quality -> Modules grid still renders (regression, unaffected by the drilldown follow-up)", () => {
+        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] })];
+        const idx = buildSite(modules, { projectName: "Test" }).find(p => p.path === "index.html");
+        assert.ok(idx.html.includes("module-grid"), "Modules grid must still render when --quality is not used");
+        assert.ok(idx.html.includes('<div class="section-title">Modules</div>'), "Modules section heading must still render in the index body when --quality is not used");
+    });
+
+    check("sidebar module navigation is unaffected when the index Modules grid is removed under --quality", () => {
+        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] }), makeMod("/proj/src/b.ts", { functions: [makeFunc("go")] })];
+        const quality = makeQuality();
+        const idx = buildSite(modules, { projectName: "Test", quality }).find(p => p.path === "index.html");
+        assert.ok(idx.html.includes("sidebar-inner"), "sidebar should still be present");
+        assert.ok(idx.html.includes(">a<") || idx.html.includes("modules/"), "sidebar should still link to module pages");
+    });
+
 };
