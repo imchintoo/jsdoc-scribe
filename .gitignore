@@ -146,7 +146,5 @@ vite.config.ts.timestamp-*
 .vite/
 
 CLAUDE.md
-sample
-samples
 docs
 .claude
