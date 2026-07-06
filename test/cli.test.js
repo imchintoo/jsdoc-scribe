@@ -173,6 +173,136 @@ module.exports = function runCliTests(check) {
         assert.ok(!fs.existsSync(path.join(outDir, "coverage-badge.svg")), "checkDrift branch should return before coverageBadge branch runs");
     });
 
+    check("cli: --lint exits 0 and reports no issues on a fully-documented, well-formed file", () => {
+        const dir = tmpDir("scribe-cli-lint-clean-");
+        const file = path.join(dir, "ok.ts");
+        fs.writeFileSync(file, [
+            "/**",
+            " * Add two numbers.",
+            " * @param {number} a - first",
+            " * @param {number} b - second",
+            " * @returns {number} the sum",
+            " */",
+            "export function add(a: number, b: number): number { return a + b; }",
+        ].join("\n") + "\n", "utf8");
+
+        const res = runCli([dir, "--lint"]);
+        assert.strictEqual(res.status, 0, "expected exit 0 for zero lint issues");
+        assert.match(res.stdout, /No lint issues found/);
+    });
+
+    check("cli: --lint exits 1 and reports issues for missing tags and unknown tag names", () => {
+        const dir = tmpDir("scribe-cli-lint-dirty-");
+        const file = path.join(dir, "bad.ts");
+        fs.writeFileSync(file, [
+            "/**",
+            " * @parm {number} a",
+            " */",
+            "export function add(a: number, b: number): number { return a + b; }",
+        ].join("\n") + "\n", "utf8");
+
+        const before = fs.readFileSync(file, "utf8");
+        const res = runCli([dir, "--lint"]);
+        const after = fs.readFileSync(file, "utf8");
+
+        assert.strictEqual(res.status, 1, "expected exit 1 when lint issues found");
+        assert.match(res.stdout, /check-tag-names/);
+        assert.match(res.stdout, /require-param/);
+        assert.strictEqual(before, after, "--lint must never modify source files");
+    });
+
+    check("cli: --lint and --check-drift both run together, sharing one extractModule() pass", () => {
+        const dir = tmpDir("scribe-cli-lint-drift-");
+        fs.writeFileSync(path.join(dir, "a.ts"), [
+            "/**",
+            " * @param {number} a",
+            " * @returns {string}",
+            " */",
+            "export function f(a: number, b: number): number { return a; }",
+        ].join("\n") + "\n", "utf8");
+
+        const res = runCli([dir, "--lint", "--check-drift"]);
+        assert.strictEqual(res.status, 1);
+        assert.match(res.stdout, /Checking drift across/);
+        assert.match(res.stdout, /Linting JSDoc across/);
+        assert.match(res.stdout, /return-type-mismatch/);
+        assert.match(res.stdout, /require-param/);
+    });
+
+    check("cli: --fix rewrites a file to resolve lint issues and reports fixed/remaining counts", () => {
+        const dir = tmpDir("scribe-cli-fix-");
+        const file = path.join(dir, "bad.ts");
+        fs.writeFileSync(file, [
+            "/**",
+            " * @param {number} b",
+            " * @param {number} a",
+            " */",
+            "export function subtract(a: number, b: number): number { return a - b; }",
+        ].join("\n") + "\n", "utf8");
+
+        const res = runCli([dir, "--fix"]);
+        const after = fs.readFileSync(file, "utf8");
+
+        assert.match(res.stdout, /Fixing JSDoc lint issues across/, "--fix should imply --lint's framing, not silently do nothing");
+        assert.match(res.stdout, /issue\(s\) fixed/);
+        assert.match(after, /@param \{number\} a/);
+        assert.match(after, /@returns/);
+        const aIdx = after.indexOf("@param {number} a");
+        const bIdx = after.indexOf("@param {number} b");
+        assert.ok(aIdx < bIdx, "param order should now match the real signature");
+    });
+
+    check("cli: --fix exits 0 once every issue is resolved", () => {
+        const dir = tmpDir("scribe-cli-fix-clean-");
+        const file = path.join(dir, "bad.ts");
+        fs.writeFileSync(file, [
+            "/**",
+            " * Adds.",
+            " * @param {number} a",
+            " */",
+            "export function add(a: number, b: number): number { return a + b; }",
+        ].join("\n") + "\n", "utf8");
+
+        const res = runCli([dir, "--fix"]);
+        assert.strictEqual(res.status, 0, "no unfixable rule (check-tag-names) present, so exit should be 0 after fixing");
+        assert.match(res.stdout, /No remaining lint issues/);
+    });
+
+    check("cli: --fix leaves an unknown-tag finding as a remaining issue and exits 1", () => {
+        const dir = tmpDir("scribe-cli-fix-remaining-");
+        const file = path.join(dir, "bad.ts");
+        fs.writeFileSync(file, [
+            "/**",
+            " * @parm {number} a",
+            " */",
+            "export function identity(a: number): number { return a; }",
+        ].join("\n") + "\n", "utf8");
+
+        const res = runCli([dir, "--fix"]);
+        assert.strictEqual(res.status, 1);
+        assert.match(res.stdout, /check-tag-names/);
+        assert.match(res.stdout, /remain/);
+    });
+
+    check("cli: --fix on an already-clean file changes nothing and exits 0", () => {
+        const dir = tmpDir("scribe-cli-fix-noop-");
+        const file = path.join(dir, "ok.ts");
+        const original = [
+            "/**",
+            " * Add two numbers.",
+            " * @param {number} a - first",
+            " * @param {number} b - second",
+            " * @returns {number} the sum",
+            " */",
+            "export function add(a: number, b: number): number { return a + b; }",
+        ].join("\n") + "\n";
+        fs.writeFileSync(file, original, "utf8");
+
+        const res = runCli([dir, "--fix"]);
+        assert.strictEqual(res.status, 0);
+        assert.strictEqual(fs.readFileSync(file, "utf8"), original, "a clean file must be byte-identical after --fix");
+    });
+
     check("cli: --check stdout is unchanged by the aggregateCoverage refactor (regression)", () => {
         const dir = tmpDir("scribe-cli-check-regress-");
         fs.writeFileSync(path.join(dir, "a.ts"), [

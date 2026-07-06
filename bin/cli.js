@@ -25,6 +25,16 @@ Options:
                   Use in CI to enforce documentation coverage.
   --check-drift   Compare existing JSDoc blocks against current AST (missing/removed params,
                    return-type mismatches). Exits 1 if drift found. Read-only, CI-gateable.
+  --lint          Validate JSDoc content — missing tags, unknown tag names, blank descriptions,
+                   comment formatting. Same category of checks as eslint-plugin-jsdoc's
+                   recommended config, no ESLint required. Exits 1 if issues found. Read-only.
+  --fix           Rewrite EXISTING JSDoc blocks to resolve --lint findings (implies --lint).
+                   Missing params/returns/descriptions are filled with a fixed "TODO: ..."
+                   placeholder — never invented prose — and mechanical issues (param order,
+                   stray asterisks, unnecessary tags) are corrected outright. Does not add
+                   JSDoc to undocumented symbols (use --write for that) and never renames an
+                   unknown/typo'd tag (check-tag-names findings always remain — there's no
+                   safe default for what the tag should have been). Edits files in place.
   --coverage-badge <dir>  Aggregate coverage across target path, write coverage-badge.svg
                           and coverage-summary.json to <dir>. Read-only w.r.t. source files.
   --help, -h      Show this help.
@@ -37,12 +47,14 @@ Examples:
   gen-comments src --write --force            # re-document files that already have JSDoc
   gen-comments src --check                    # CI gate: exit 1 if any symbols undocumented
   gen-comments src --check-drift              # CI gate: exit 1 if JSDoc blocks drifted from AST
+  gen-comments src --lint                     # CI gate: exit 1 if JSDoc content is invalid
+  gen-comments src --lint --fix               # rewrite existing JSDoc to resolve lint findings
   gen-comments src --coverage-badge docs      # write docs/coverage-badge.svg + coverage-summary.json
 `);
 }
 
 function parseArgs(argv) {
-    const args = { inputs: [], write: false, force: false, help: false, version: false, dryRun: false, check: false, checkDrift: false, coverageBadge: null };
+    const args = { inputs: [], write: false, force: false, help: false, version: false, dryRun: false, check: false, checkDrift: false, lint: false, fix: false, coverageBadge: null };
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a === "--write" || a === "-w") args.write = true;
@@ -50,11 +62,16 @@ function parseArgs(argv) {
         else if (a === "--dry-run" || a === "-n") args.dryRun = true;
         else if (a === "--check" || a === "-C") args.check = true;
         else if (a === "--check-drift") args.checkDrift = true;
+        else if (a === "--lint") args.lint = true;
+        else if (a === "--fix") args.fix = true;
         else if (a === "--coverage-badge") { args.coverageBadge = argv[++i] || null; }
         else if (a === "--help" || a === "-h") args.help = true;
         else if (a === "--version" || a === "-v") args.version = true;
         else args.inputs.push(a);
     }
+    // --fix implies --lint: there is no separate "just fix, don't tell me what's left" mode —
+    // the whole point is seeing what got fixed vs. what still needs a human (e.g. check-tag-names).
+    if (args.fix) args.lint = true;
     return args;
 }
 
@@ -70,7 +87,7 @@ function isInsideGitRepo(startDir) {
 
 function main() {
     const argv = process.argv.slice(2);
-    const { inputs, write, force, help, version, dryRun, check, checkDrift, coverageBadge } = parseArgs(argv);
+    const { inputs, write, force, help, version, dryRun, check, checkDrift, lint, fix, coverageBadge } = parseArgs(argv);
 
     if (version) {
         console.log(pkg.version);
@@ -82,9 +99,9 @@ function main() {
         return;
     }
 
-    if (write && !isInsideGitRepo(process.cwd())) {
+    if ((write || fix) && !isInsideGitRepo(process.cwd())) {
         console.warn(
-            "⚠ --write will edit files in place and this folder is not (or you are not inside) a git repo.\n" +
+            "⚠ " + (fix ? "--fix" : "--write") + " will edit files in place and this folder is not (or you are not inside) a git repo.\n" +
                 "  Consider committing your work first so you have something to diff/revert against.\n",
         );
     }
@@ -104,18 +121,34 @@ function main() {
         return;
     }
 
-    // --check-drift: compare existing JSDoc blocks against current AST (read-only)
-    if (checkDrift) {
+    // --check-drift / --lint: both read extractModule() per file — share one call per
+    // file when both flags are passed together, rather than parsing twice.
+    if (checkDrift || lint) {
         const { extractModule } = require("../lib/extractor.js");
-        const { detectDrift } = require("../lib/drift.js");
-        console.log(`Checking drift across ${files.length} file(s)...\n`);
-        let totalIssues = 0;
+        const { detectDrift } = checkDrift ? require("../lib/drift.js") : {};
+        const { lintModule } = lint ? require("../lib/lint.js") : {};
+        const { fixModule } = fix ? require("../lib/fix.js") : {};
+        if (checkDrift) console.log(`Checking drift across ${files.length} file(s)...\n`);
+        if (fix) console.log(`Fixing JSDoc lint issues across ${files.length} file(s)...\n`);
+        else if (lint) console.log(`Linting JSDoc across ${files.length} file(s)...\n`);
+
+        let driftTotal = 0;
+        let lintTotal = 0;
+        let fixedTotal = 0;
+        let filesFixed = 0;
+
         for (const file of files) {
-            try {
-                const moduleData = extractModule(file);
+            if (checkDrift) {
+                let moduleData;
+                try {
+                    moduleData = extractModule(file);
+                } catch (err) {
+                    console.error(`  ${file} -> FAILED: ${err.message}`);
+                    continue;
+                }
                 const issues = detectDrift(moduleData);
                 if (issues.length) {
-                    console.log(`  ${file}`);
+                    console.log(`  ${file}  (drift)`);
                     issues.forEach((issue) => {
                         const loc = issue.line != null ? `${file}:${issue.line}` : file;
                         const detail =
@@ -123,19 +156,67 @@ function main() {
                                 ? `expected ${issue.detail.astType}, documented ${issue.detail.docType}`
                                 : issue.detail.param;
                         console.log(`    ${loc}  ${issue.symbol}  ${issue.kind}  ${detail}`);
-                        totalIssues += 1;
+                        driftTotal += 1;
                     });
                 }
-            } catch (err) {
-                console.error(`  ${file} -> FAILED: ${err.message}`);
+            }
+
+            if (lint) {
+                if (fix) {
+                    let result;
+                    try {
+                        result = fixModule(file);
+                    } catch (err) {
+                        console.error(`  ${file} -> FAILED: ${err.message}`);
+                        continue;
+                    }
+                    if (result.fixedCount > 0) {
+                        filesFixed += 1;
+                        fixedTotal += result.fixedCount;
+                        console.log(`  ${file}  (fixed ${result.fixedCount}/${result.totalBefore} issue(s))`);
+                    }
+                    if (result.remainingIssues.length) {
+                        console.log(`  ${file}  (lint — ${result.remainingIssues.length} remaining)`);
+                        result.remainingIssues.forEach((issue) => {
+                            const loc = issue.line != null ? `${file}:${issue.line}` : file;
+                            console.log(`    ${loc}  ${issue.symbol}  ${issue.rule}  ${issue.message}`);
+                            lintTotal += 1;
+                        });
+                    }
+                } else {
+                    let moduleData;
+                    try {
+                        moduleData = extractModule(file);
+                    } catch (err) {
+                        console.error(`  ${file} -> FAILED: ${err.message}`);
+                        continue;
+                    }
+                    const issues = lintModule(moduleData);
+                    if (issues.length) {
+                        console.log(`  ${file}  (lint)`);
+                        issues.forEach((issue) => {
+                            const loc = issue.line != null ? `${file}:${issue.line}` : file;
+                            console.log(`    ${loc}  ${issue.symbol}  ${issue.rule}  ${issue.message}`);
+                            lintTotal += 1;
+                        });
+                    }
+                }
             }
         }
-        if (totalIssues === 0) {
-            console.log("No drift detected. All existing JSDoc blocks match their AST.");
-        } else {
-            console.log(`\n${totalIssues} drift issue(s) found.`);
-            process.exitCode = 1;
+
+        if (checkDrift) {
+            if (driftTotal === 0) console.log("No drift detected. All existing JSDoc blocks match their AST.");
+            else console.log(`\n${driftTotal} drift issue(s) found.`);
         }
+        if (fix) {
+            console.log(`\n${fixedTotal} issue(s) fixed across ${filesFixed} file(s).`);
+            if (lintTotal === 0) console.log("No remaining lint issues.");
+            else console.log(`${lintTotal} issue(s) remain — see above (typically check-tag-names, which --fix never auto-corrects).`);
+        } else if (lint) {
+            if (lintTotal === 0) console.log("No lint issues found.");
+            else console.log(`\n${lintTotal} lint issue(s) found.`);
+        }
+        if (driftTotal > 0 || lintTotal > 0) process.exitCode = 1;
         return;
     }
 

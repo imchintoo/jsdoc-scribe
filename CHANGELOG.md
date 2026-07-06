@@ -1,3 +1,29 @@
+## [1.19.0] - 2026-07-06
+
+### Added
+- **`--fix` flag for `gen-comments`**: rewrites *existing* JSDoc blocks in place to resolve `--lint` findings — reorders `@param` tags to match real parameter order, fills a missing `@param`/`@returns`/description with a fixed, deterministic `"TODO: ..."` placeholder (never invented prose), strips trailing text off a no-description tag, collapses stray asterisks, and drops an unnecessary `@returns` on a function that never returns a value. Implies `--lint`. Does **not** add JSDoc to undocumented symbols (that stays `--write`'s job) and never auto-fixes `check-tag-names` (an unknown/typo'd tag has no safe default — always left as a remaining issue for a human). New `lib/fix.js`, zero new npm dependency.
+- **`eslint-plugin-jsdoc-scribe@0.2.0`**: 10 of the plugin's 12 rules now ship a real ESLint `fix()` (`fixable: "code"`), using the same rebuild strategy and `TODO:` placeholder convention as the core CLI's `--fix`. `require-jsdoc` and `check-tag-names` remain fixer-less, for the same reasons as the core CLI.
+
+### Changed
+- Internal: `lib/extractor.js`'s `readJSDoc()` now also returns `commentRange` (`{ pos, end }`, the exact source-text range of an existing JSDoc block) per symbol — purely additive, same threading pattern as `rawComment`/`badComment` in v1.18.0. Verified zero behavior change: all 132 pre-existing tests pass unmodified.
+- Test suite grew from 132 to 152 assertions in the core package (20 new: 16 `lib/fix.js` unit tests, 4 CLI-level `--fix` tests) and from 36 to 39 in `eslint-plugin-jsdoc-scribe` (3 new `Linter.verifyAndFix()` convergence/preservation tests, alongside 10 new `RuleTester` `output` assertions on already-existing cases).
+
+### Design note
+- Filling in a missing description with a placeholder is a deliberate, narrow exception to "no AI, no guessing" — every placeholder is a fixed template (`"TODO: describe ...”`), never code-derived prose, and is unmistakably marked so a human immediately knows it needs attention (`grep -r "TODO: describe"` finds every one). See `docs/backlog/adr-013-lint-autofix.md` for the full reasoning, including why `check-tag-names` is the one rule that stays report-only even here.
+
+## [1.18.0] - 2026-07-06
+
+### Added
+- **`--lint` flag for `gen-comments`**: native JSDoc content validation — no ESLint required. New `lib/lint.js` rule engine reuses `extractModule()`'s existing AST + parsed-JSDoc data (plus a new additive `rawComment`/`badComment` field per symbol) to check the same category of things `eslint-plugin-jsdoc`'s `recommended` config does: `require-jsdoc`, `require-param`/`require-param-description`, `check-param-names` (ordering), `require-returns`/`require-returns-description`/`require-returns-check`, `require-description`, `check-tag-names`, `empty-tags`, `no-multi-asterisks`, `no-blank-block-descriptions`, `no-bad-blocks`. Read-only, exits 1 if issues are found — same CI-gate contract as `--check`/`--check-drift`. Zero new npm dependency.
+- `--lint` and `--check-drift` can be passed together in one invocation; both share a single `extractModule()` parse per file rather than parsing twice.
+
+### Changed
+- Internal: `lib/extractor.js`'s `readJSDoc()` now also returns `rawComment` (the exact `/** */` block text) and `badComment` (a near-miss malformed block, e.g. wrong asterisk count) per symbol, threaded through every extractor function/class/method/constructor/getter/setter/property/interface/typeAlias/enum/variable output. Purely additive — verified zero output change on every existing field via a byte-diff dogfood run across `lib/` and `bin/` (same method as `task-a10-03`), excluding the two new fields.
+- Test suite grew from 101 to 132 assertions (31 new: `lib/lint.js` unit tests plus `--lint` CLI-level tests).
+
+### Known limitation (tracked, not a regression)
+- `extractModule()`'s traversal (existing behavior, inherited by `--lint`) walks into function bodies and picks up local variable declarations as documentable "symbols," not just top-level/exported declarations — the same reason `--check` has always reported jsdoc-scribe's own low internal-helper coverage number. `--lint`'s `require-jsdoc` inherits that same scope, so running `--lint` against this repository's own `lib/` reports real (not false-positive) gaps on internal helpers that were never intended to carry a doc block, consistent with what `--check` already reports today. Scoping extraction to declaration depth or exported-only symbols is a larger, separate change candidate for a future story — not bundled into this release.
+
 ## [1.17.0] - 2026-07-05
 
 ### Added
@@ -285,49 +311,4 @@ The return array now includes three additional entries: `{ path: 'assets/style.c
 ### Added
 - **Programmatic API** (`require('jsdoc-scribe/docs')`): `lib/docs.js` exports `collectFiles`, `extractModule`, `extractModules`, `buildSite`, `generateSite`, `moduleLabel`, `moduleHtmlPath`, and constants. `package.json` `exports` field maps `./docs` subpath.
 - **JSON export** (`--json` / `-j`): `gen-docs` writes `docs.json` with title, version, `generatedAt` ISO timestamp, and full modules array alongside the HTML site.
-- **GitHub Actions workflow** (`.github/workflows/docs.yml`): triggers on push to `main`, builds docs, deploys to GitHub Pages via `actions/deploy-pages`.
-- **Collapsible sidebar module tree**: when modules share a directory prefix, the sidebar groups them under expandable `<details>` elements. Active group auto-opens.
-
----
-
-## [1.3.0] - 2026-06-29
-
-### Added
-- **JSDoc description extraction**: `lib/extractor.js` parses `/** */` blocks, extracts description (text before first `@tag`) and `@example` content, attaches to every extracted symbol.
-- **Dark mode toggle**: CSS custom properties (`--bg`, `--surface`, etc.) for light/dark theming; `data-theme` attribute on `<html>`; `localStorage` persistence; "Dark/Light" toggle button in sidebar.
-- **Collapsible class sections**: Constructor, Properties, Methods, Accessors rendered as `<details><summary>` elements — open by default.
-- **Watch mode** (`--watch` / `-W`): `fs.watch({ recursive: true })` with 150ms debounce, no extra dependencies.
-
----
-
-## [1.2.0] - 2026-06-29
-
-### Added
-- **Client-side search** (Ctrl+K): embedded JSON index searched as-you-type; results panel with module context.
-- **Anchor deep-links**: every card gets a stable `id` and a `#` link for sharing.
-- **Copy-signature button**: one-click clipboard copy for function/method signatures.
-- Rich sample files: `sample/utils.js` (16 functions + constants), `sample/models.ts` (4 classes, 3 interfaces, 2 enums, 5 type aliases), `sample/api.ts` (4 classes, 4 interfaces, 3 functions).
-
----
-
-## [1.1.0] - 2026-06-29
-
-### Added
-- **`gen-docs` CLI**: generates a multi-page HTML documentation site from JS/TS source.
-- `lib/extractor.js`: TypeScript Compiler API AST → structured JSON module model.
-- `lib/renderer.js`: JSON module model → multi-page HTML site.
-- `bin/gen-docs.js`: CLI entry with `--out`, `--title`, `--help`, `--version` flags.
-
----
-
-## [1.0.1] - 2026-06-29
-
-### Fixed
-- `@abstract` modifier never detected: `modifiersOf()` now uses `kinds.has(ts.SyntaxKind.AbstractKeyword)` (direct numeric comparison) instead of string reverse lookup which always returned `"FirstContextualKeyword"`.
-
----
-
-## [1.0.0] - Initial release
-
-### Added
-- `gen-comments` CLI: AST-based JSDoc comment inserter for JavaScript and TypeScript. Adds `@param`, `@returns` (and `@class`, `@method`, etc.) stubs to undocumented functions and classes. Skip-existing and `--force` modes. Idempotent.
+- **GitHub Actions workflow** (`.github/workflows

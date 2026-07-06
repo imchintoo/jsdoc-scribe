@@ -7,10 +7,11 @@
 [![Node.js](https://img.shields.io/node/v/jsdoc-scribe.svg)](https://nodejs.org)
 [![Types: included](https://img.shields.io/badge/types-included-blue.svg)](./lib/index.d.ts)
 
-> Pure, deterministic, **AST-based** JSDoc comment generator and multi-page documentation site builder for JavaScript & TypeScript.
+> Automated, **AST-based** JSDoc comment generator and static documentation site builder for JavaScript & TypeScript. Fast, deterministic, and 100% local (No AI involved).
 > **No AI. No LLM. No surprises.** Same input always produces the same output.
 
-Two CLIs, one dependency (`typescript`, used purely as a syntax parser), **101 passing tests** (deterministic, zero network calls — same self-test suite runs on every `npm test` and before every `npm publish`):
+
+Two CLIs, one dependency (`typescript`, used purely as a syntax parser), **152 passing tests** (deterministic, zero network calls — same self-test suite runs on every `npm test` and before every `npm publish`):
 
 `typescript` is listed as a regular `dependency`, not a `peerDependency`, on purpose: it's the
 parser for *every* file this tool touches, `.js` included, not just `.ts` — so it can't be
@@ -30,6 +31,28 @@ requiring one to be present at all.
 ![jsdoc-scribe docs preview](https://raw.githubusercontent.com/imchintoo/jsdoc-scribe/main/assets/preview.svg)
 
 Sticky topnav with centered search, white sidebar with an N-level folder tree, two-column symbol cards (prose left / dark code panel right), and a scroll-spy TOC on module pages.
+
+---
+
+## Real-world sample code
+
+`sample/` is a real, runnable-shaped fixture set — not toy one-liners — covering the stacks
+teams actually ship with:
+
+| Path | Stack | What's in it |
+|---|---|---|
+| `sample/express/` | Express.js (TS) | `app.ts`, routes, a controller, a service, and auth middleware for a small task API |
+| `sample/nestjs/` | NestJS (TS, decorators) | A `UsersModule` with `@Controller`/`@Injectable` classes, a DTO using `class-validator` decorators, an entity, and a guard |
+| `sample/vanilla-js/` | Plain JavaScript (CommonJS, no types) | A logger, an event emitter, a retry/circuit-breaker helper, and input validators |
+| `sample/*.ts` (top-level) | Generic TS | A fully-documented DI container, error hierarchy, event bus, HTTP middleware, models, and API layer — used as the "already good" reference case for `--check-drift`/`--lint` |
+
+Run any of the CLIs directly against them to see real output on real code, not a demo script:
+
+```bash
+gen-comments sample/nestjs --dry-run   # see what would be generated for decorator-heavy NestJS classes
+gen-comments sample/express --check    # coverage on an undocumented Express app
+gen-docs sample --out docs --title "jsdoc-scribe sample"
+```
 
 ---
 
@@ -58,6 +81,66 @@ npx jsdoc-scribe . --write            # run once, no install
 npm install --save-dev jsdoc-scribe   # add to project
 npm install -g jsdoc-scribe           # or install globally
 ```
+
+---
+
+## Three ways to use jsdoc-scribe
+
+Comments, docs, and lint are all reachable from the CLI, from inside your own Node code, or
+wired into CI — pick whichever fits the moment. Everything below is expanded in its own
+section further down; this is the map.
+
+| | Comments (`gen-comments`) | Docs (`gen-docs`) | Lint (`--lint`) |
+|---|---|---|---|
+| **CLI** | `gen-comments src --write` | `gen-docs src --out docs` | `gen-comments src --lint` / `--lint --fix` |
+| **Inside your codebase** | `require('jsdoc-scribe').processFile(file, { write: true })` | `require('jsdoc-scribe/docs').generateSite(['src'], opts)` | `require('jsdoc-scribe/lint').lintModule(moduleData)` |
+| **GitHub Actions** | `run: npx gen-comments src --check` (PR gate) | `run: npx gen-docs src --out _site` (Pages deploy) | `run: npx gen-comments src --lint` (PR gate) |
+
+### 1. CLI
+
+The two binaries this package installs — `gen-comments` and `gen-docs` — cover writing
+JSDoc, validating it, and building a docs site, with no config file required to get
+started:
+
+```bash
+gen-comments src --write          # insert missing JSDoc blocks in place
+gen-comments src --check          # CI gate: fail if anything is undocumented
+gen-comments src --check-drift    # CI gate: fail if JSDoc has drifted from the AST
+gen-comments src --lint           # CI gate: fail if JSDoc content itself is invalid
+gen-comments src --lint --fix     # rewrite existing JSDoc to resolve lint findings
+gen-docs src --out docs --title "My Project"
+```
+
+Full flag references: [`gen-comments`](#gen-comments--add-jsdoc-to-source),
+[`--lint`](#--lint--jsdoc-validation-no-eslint-required),
+[`--fix`](#--fix--autofix-lint-issues),
+[`gen-docs`](#gen-docs--build-a-documentation-site).
+
+### 2. Inside your codebase
+
+Every CLI capability is also a plain function import — no child-process spawning, no
+parsing your own stdout. Three subpath exports, one per capability:
+
+```js
+const { processFile, analyseFile, collectFiles } = require('jsdoc-scribe');       // comments
+const { generateSite, extractModule } = require('jsdoc-scribe/docs');             // docs
+const { lintModule } = require('jsdoc-scribe/lint');                              // lint
+```
+
+Full walkthrough with real return shapes: [Programmatic API](#programmatic-api).
+
+### 3. GitHub Actions
+
+Drop any of the three CLI commands above into a `run:` step — they're plain CLI exit
+codes (`0`/`1`), so they compose with any workflow you already have. Full copy-pasteable
+workflows (PR quality gate covering comments + drift + lint, plus a docs-to-Pages deploy)
+are in [CI — GitHub Actions](#ci--github-actions) below.
+
+Already running ESLint? The same 12 lint rules — 10 of them autofixable — are also
+available as a native ESLint flat-config plugin — see
+[`packages/eslint-plugin-jsdoc-scribe`](./packages/eslint-plugin-jsdoc-scribe/README.md)
+if you'd rather your JSDoc findings (and fixes) show up in your existing `eslint`/`eslint --fix`
+run than a separate CLI invocation.
 
 ---
 
@@ -102,6 +185,7 @@ Purely syntactic — explicit type annotations are used verbatim; without them, 
 | `--dry-run` | `-n` | Preview only, no writes. |
 | `--check` | `-C` | Like `--dry-run`, exits `1` if anything's undocumented. CI coverage gate. |
 | `--check-drift` | | Compares existing JSDoc against the current AST — flags missing/removed params and return-type mismatches. Read-only, exits `1` on drift. |
+| `--lint` | | Validates JSDoc content — missing tags, unknown tag names, blank descriptions, comment formatting. Read-only, exits `1` on findings. |
 | `--coverage-badge <dir>` | | Writes an offline `coverage-badge.svg` + `coverage-summary.json` to `<dir>`. No network calls. |
 | `--help` / `--version` | `-h` / `-v` | |
 
@@ -109,10 +193,104 @@ Purely syntactic — explicit type annotations are used verbatim; without them, 
 gen-comments src --write --force            # re-document already-commented files
 gen-comments src --check                    # CI gate: undocumented symbols
 gen-comments src --check-drift              # CI gate: JSDoc drifted from AST
+gen-comments src --lint                     # CI gate: JSDoc content is invalid
 gen-comments src --coverage-badge docs      # docs/coverage-badge.svg + coverage-summary.json
 ```
 
 > Commit before running `--write` — the CLI warns if you're outside a git repo.
+
+---
+
+## `--lint` — JSDoc validation, no ESLint required
+
+You don't need ESLint installed to validate your JSDoc — `gen-comments --lint` runs the
+same category of checks [eslint-plugin-jsdoc](https://github.com/gajus/eslint-plugin-jsdoc)'s
+`recommended` config does, directly, with zero new dependencies:
+
+```bash
+gen-comments src --lint
+```
+
+```
+Linting JSDoc across 3 file(s)...
+
+  src/auth.ts  (lint)
+    src/auth.ts:12  login  require-param-description  @param "password" has no description.
+    src/auth.ts:12  login  check-tag-names  Unknown tag "@parm".
+
+2 lint issue(s) found.
+```
+
+v1.18.0 ships the rules closest to eslint-plugin-jsdoc's own `recommended` starting set —
+more are queued (see the project's public backlog for the full rule-by-rule comparison):
+
+| jsdoc-scribe (`--lint`) | eslint-plugin-jsdoc equivalent | Status |
+|---|---|---|
+| `require-jsdoc` | `require-jsdoc` | Shipped v1.18.0 |
+| `require-param`, `require-param-description` | `require-param`, `require-param-description` | Shipped v1.18.0 |
+| `check-param-names` (ordering) | `check-param-names` | Shipped v1.18.0 |
+| `require-returns`, `require-returns-description`, `require-returns-check` | same names | Shipped v1.18.0 |
+| `require-description` | `require-description` | Shipped v1.18.0 |
+| `check-tag-names` | `check-tag-names` | Shipped v1.18.0 |
+| `empty-tags` | `empty-tags` | Shipped v1.18.0 |
+| `no-multi-asterisks`, `no-blank-block-descriptions`, `no-bad-blocks` | same names | Shipped v1.18.0 |
+| `require-throws`, `require-yields` | same names | Planned (sprint 12) |
+| Type-string validation (`valid-types`, `check-types`, `reject-any-type`, ...) | same | Planned, needs a type-expression tokenizer |
+| `no-undefined-types`, full `check-access` | same | Gated on the in-progress Checker-API epic |
+
+`--lint` itself is always read-only and report-only — pair it with `--fix` (below) when you
+want issues corrected, not just reported.
+
+---
+
+## `--fix` — autofix lint issues
+
+```bash
+gen-comments src --lint --fix
+```
+
+`--fix` implies `--lint` and rewrites *existing* JSDoc blocks in place to resolve as many
+findings as it safely can, without guessing:
+
+- **Mechanical fixes** — reorders `@param` tags to match the real parameter order, strips
+  trailing text off a tag that should never carry one (e.g. `@readonly`), collapses stray
+  extra asterisks, and drops an unnecessary `@returns` on a function that never returns a
+  value.
+- **Placeholder fixes** — a missing block description, `@param` description, or `@returns`
+  description is filled with a fixed, deterministic template: `TODO: describe what this
+  does.` / `TODO: describe parameter "name".` / `TODO: describe the return value.` This is
+  never invented prose — same text every time for the same kind of gap, clearly marked so a
+  human immediately knows it needs a real description (`grep -r "TODO: describe"` finds
+  every one `--fix` has ever left behind).
+
+```bash
+gen-comments src --lint --fix
+```
+
+```
+Fixing JSDoc lint issues across 3 file(s)...
+
+  src/auth.ts  (fixed 2/3 issue(s))
+  src/auth.ts  (lint — 1 remaining)
+    src/auth.ts:12  login  check-tag-names  Unknown tag "@parm".
+
+2 issue(s) fixed across 1 file(s).
+1 issue(s) remain — see above (typically check-tag-names, which --fix never auto-corrects).
+```
+
+**What `--fix` deliberately doesn't do:**
+
+- **Add JSDoc to undocumented symbols.** A `require-jsdoc` finding (no block at all) is left
+  untouched — that's `--write`'s job.
+- **Rename an unknown/typo'd tag.** `check-tag-names` findings (e.g. `@parm` instead of
+  `@param`) always survive `--fix` — there's no safe default for what the tag should have
+  been, and guessing would be a real departure from "no AI, no guessing," unlike the fixed
+  placeholder templates above.
+
+A file with zero lint issues is left byte-identical, and running `--fix` twice in a row
+produces zero additional changes the second time. See
+[`docs/backlog/adr-013-lint-autofix.md`](./docs/backlog/adr-013-lint-autofix.md) for the
+full design reasoning.
 
 ---
 
@@ -202,9 +380,70 @@ const fs = require('fs'), path = require('path');
 
 Also exported from `jsdoc-scribe/docs`: `collectFiles`, `extractModule`, `extractModules`, `buildSite`, `moduleLabel`, `moduleHtmlPath`. `extractModule(filePath)` returns `{ filePath, description, functions[], classes[], interfaces[], typeAliases[], enums[], variables[] }` — each entry carries both the AST-inferred shape (`params`, `returnType`) and the parsed JSDoc (`jsdocParams`, `returns`, `throws`, `since`, `deprecated`).
 
+### `require('jsdoc-scribe/lint')` — JSDoc validation
+
+The same rule engine `gen-comments --lint` runs under the hood, callable directly against
+an already-extracted module — useful for a custom reporter, a pre-commit hook that only
+lints staged files, or building your own tooling on top without shelling out to the CLI:
+
+```js
+const { extractModule } = require('jsdoc-scribe/docs');
+const { lintModule, KNOWN_TAGS, NO_DESC_TAGS } = require('jsdoc-scribe/lint');
+
+const moduleData = extractModule('src/auth.ts');
+const issues = lintModule(moduleData);   // [{ symbol, rule, message, line }, ...]
+
+for (const issue of issues) {
+  console.log(`${moduleData.filePath}:${issue.line}  ${issue.symbol}  ${issue.rule}  ${issue.message}`);
+}
+```
+
+`lintModule` is pure and synchronous — no I/O, no network, same input always produces the
+same output. `KNOWN_TAGS` (83 entries) and `NO_DESC_TAGS` (17 entries) are exported as
+`Set<string>` if you want to reuse jsdoc-scribe's own tag reference data in something else
+you're building (this is exactly how
+[`eslint-plugin-jsdoc-scribe`](./packages/eslint-plugin-jsdoc-scribe) reuses them). Type
+declarations ship in `lib/lint.d.ts`.
+
 ---
 
-## CI — auto-deploy docs to GitHub Pages
+## CI — GitHub Actions
+
+Every CLI flag is a plain process exit code (`0` clean, `1` findings), so any of them drop
+straight into a `run:` step. Two complete, ready-to-copy workflows:
+
+### PR quality gate — comments, drift, and lint
+
+Fails the check if anything is undocumented, JSDoc has drifted from the code, or JSDoc
+content itself is malformed — three independent signals, one job:
+
+```yaml
+# .github/workflows/jsdoc-quality.yml
+name: JSDoc quality gate
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  jsdoc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci
+      - name: Fail if anything is undocumented
+        run: npx gen-comments src --check
+      - name: Fail if JSDoc has drifted from the AST
+        run: npx gen-comments src --check-drift
+      - name: Fail if JSDoc content is invalid
+        run: npx gen-comments src --lint
+```
+
+Each step runs independently (not `&&`-chained) so a PR's Actions tab shows exactly which
+of the three checks failed, rather than one opaque "the script exited non-zero." Drop any
+step you don't want as a hard gate yet.
+
+### Auto-deploy docs to GitHub Pages
 
 ```yaml
 # .github/workflows/docs.yml
@@ -229,10 +468,14 @@ jobs:
 
 Enable GitHub Pages (Settings → Pages → Source: GitHub Actions).
 
-This repo's own CI (`.github/workflows/test.yml`) runs the 101-test suite on Node 18/20/22
-for every push and PR — that's the badge at the top of this README. Releases publish via
-`.github/workflows/publish.yml` using npm's OIDC trusted publishing (no stored token; every
-published version carries verifiable provenance).
+The PR quality gate above is a template — copy it into your own project's
+`.github/workflows/`. This repo's own CI is three separate workflows you can look at
+directly: [`test.yml`](./.github/workflows/test.yml) runs the 152-test suite on Node
+18/20/22 for every push and PR (that's the badge at the top of this README),
+[`docs.yml`](./.github/workflows/docs.yml) is the exact Pages-deploy job shown above, and
+[`publish.yml`](./.github/workflows/publish.yml) publishes tagged releases via npm's OIDC
+trusted publishing (no stored token; every published version carries verifiable
+provenance).
 
 ---
 

@@ -1,0 +1,41 @@
+{
+    "name": "eslint-plugin-jsdoc-scribe",
+    "version": "0.2.0",
+    "description": "JSDoc validation rules for ESLint, powered by jsdoc-scribe's native lint engine. Flat config only.",
+    "main": "index.js",
+    "exports": {
+        ".": "./index.js"
+    },
+    "files": [
+        "index.js",
+        "rules",
+        "README.md"
+    ],
+    "scripts": {
+        "test": "node test/run.js"
+    },
+    "keywords": [
+        "eslint",
+        "eslintplugin",
+        "eslint-plugin",
+        "jsdoc",
+        "jsdoc-lint",
+        "lint"
+    ],
+    "author": {
+        "name": "Chintan Goswami"
+    },
+    "license": "MIT",
+    "engines": {
+        "node": ">=18"
+    },
+    "peerDependencies": {
+        "eslint": ">=9.0.0"
+    },
+    "dependencies": {
+        "jsdoc-scribe": "file:../.."
+    },
+    "devDependencies": {
+        "eslint": "^10.0.0"
+    }
+}

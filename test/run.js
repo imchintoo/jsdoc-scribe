@@ -13,6 +13,8 @@
  *   5. coverage      (lib/coverage.js)  — 5 tests
  *   6. cli           (bin/cli.js)       — 8 tests
  *   7. ast-utils     (lib/ast-utils.js) — 12 tests
+ *   8. lint          (lib/lint.js)      — new in v1.18.0
+ *   9. fix           (lib/fix.js)       — new in v1.19.0 (--lint --fix)
  */
 
 const fs   = require("fs");
@@ -181,6 +183,18 @@ require("./cli.test.js")(check);
 // ---------------------------------------------------------------------------
 console.log("\n-- ast-utils --");
 require("./ast-utils.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 8 — lint (lib/lint.js)
+// ---------------------------------------------------------------------------
+console.log("\n-- lint --");
+require("./lint.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 9 — fix (lib/fix.js)
+// ---------------------------------------------------------------------------
+console.log("\n-- fix --");
+require("./fix.test.js")(check);
 
 // ---------------------------------------------------------------------------
 // Summary

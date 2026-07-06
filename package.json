@@ -1,6 +1,6 @@
 {
     "name": "jsdoc-scribe",
-    "version": "1.17.3",
+    "version": "1.19.0",
     "description": "Automated, AST-based JSDoc comment generator and static documentation site builder for JavaScript & TypeScript. Fast, deterministic, and 100% local (No AI involved).",
     "main": "lib/index.js",
     "types": "./lib/index.d.ts",
@@ -12,6 +12,10 @@
         "./docs": {
             "types": "./lib/docs.d.ts",
             "default": "./lib/docs.js"
+        },
+        "./lint": {
+            "types": "./lib/lint.d.ts",
+            "default": "./lib/lint.js"
         }
     },
     "bin": {
@@ -27,6 +31,7 @@
     ],
     "scripts": {
         "demo": "node bin/cli.js sample",
+        "lint": "node bin/cli.js sample --lint --fix",
         "docs": "node bin/gen-docs.js sample --out docs --title jsdoc-scribe",
         "test": "node test/run.js",
         "prepublishOnly": "npm test"
@@ -49,7 +54,11 @@
         "js",
         "documentation-tool",
         "api-reference",
-        "static-docs"
+        "static-docs",
+        "jsdoc-lint",
+        "lint",
+        "eslint-plugin-jsdoc",
+        "autofix"
     ],
     "author": {
         "name": "Chintan Goswami"
@@ -68,5 +77,8 @@
     },
     "dependencies": {
         "typescript": ">=5.0.0"
-    }
+    },
+    "workspaces": [
+        "packages/*"
+    ]
 }
