@@ -9,6 +9,7 @@ const { buildSite, moduleLabel, moduleHtmlPath } = require("../lib/renderer.js")
 const { loadConfig, mergeConfig } = require("../lib/config.js");
 const { buildImportGraph, findOrphanFiles } = require("../lib/import-graph.js");
 const quality = require("../lib/quality.js");
+const siteData = require("../lib/site-data.js");
 const pkg = require("../package.json");
 
 
@@ -46,12 +47,27 @@ Quality reporting (optional -- requires a separate install):
   --quality-baseline <path>       Only report regressions vs. a saved baseline
   --quality-save-baseline <path>  Save current analysis as a baseline JSON file
   --quality-snapshot <dir>        Save a timestamped snapshot for trend tracking
-  --quality-trend <dir>           Load snapshots and include trend/hotspot data
-                                   (only with --quality-reporter dashboard)
+  --quality-trend <dir>           Load snapshots and include trend/hotspot data --
+                                   with --quality-reporter dashboard this drives the
+                                   standalone dashboard's trend/hotspot tabs; with plain
+                                   --quality it drives the embedded index-page sparkline
 
   Quality reporting requires code-multivitals as a separate, optional install
   (npm install --save-dev code-multivitals) -- it is NOT installed by
   "npm install jsdoc-scribe" and never affects default gen-docs behavior.
+
+Site-data JSON (optional -- separate from, and does not change, --json/docs.json):
+  --data                           Also write <out>/site-data.json: everything
+                                   buildSite() needs (modules + quality/import-graph/
+                                   snapshot data) in one file. Never overwrites a
+                                   prior site-data.json -- the previous one is moved
+                                   into <out>/site-data-history/ first, so successive
+                                   generations can be compared later.
+  --from-data <path>               Build the site directly from a previously-written
+                                   site-data.json, skipping source parsing and quality
+                                   analysis entirely -- fast path for iterating on
+                                   templates/CSS. <path>'s inputs (positional args) are
+                                   not required in this mode.
 
 Config file (.jsdoc-scribe.json):
   { "out": "docs", "title": "My API", "json": true,
@@ -67,6 +83,8 @@ Examples:
   gen-docs src --quality --quality-reporter console        # console-only report, no site changes
   gen-docs src --quality --quality-reporter sarif --out ci # standalone SARIF file for CI (no site build)
   gen-docs src --quality --quality-profile strict
+  gen-docs src --quality --data                            # also writes docs/site-data.json
+  gen-docs --from-data docs/site-data.json --out docs       # fast re-render, no re-parsing/re-analysis
 `);
 }
 
@@ -79,6 +97,7 @@ function parseArgs(argv) {
         quality: false, qualityReporter: undefined, qualityProfile: undefined,
         qualityConfig: undefined, qualityBaseline: undefined, qualitySaveBaseline: undefined,
         qualitySnapshot: undefined, qualityTrend: undefined,
+        data: false, fromData: undefined,
     };
     let i = 0;
     while (i < argv.length) {
@@ -96,6 +115,8 @@ function parseArgs(argv) {
         else if (a === "--quality-save-baseline" && argv[i+1]) { args.qualitySaveBaseline = argv[++i]; }
         else if (a === "--quality-snapshot"      && argv[i+1]) { args.qualitySnapshot     = argv[++i]; }
         else if (a === "--quality-trend"         && argv[i+1]) { args.qualityTrend        = argv[++i]; }
+        else if (a === "--data") { args.data = true; }
+        else if (a === "--from-data"             && argv[i+1]) { args.fromData             = argv[++i]; }
         else if ((a === "--out"       || a === "-o") && argv[i+1]) { args.out       = argv[++i]; }
         else if ((a === "--title"     || a === "-t") && argv[i+1]) { args.title     = argv[++i]; }
         else if ((a === "--config"    || a === "-c") && argv[i+1]) { args.configPath= argv[++i]; }
@@ -158,7 +179,7 @@ function resolveEntryPoints() {
  * buildSite() needs.
  * @param {string[]} files
  * @param {object} cliArgs
- * @returns {{result: object, graph: object, orphans: string[]}}
+ * @returns {{result: object, graph: object, orphans: string[], snapshots?: object[]}}
  */
 function computeQualityEmbedData(files, cliArgs) {
     let result = quality.runQuality(files, { profile: cliArgs.qualityProfile, configPath: cliArgs.qualityConfig });
@@ -180,8 +201,24 @@ function computeQualityEmbedData(files, cliArgs) {
     const graph = buildImportGraph(files);
     const orphans = findOrphanFiles(graph, resolveEntryPoints());
 
+    // story-code-health-redesign: the embedded index-page hero panel's trend
+    // sparkline reuses the same `--quality-trend <dir>` flag that already
+    // powered the standalone dashboard reporter's trend view (see
+    // runQualityStandalone below) -- no new CLI flag. Snapshot loading is
+    // best-effort: a missing/unreadable dir just means "no trend yet", not a
+    // build failure.
+    let snapshots;
+    if (cliArgs.qualityTrend) {
+        try {
+            snapshots = quality.loadQualitySnapshots(cliArgs.qualityTrend);
+        } catch (err) {
+            console.error(`Quality trend history unavailable (${err.message}) -- rendering without a sparkline.`);
+            snapshots = [];
+        }
+    }
+
     if (result.errorCount > 0) process.exitCode = 1;
-    return { result, graph, orphans };
+    return { result, graph, orphans, snapshots };
 }
 
 /**
@@ -369,11 +406,182 @@ function generateReadme(modules, projectName, version, outDir) {
 // Build
 // ---------------------------------------------------------------------------
 
-function build(files, outDir, projectName, projectVersion, opts, silent, qualityData) {
-    const modules = [];
-    for (const file of files) {
-        try { modules.push(extractModule(file)); }
-        catch (err) { console.error(`  ${file} -> FAILED: ${err.message}`); }
+/**
+ * story-doc-version-switcher: extracts the version-id out of a
+ * `site-data-history/site-data-<id>.json` filename. Pure string-parse of
+ * the ISO-timestamp (dashes standing in for colons/dot) `writeSiteData()`
+ * (lib/site-data.js) already generates -- no new convention invented, and
+ * this never needs to change if that convention doesn't.
+ * @param {string} historyFilePath - a `site-data-history/*.json` path or bare filename.
+ * @returns {string} the version-id (e.g. "2026-07-01T14-22-03-123Z", or with
+ *   a "-1"-style collision suffix in the rare case two writes landed in the
+ *   same millisecond).
+ */
+function deriveVersionId(historyFilePath) {
+    const base = path.basename(historyFilePath, ".json");
+    return base.replace(/^site-data-/, "");
+}
+
+/**
+ * story-doc-version-switcher: lists existing `site-versions/<id>/`
+ * directories, most-recent-first. Version-ids are fixed-width ISO-timestamp
+ * strings (dashes for colons/dot), so a plain reverse lexical sort is
+ * chronological too, without needing to re-parse each into a Date here --
+ * `lib/renderer.js`'s `buildVersionSwitcher()`/`formatVersionLabel()` does
+ * that parsing purely for display, this function only enumerates ids.
+ * @param {string} outDir
+ * @returns {string[]}
+ */
+function listVersionSnapshots(outDir) {
+    const dir = path.join(outDir, "site-versions");
+    if (!fs.existsSync(dir)) return [];
+    return fs.readdirSync(dir)
+        .filter((name) => { try { return fs.statSync(path.join(dir, name)).isDirectory(); } catch (_) { return false; } })
+        .sort()
+        .reverse();
+}
+
+/**
+ * story-doc-version-switcher (TICKET-2): renders ONE historical
+ * `site-data-*.json` into its own `<outDir>/site-versions/<versionId>/`
+ * snapshot -- a complete, self-contained copy of the site as it looked at
+ * that generation (requirement 2/5). Reuses `writeSite()` verbatim (no new
+ * render path): `versionOpts` tells that call this is a snapshot render,
+ * not the live/main run, so it skips re-writing its own site-data.json/
+ * history/backfill (that would recurse and pollute every historical
+ * snapshot with a nested copy of the data layer, which isn't part of "a
+ * complete copy of the site" per requirement 2's own listed contents --
+ * index.html/modules/assets/health-detail pages, not docs.json/README/
+ * site-data.json). `docs.json`/`README.md` are likewise switched off for
+ * snapshot renders for the same reason -- kept minimal and focused on the
+ * browsable site itself, not duplicated once per historical generation.
+ * @param {string} dataPath - the `site-data-*.json` file to render.
+ * @param {string} outDir - the LIVE output root (site-versions/ is created under this).
+ * @param {string} versionId
+ * @param {object} opts
+ * @param {string[]} versions - full version-id list (for that snapshot's own switcher).
+ * @param {boolean} silent
+ * @returns {boolean} true if rendered, false if the source JSON couldn't be read.
+ */
+function renderVersionSnapshot(dataPath, outDir, versionId, opts, versions, silent) {
+    let data;
+    try {
+        data = siteData.loadSiteData(dataPath);
+    } catch (err) {
+        console.error(`  skipping version snapshot ${versionId} (${dataPath}): ${err.message}`);
+        return false;
+    }
+    const snapshotOutDir = path.join(outDir, "site-versions", versionId);
+    const snapshotOpts = Object.assign({}, opts, { json: false, readme: false, data: false });
+    writeSite(data.modules, snapshotOutDir, data.projectName, data.version, snapshotOpts, true, data.quality || null, {
+        isSnapshot: true, currentVersionId: versionId, versions: versions,
+    });
+    if (!silent) console.log(`  wrote site-versions/${versionId}/ (snapshot)`);
+    return true;
+}
+
+/**
+ * story-doc-version-switcher (TICKET-3): render-only-missing backfill.
+ * `site-data-history/*.json` entries are immutable once moved there (Phase
+ * L Decision 5) -- once a version-id's snapshot exists, re-rendering it has
+ * zero correctness benefit and is pure wasted cost at realistic history
+ * depth (solutions-architect's estimate: O(1) per run after a one-time
+ * backfill, see the story's architect sign-off). `fs.existsSync` on the
+ * target directory is the entire "already rendered" check.
+ * @param {string} outDir
+ * @param {object} opts
+ * @param {boolean} silent
+ */
+function renderMissingVersionSnapshots(outDir, opts, silent) {
+    const histDir = siteData.historyDirFor(path.join(outDir, "site-data.json"));
+    if (!fs.existsSync(histDir)) return;
+    // Bug caught during live verification: this must be the full set of
+    // version-ids implied by EVERY history file, not just `listVersionSnapshots()`
+    // (which only reflects site-versions/ dirs that already exist on disk). Using
+    // the disk-only list meant a snapshot being rendered for the first time in
+    // this very pass never saw its OWN id in the list passed to its switcher --
+    // its own page couldn't show itself as the current selection. All history
+    // files always end up with a snapshot dir (either already present, or about
+    // to be created below), so deriving the list from history files themselves
+    // is the correct set for every snapshot rendered in this pass.
+    const versions = fs.readdirSync(histDir)
+        .filter((f) => f.endsWith(".json"))
+        .map(deriveVersionId)
+        .sort()
+        .reverse();
+    fs.readdirSync(histDir)
+        .filter((f) => f.endsWith(".json"))
+        .forEach((f) => {
+            const versionId = deriveVersionId(f);
+            const snapshotDir = path.join(outDir, "site-versions", versionId);
+            if (fs.existsSync(snapshotDir)) return; // render-only-missing
+            renderVersionSnapshot(path.join(histDir, f), outDir, versionId, opts, versions, silent);
+        });
+}
+
+/**
+ * Writes the full site (+ optional docs.json / README.md / site-data.json)
+ * from an already-in-hand `modules` array. Split out from `build()` so
+ * `--from-data` (story-file-detail-redesign) can reuse this exact same
+ * write path without re-parsing source files -- `modules` there comes from
+ * a saved site-data.json instead of `extractModule()`.
+ * @param {object[]} modules
+ * @param {string} outDir
+ * @param {string} projectName
+ * @param {string} projectVersion
+ * @param {object} opts
+ * @param {boolean} silent
+ * @param {object|null} qualityData
+ * @param {{isSnapshot: boolean, currentVersionId: string, versions: string[]}|null} versionOpts -
+ *   story-doc-version-switcher: set by `renderVersionSnapshot()` when this call is
+ *   rendering ONE historical snapshot rather than the live/main site. `null`/omitted
+ *   means "this is the live/main run" -- compute everything fresh below.
+ * @returns {number} pages written.
+ */
+function writeSite(modules, outDir, projectName, projectVersion, opts, silent, qualityData, versionOpts) {
+    let switcherVersions = [];
+    let currentVersionId = null;
+    let isSnapshot = false;
+
+    if (versionOpts) {
+        // Rendering one historical snapshot (via renderVersionSnapshot() above) --
+        // reuse the caller-computed version list; never re-trigger this snapshot's
+        // own site-data.json/history/backfill (snapshotOpts already forces
+        // opts.data=false for this nested call, see renderVersionSnapshot()).
+        switcherVersions = versionOpts.versions || [];
+        currentVersionId = versionOpts.currentVersionId || null;
+        isSnapshot = true;
+    } else if (opts.data) {
+        // Live/main run with --data: evict the prior site-data.json to history FIRST
+        // (siteData.writeSiteData() -- unchanged mechanism, per this story's own
+        // constraint), so THIS run's own live pages' switcher already reflects that
+        // eviction, then backfill any site-versions/ snapshots still missing for
+        // history entries (including the one just evicted).
+        //
+        // Deliberate deviation from the architect's Decision 3, disclosed: Decision 3
+        // also called for pre-rendering a site-versions/<id>/ copy of the CURRENT
+        // generation "so it can later be listed and browsed once superseded." That
+        // doesn't hold up against `writeSiteData()`'s actual (unchanged) rename-at-
+        // EVICTION-time timestamp (`new Date().toISOString()` captured on some FUTURE
+        // run, not this one) -- a version-id derived now from this run's own
+        // `generatedAt` would NOT match the version-id `deriveVersionId()` computes
+        // later from the real history filename, producing an orphaned duplicate
+        // directory under the wrong id. Not implemented for that reason. The live
+        // `outDir` root already always represents "Current" (requirement 3,
+        // unchanged); once a generation is genuinely superseded, the NEXT run's
+        // backfill scan renders it under its one true, stable version-id -- fully
+        // satisfying "listed and browsable once superseded" without the mismatch.
+        const dataPath = path.join(outDir, "site-data.json");
+        const payload = siteData.buildSiteData(modules, qualityData || null, {
+            projectName, version: projectVersion, sourceUrl: opts.sourceUrl,
+        });
+        const written = siteData.writeSiteData(dataPath, payload);
+        if (!silent) {
+            console.log(`  wrote ${path.relative(process.cwd(), written.path)}`);
+            if (written.preserved) console.log(`  preserved prior generation: ${path.relative(process.cwd(), written.preserved)}`);
+        }
+        renderMissingVersionSnapshots(outDir, opts, silent);
+        switcherVersions = listVersionSnapshots(outDir);
     }
 
     const pages = buildSite(modules, {
@@ -381,6 +589,9 @@ function build(files, outDir, projectName, projectVersion, opts, silent, quality
         version: projectVersion,
         sourceUrl: opts.sourceUrl,
         quality: qualityData || null,
+        versions: switcherVersions,
+        currentVersionId: currentVersionId,
+        isSnapshot: isSnapshot,
     });
     fs.mkdirSync(path.join(outDir, "modules"), { recursive: true });
 
@@ -415,6 +626,15 @@ function build(files, outDir, projectName, projectVersion, opts, silent, quality
     return pages.length;
 }
 
+function build(files, outDir, projectName, projectVersion, opts, silent, qualityData) {
+    const modules = [];
+    for (const file of files) {
+        try { modules.push(extractModule(file)); }
+        catch (err) { console.error(`  ${file} -> FAILED: ${err.message}`); }
+    }
+    return writeSite(modules, outDir, projectName, projectVersion, opts, silent, qualityData);
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -424,23 +644,50 @@ function main() {
     const cliArgs = parseArgs(argv);
 
     if (cliArgs.version) { console.log(pkg.version); return; }
-    if (cliArgs.help || cliArgs.inputs.length === 0) {
+    // --from-data legitimately has zero positional inputs (story-file-detail-redesign)
+    // -- it reads a previously-written site-data.json instead of source files.
+    if (cliArgs.help || (cliArgs.inputs.length === 0 && !cliArgs.fromData)) {
         printHelp();
-        process.exitCode = cliArgs.inputs.length === 0 && !cliArgs.help ? 1 : 0;
+        process.exitCode = cliArgs.inputs.length === 0 && !cliArgs.help && !cliArgs.fromData ? 1 : 0;
         return;
     }
 
     // Load config file and merge with CLI (CLI wins)
     const fileConfig = loadConfig(cliArgs.configPath);
     const opts = mergeConfig(fileConfig, cliArgs);
-
-    const files = collectAllFiles(cliArgs.inputs, opts.ignore);
-    if (files.length === 0) { console.log("No matching .js/.jsx/.ts/.tsx files found."); return; }
+    opts.data = !!cliArgs.data; // one-off generation flag, not a persisted config-file option
 
     const outDir        = path.resolve(opts.out || "docs");
     const projectName   = resolveTitle(opts.title);
     const projectVersion = resolveVersion();
-    const extras = [opts.json && "docs.json", opts.readme && "README.md"].filter(Boolean);
+
+    // --from-data: fast path -- skip collectAllFiles()/extractModule()/
+    // runQuality()/buildImportGraph() entirely, load a previously-written
+    // site-data.json instead (ADR Decision 4/5). Mutually exercised
+    // independently of --quality/--data below; a caller can still pass
+    // --data alongside --from-data to re-emit (and history-preserve)
+    // site-data.json from the loaded content, e.g. after hand-editing it.
+    if (cliArgs.fromData) {
+        let data;
+        try {
+            data = siteData.loadSiteData(path.resolve(cliArgs.fromData));
+        } catch (err) {
+            console.error(err.message);
+            process.exitCode = 1;
+            return;
+        }
+        const dataProjectName = opts.title ? projectName : (data.projectName || projectName);
+        const dataVersion = data.version || projectVersion;
+        const n = writeSite(data.modules, outDir, dataProjectName, dataVersion, opts, false, data.quality || null);
+        console.log(`\nDone (from ${path.relative(process.cwd(), path.resolve(cliArgs.fromData))}). ${n} page(s) written to ${path.relative(process.cwd(), outDir) || outDir}`);
+        console.log(`Open ${path.join(path.relative(process.cwd(), outDir) || outDir, "index.html")} in a browser.`);
+        return;
+    }
+
+    const files = collectAllFiles(cliArgs.inputs, opts.ignore);
+    if (files.length === 0) { console.log("No matching .js/.jsx/.ts/.tsx files found."); return; }
+
+    const extras = [opts.json && "docs.json", opts.readme && "README.md", opts.data && "site-data.json"].filter(Boolean);
     const extraStr = extras.length ? " + " + extras.join(" + ") : "";
 
     // --quality: default (no --quality-reporter) embeds a Code Health section

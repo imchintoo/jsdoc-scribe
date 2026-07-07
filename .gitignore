@@ -148,8 +148,14 @@ vite.config.ts.timestamp-*
 CLAUDE.md
 docs
 docs-internal
+docs-dashboard
 .claude
 # jsdoc-scribe quality reporting (code-multivitals) output -- generated, never committed
 quality-results/
 snapshots/
 *.code-multivitals-baseline.json
+# story-file-detail-redesign: site-data JSON layer -- generated, never committed
+site-data.json
+site-data-history/
+# story-doc-version-switcher: rendered historical snapshots -- generated, never committed
+site-versions/

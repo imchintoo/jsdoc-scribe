@@ -218,6 +218,18 @@ console.log("\n-- quality --");
 require("./quality.test.js")(check);
 
 // ---------------------------------------------------------------------------
+// Suite 13 — site-data (lib/site-data.js) — new in v2.2.0 (story-file-detail-redesign)
+// ---------------------------------------------------------------------------
+console.log("\n-- site-data --");
+require("./site-data.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 14 — gen-docs CLI (bin/gen-docs.js) — new in v2.2.0 (--data/--from-data)
+// ---------------------------------------------------------------------------
+console.log("\n-- gen-docs --");
+require("./gen-docs.test.js")(check);
+
+// ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
 console.log("\n" + passed + " test(s) passed." + (failed ? "  " + failed + " FAILED." : ""));

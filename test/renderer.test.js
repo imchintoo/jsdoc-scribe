@@ -129,7 +129,11 @@ module.exports = function runRendererTests(check) {
         assert.ok(indexPage.html.includes('class="topnav"'), "topnav missing from index page");
         assert.ok(modPage.html.includes('class="topnav"'),   "topnav missing from module page");
         assert.ok(indexPage.html.includes("search-box"),  "search-box missing from index topnav");
-        assert.ok(modPage.html.includes("topnav-logo"),   "topnav-logo missing from module page");
+        // NOTE (fixed 2026-07-07, pre-existing drift from adr-phase-m-exact-design-shell.md):
+        // Phase M moved the logo/brand out of the topnav into the sidebar
+        // (buildTopnav() no longer emits topnav-logo at all -- see .sidebar-logo
+        // in buildSidebar()). This assertion was never updated when that shipped.
+        assert.ok(modPage.html.includes("sidebar-logo"),   "sidebar-logo missing from module page");
         assert.ok(modPage.html.includes("search-kbd"),    "search-kbd hint missing");
     });
 
@@ -526,7 +530,10 @@ module.exports = function runRendererTests(check) {
             .forEach(p => assert.ok(paths.includes(p), `missing detail page ${p}`));
         const idx = pages.find(p => p.path === "index.html");
         assert.ok(idx.html.includes('id="code-health"'), "code-health section missing from index.html");
-        assert.ok(idx.html.includes("topnav-quality-link"), "Code Health nav link missing from topnav");
+        // NOTE (fixed 2026-07-07, pre-existing drift from adr-phase-m-exact-design-shell.md):
+        // Phase M's own "Consequences" section says this rename/relocation should have
+        // updated this assertion; it never landed. topnav-quality-link -> sidebar-quality-link.
+        assert.ok(idx.html.includes("sidebar-quality-link"), "Code Health nav link missing from sidebar");
         assert.ok(idx.html.includes(">67<"), "average health score not rendered");
         assert.ok(idx.html.includes("qcard-grid"), "summary card grid missing from index page");
     });
@@ -552,9 +559,15 @@ module.exports = function runRendererTests(check) {
         const detail = pages.find(p => p.path === "health-attention.html");
         assert.ok(detail, "health-attention.html not generated");
         files.forEach(f => assert.ok(detail.html.includes(f.filePath), `${f.filePath} missing from detail page`));
-        // Card preview is capped at 5 — not every file needs to appear on the index page.
-        const missingFromCard = files.filter(f => !idx.html.includes(f.filePath));
-        assert.ok(missingFromCard.length > 0, "expected the index card preview to be capped, unlike the detail page");
+        // NOTE (fixed 2026-07-07, pre-existing drift from story-code-health-redesign.md):
+        // qCard() now renders rows beyond 5 into a zero-JS <details class="qcard-expand">
+        // block (ADR Decision 3) instead of omitting them from the index page entirely, so
+        // every file's path IS present in idx.html (collapsed) -- the old "missing from
+        // idx.html entirely" signal for "capped" no longer holds. What's still true and
+        // load-bearing: only 5 rows are in the *default-visible* preview, the rest sit
+        // behind an explicit "View N more" expand toggle, both provably present.
+        assert.ok(idx.html.includes("qcard-expand"), "expected the overflow rows to be behind a qcard-expand details toggle");
+        assert.ok(idx.html.includes("View 3 more"), "expected a 'View 3 more' toggle label for the 3 rows beyond the 5-row preview");
         assert.ok(detail.html.includes("qback"), "back-to-index link missing on detail page");
         assert.ok(detail.html.includes('href="index.html#code-health"'), "back link should point to index.html#code-health");
     });
@@ -652,7 +665,10 @@ module.exports = function runRendererTests(check) {
         assert.ok(modPage.html.includes(">41<"), "health score chip missing");
         assert.ok(modPage.html.includes(">34<"), "maintainability chip missing");
         assert.ok(modPage.html.includes(">2<"), "functions chip (count 2) missing");
-        assert.ok(modPage.html.includes(">error<"), "worst severity chip missing");
+        // NOTE (fixed 2026-07-07, pre-existing drift from story-file-detail-redesign.md):
+        // buildHealthStrip()'s old flat chip row was replaced by buildFileHero()'s
+        // gauge+chip markup ("worst: error" inline text), never re-asserted after that shipped.
+        assert.ok(modPage.html.includes("worst: error"), "worst severity chip missing");
         assert.ok(modPage.html.includes("god-function"), "smells chip missing");
         // 1 error metric, 1 warn metric across the file's two functions
         assert.ok(modPage.html.includes(">1<"), "errors/warnings chip value (1) missing");
@@ -667,7 +683,10 @@ module.exports = function runRendererTests(check) {
         const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] })];
         assert.doesNotThrow(() => buildSite(modules, { projectName: "Test", quality }));
         const modPage = buildSite(modules, { projectName: "Test", quality }).find(p => p.path.startsWith("modules/"));
-        assert.ok(modPage.html.includes("qstrip"), "strip container should still render");
+        // NOTE (fixed 2026-07-07, pre-existing drift from story-file-detail-redesign.md):
+        // the fallback container is buildFileHero()'s `qhero qhero-file` aside now, not the
+        // retired buildHealthStrip()'s `qstrip` -- never re-asserted after that shipped.
+        assert.ok(modPage.html.includes("qhero-file"), "hero fallback container should still render");
         assert.ok(modPage.html.includes("No code health data for this file."), "fallback text missing");
         assert.ok(!modPage.html.includes("qchip-label"), "no real chips should render in the fallback state");
     });
@@ -736,29 +755,133 @@ module.exports = function runRendererTests(check) {
         assert.ok(CSS_STRUCTURE.includes("max-width:720px"), "mobile 2-column strip media query missing");
     });
 
-    check("index page: --quality present -> Modules grid is removed, Code Health is the only content section", () => {
-        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] }), makeMod("/proj/src/b.ts")];
-        const quality = makeQuality();
-        const idx = buildSite(modules, { projectName: "Test", quality }).find(p => p.path === "index.html");
-        assert.ok(!idx.html.includes("module-grid"), "Modules grid should be removed from the index page when --quality is active");
-        assert.ok(!idx.html.includes('<div class="section-title">Modules</div>'), "Modules section heading should not render in the index body when --quality is active");
-        assert.ok(idx.html.includes('id="code-health"'), "Code Health section should still render");
-        assert.ok(idx.html.includes("page-title"), "page title should remain");
+    check("CSS_STRUCTURE: adr-phase-n corrected/new design tokens present, matching the real mockup values", () => {
+        assert.ok(CSS_STRUCTURE.includes("Space+Grotesk") && CSS_STRUCTURE.includes("JetBrains+Mono"), "Google Fonts @import for Space Grotesk / JetBrains Mono missing");
+        assert.ok(CSS_STRUCTURE.includes('--font-display:"Space Grotesk"'), "--font-display token missing/wrong");
+        assert.ok(CSS_STRUCTURE.includes('--font-mono:"JetBrains Mono"'), "--font-mono token missing/wrong");
+        assert.ok(CSS_STRUCTURE.includes("--coral:#FF4B2E"), "--coral not corrected to the real mockup value (was #FF6452)");
+        assert.ok(CSS_STRUCTURE.includes("--coral-hover:") && CSS_STRUCTURE.includes("--coral-press:"), "--coral-hover/--coral-press tokens missing");
+        assert.ok(CSS_STRUCTURE.includes("--purple-hover:") && CSS_STRUCTURE.includes("--purple-press:"), "--purple-hover/--purple-press tokens missing");
+        assert.ok(CSS_STRUCTURE.includes("--lime-hover:") && CSS_STRUCTURE.includes("--lime-press:"), "--lime-hover/--lime-press tokens missing");
+        assert.ok(CSS_STRUCTURE.includes("--black-soft:") && CSS_STRUCTURE.includes("--offwhite-soft:"), "--black-soft/--offwhite-soft tokens missing");
+        assert.ok(CSS_STRUCTURE.includes("--text-on-lime:") && CSS_STRUCTURE.includes("--text-button:"), "--text-on-lime/--text-button tokens missing");
+        ["--radius-sm", "--radius-md", "--radius-lg", "--radius-xl", "--radius-pill"].forEach(function (t) {
+            assert.ok(CSS_STRUCTURE.includes(t + ":"), t + " radius-scale token missing");
+        });
+        assert.ok(CSS_STRUCTURE.includes("--shadow-card:") && CSS_STRUCTURE.includes("--shadow-inset-dark:"), "shadow tokens missing");
+        assert.ok(CSS_STRUCTURE.includes(".badge-pill{") && CSS_STRUCTURE.includes("var(--radius-pill)"), "badge-pill not wired to the radius-pill token");
+        assert.ok(CSS_STRUCTURE.includes(".focus-btn{") && CSS_STRUCTURE.includes("var(--text-mono-badge)"), "focus-btn not wired to the mono-badge type token");
+        assert.ok(CSS_STRUCTURE.includes(".insight-row{") && CSS_STRUCTURE.includes("var(--border-on-light)"), "insight-row not wired to the border-on-light token");
     });
 
-    check("index page: no --quality -> Modules grid still renders (regression, unaffected by the drilldown follow-up)", () => {
+    check("gen-docs default (--quality-less) output is byte-for-byte unaffected by the adr-phase-n token pass", () => {
         const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] })];
-        const idx = buildSite(modules, { projectName: "Test" }).find(p => p.path === "index.html");
-        assert.ok(idx.html.includes("module-grid"), "Modules grid must still render when --quality is not used");
-        assert.ok(idx.html.includes('<div class="section-title">Modules</div>'), "Modules section heading must still render in the index body when --quality is not used");
+        const before = buildSite(modules, { projectName: "Test", version: "1.0.0" });
+        const after = buildSite(modules, { projectName: "Test", version: "1.0.0" });
+        assert.deepStrictEqual(before.map(p => p.path), after.map(p => p.path), "page set changed across two identical calls");
+        before.forEach((p, i) => assert.strictEqual(p.html, after[i].html, p.path + " is not byte-identical across two identical calls"));
     });
 
-    check("sidebar module navigation is unaffected when the index Modules grid is removed under --quality", () => {
-        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] }), makeMod("/proj/src/b.ts", { functions: [makeFunc("go")] })];
-        const quality = makeQuality();
-        const idx = buildSite(modules, { projectName: "Test", quality }).find(p => p.path === "index.html");
-        assert.ok(idx.html.includes("sidebar-inner"), "sidebar should still be present");
-        assert.ok(idx.html.includes(">a<") || idx.html.includes("modules/"), "sidebar should still link to module pages");
+
+    check("CSS_STRUCTURE: story-function-level-health-drilldown chip-row selectors present", () => {
+        assert.ok(CSS_STRUCTURE.includes(".qfn-chip-row{"), ".qfn-chip-row missing");
+        assert.ok(CSS_STRUCTURE.includes(".qfn-grade{"), ".qfn-grade missing");
+        assert.ok(CSS_STRUCTURE.includes(".qfn-metric-dots{"), ".qfn-metric-dots missing");
+        assert.ok(CSS_STRUCTURE.includes(".qfn-smells{"), ".qfn-smells missing");
+    });
+
+    check("buildFunctionHealthLookup: matches by name + point-in-range, tightest (smallest) range wins on ambiguity", () => {
+        const { buildFunctionHealthLookup } = require("../lib/renderer.js");
+        const quality = {
+            result: {
+                files: [{
+                    filePath: "/proj/src/nested.ts",
+                    functions: [
+                        { name: "helper", startLine: 1, endLine: 100, healthScore: 50, maintainabilityIndex: 50, metrics: [], smells: [] },
+                        { name: "helper", startLine: 45, endLine: 55, healthScore: 10, maintainabilityIndex: 20, metrics: [], smells: [] },
+                    ],
+                }],
+            },
+        };
+        const lookup = buildFunctionHealthLookup(quality, "/proj/src/nested.ts");
+        const match = lookup.match("helper", 50);
+        assert.ok(match, "expected a match to be found");
+        assert.strictEqual(match.healthScore, 10, "expected the tightest (inner, 45-55) range to win over the wider (1-100) outer range");
+    });
+
+    check("buildFunctionHealthLookup: no quality data / no file entry / no matching line all return a safe no-op lookup", () => {
+        const { buildFunctionHealthLookup } = require("../lib/renderer.js");
+        assert.strictEqual(buildFunctionHealthLookup(null, "/proj/x.js").match("f", 1), null, "null quality should be a safe no-op");
+        assert.strictEqual(buildFunctionHealthLookup({ result: { files: [] } }, "/proj/x.js").match("f", 1), null, "unknown file should be a safe no-op");
+        const q = { result: { files: [{ filePath: "/proj/x.js", functions: [{ name: "f", startLine: 1, endLine: 5, healthScore: 90 }] }] } };
+        assert.strictEqual(buildFunctionHealthLookup(q, "/proj/x.js").match("f", 999), null, "a line outside every range should not match");
+        assert.strictEqual(buildFunctionHealthLookup(q, "/proj/x.js").match("g", 3), null, "a name with no matching entry should not match");
+    });
+
+    check("story-function-level-health-drilldown: functions with different health scores render visibly different chips, not one repeated file-level number", () => {
+        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("good", { line: 5 }), makeFunc("bad", { line: 25 })] })];
+        const quality = makeQuality({
+            result: Object.assign({}, makeQuality().result, {
+                files: [{
+                    filePath: "/proj/src/a.ts",
+                    functions: [
+                        { name: "good", startLine: 1, endLine: 10, healthScore: 95, maintainabilityIndex: 80, metrics: [{ name: "cyclomatic", value: 2, severity: "ok" }], smells: [] },
+                        { name: "bad", startLine: 20, endLine: 30, healthScore: 28, maintainabilityIndex: 15, metrics: [{ name: "cyclomatic", value: 40, severity: "error" }], smells: [{ id: "god-function", label: "god-function", reason: "too big" }] },
+                    ],
+                    summary: { weightedHealthScore: 60, weightedMI: 47, worstSeverity: "error", smellIds: ["god-function"] },
+                }],
+            }),
+        });
+        const modPage = buildSite(modules, { projectName: "Test", quality }).find(p => p.path.startsWith("modules/"));
+        assert.ok(modPage.html.includes("A 95"), "expected the healthy function's own grade+score (A 95), not a file-level number");
+        assert.ok(modPage.html.includes("F 28"), "expected the unhealthy function's own grade+score (F 28), distinct from the healthy one");
+        assert.ok(modPage.html.includes("smells: god-function"), "expected the smells chip scoped to the function that actually has smells");
+    });
+
+    check("story-function-level-health-drilldown: a function absent from code-multivitals's report renders the graceful fallback, never file-level data", () => {
+        const modules = [makeMod("/proj/src/b.ts", { functions: [makeFunc("mystery", { line: 5 })] })];
+        const quality = makeQuality({
+            result: Object.assign({}, makeQuality().result, {
+                files: [{ filePath: "/proj/src/b.ts", functions: [], summary: { weightedHealthScore: 99, weightedMI: 99, worstSeverity: "ok", smellIds: [] } }],
+            }),
+        });
+        const modPage = buildSite(modules, { projectName: "Test", quality }).find(p => p.path.startsWith("modules/"));
+        assert.ok(modPage.html.includes("No health data for this function."), "expected the per-function fallback text");
+        assert.strictEqual((modPage.html.match(/class="qfn-grade"/g) || []).length, 0, "no qfn-grade chip should render -- must never silently reuse the file-level aggregate as this function's own score");
+    });
+
+    check("story-function-level-health-drilldown: class constructor/method/getter are each matched by their own line; an unmatched setter falls back gracefully", () => {
+        const cls = makeClass("Widget", {
+            constructor: { line: 2, params: [], jsdocParams: [], throws: [], description: null },
+            methods: [{ name: "run", params: [], returnType: "void", visibility: "public", isStatic: false, isAbstract: false, isAsync: false, deprecated: null, description: null, jsdocParams: [], returns: null, throws: [], line: 10 }],
+            getters: [{ name: "value", returnType: "number", isStatic: false, deprecated: null, description: null, line: 20 }],
+            setters: [{ name: "value", params: [{ name: "v", type: "number" }], isStatic: false, deprecated: null, description: null, line: 25 }],
+        });
+        const modules = [makeMod("/proj/src/widget.ts", { classes: [cls] })];
+        const quality = makeQuality({
+            result: Object.assign({}, makeQuality().result, {
+                files: [{
+                    filePath: "/proj/src/widget.ts",
+                    functions: [
+                        { name: "constructor", startLine: 1, endLine: 5, healthScore: 91, maintainabilityIndex: 80, metrics: [], smells: [] },
+                        { name: "run", startLine: 8, endLine: 12, healthScore: 71, maintainabilityIndex: 60, metrics: [], smells: [] },
+                        { name: "value", startLine: 19, endLine: 21, healthScore: 61, maintainabilityIndex: 50, metrics: [], smells: [] },
+                    ],
+                }],
+            }),
+        });
+        const modPage = buildSite(modules, { projectName: "Test", quality }).find(p => p.path.startsWith("modules/"));
+        assert.ok(modPage.html.includes("91"), "constructor health score missing (bare 'constructor' name match, TICKET-1 finding)");
+        assert.ok(modPage.html.includes("71"), "method health score missing");
+        assert.ok(modPage.html.includes("61"), "getter health score missing");
+        assert.ok(modPage.html.includes("No health data for this function."), "setter at line 25 (outside the only 'value' entry's 19-21 range) should fall back, not reuse the getter's match");
+    });
+
+    check("story-function-level-health-drilldown: default (--quality-less) output never contains function-level chip markup", () => {
+        const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] })];
+        const pages = buildSite(modules, { projectName: "Test" });
+        const modPage = pages.find(p => p.path.startsWith("modules/"));
+        assert.ok(!modPage.html.includes("qfn-chip-row"), "qfn-chip-row must not appear without --quality");
     });
 
 };
