@@ -39,6 +39,61 @@ function fixtureDir() {
     return dir;
 }
 
+// task-ls-05: a multi-file, multi-directory fixture -- unlike fixtureDir()'s
+// single flat file, this actually exercises the sidebar tree (multiple
+// modules across nested subdirectories), which is what the linear-scaling
+// fix (task-ls-03/task-ls-04) touches. Deterministic/static content -- no
+// randomness -- so two independent gen-docs runs against it must produce
+// byte-identical output.
+function fixtureDirTree() {
+    const dir = tmpDir("scribe-gendocs-tree-src-");
+    const write = (rel, content) => {
+        const full = path.join(dir, rel);
+        fs.mkdirSync(path.dirname(full), { recursive: true });
+        fs.writeFileSync(full, content, "utf8");
+    };
+    write(
+        "index.ts",
+        "/**\n * Root entry point.\n * @returns {void}\n */\nexport function main() {\n  return;\n}\n",
+    );
+    write(
+        "utils/helper.ts",
+        "/**\n * A helper function.\n * @param {string} x\n * @returns {string}\n */\nexport function helper(x) {\n  return x;\n}\n",
+    );
+    write(
+        "utils/other.ts",
+        "/**\n * Another helper.\n * @returns {number}\n */\nexport function other() {\n  return 1;\n}\n",
+    );
+    write(
+        "services/deep/nested/worker.ts",
+        "/**\n * A worker class.\n */\nexport class Worker {\n  /**\n   * Runs the worker.\n   * @param {number} n\n   * @returns {number}\n   */\n  run(n) {\n    return n * 2;\n  }\n}\n",
+    );
+    write(
+        "services/api.ts",
+        "/**\n * API surface.\n * @param {string} id\n * @returns {string}\n */\nexport function getById(id) {\n  return id;\n}\n",
+    );
+    return dir;
+}
+
+// Recursively collects every file under `dir`, relative to `dir`, sorted --
+// used to byte-diff two full output trees (task-ls-05 AC1: "every generated
+// output file", not a spot check).
+function listFilesRecursive(dir) {
+    const out = [];
+    (function walk(rel) {
+        const full = path.join(dir, rel);
+        for (const entry of fs.readdirSync(full, { withFileTypes: true })) {
+            const relChild = rel ? rel + "/" + entry.name : entry.name;
+            if (entry.isDirectory()) {
+                walk(relChild);
+            } else {
+                out.push(relChild);
+            }
+        }
+    })("");
+    return out.sort();
+}
+
 // story-doc-version-switcher: a fixture variant whose extracted module content
 // actually differs run-to-run (an extra exported function), so successive
 // --data generations produce genuinely distinct site-data.json payloads --
@@ -249,6 +304,51 @@ module.exports = function runGenDocsTests(check) {
         run([fixtureDirRevision(1), "--out", out, "--data"]);
         const css = fs.readFileSync(path.join(out, "assets", "style.css"), "utf8");
         assert.ok(/\.version-switcher-menu\{[^}]*max-height:320px/.test(css), "expected .version-switcher-menu{...max-height:320px...} in assets/style.css");
+    });
+
+    // -- task-ls-05 (qa-automation-engineer, story-gendocs-linear-scaling AC7) --
+
+    check("gen-docs: full output tree is byte-identical across two independent runs against the same multi-directory input (permanent regression guard, extends the modules/-only pattern above to every generated file)", () => {
+        const src = fixtureDirTree();
+        const out1 = tmpDir("scribe-gendocs-treediff-a-");
+        const out2 = tmpDir("scribe-gendocs-treediff-b-");
+        const res1 = run([src, "--out", out1, "--title", "TreeDiff"]);
+        const res2 = run([src, "--out", out2, "--title", "TreeDiff"]);
+        assert.strictEqual(res1.status, 0, res1.stdout);
+        assert.strictEqual(res2.status, 0, res2.stdout);
+
+        const files1 = listFilesRecursive(out1);
+        const files2 = listFilesRecursive(out2);
+        assert.deepStrictEqual(files1, files2, "the two runs produced a different set of output files");
+        // 3 assets (style.css, app.js, search-index.js) + index.html + 5 module pages = 9.
+        assert.ok(files1.length >= 4 + 5, "sanity: expected at least 4 asset/index files + 5 module pages, got " + files1.length);
+
+        for (const f of files1) {
+            const c1 = fs.readFileSync(path.join(out1, f));
+            const c2 = fs.readFileSync(path.join(out2, f));
+            assert.ok(c1.equals(c2), `output file "${f}" differs between two independent runs against identical input -- this is exactly the class of bug task-ls-03/task-ls-04's caching could introduce if it leaked state across buildSite() calls`);
+        }
+    });
+
+    check("gen-docs --quality: full output tree (including the 4 health-detail pages) is byte-identical across two independent runs against the same input", () => {
+        const src = fixtureDirTree();
+        const out1 = tmpDir("scribe-gendocs-treediffq-a-");
+        const out2 = tmpDir("scribe-gendocs-treediffq-b-");
+        const res1 = run([src, "--out", out1, "--title", "TreeDiffQ", "--quality"]);
+        const res2 = run([src, "--out", out2, "--title", "TreeDiffQ", "--quality"]);
+        assert.strictEqual(res1.status, 0, res1.stdout);
+        assert.strictEqual(res2.status, 0, res2.stdout);
+
+        const files1 = listFilesRecursive(out1);
+        const files2 = listFilesRecursive(out2);
+        assert.deepStrictEqual(files1, files2, "the two --quality runs produced a different set of output files");
+        assert.ok(files1.some((f) => f === "health-attention.html"), "expected health-detail pages in --quality output");
+
+        for (const f of files1) {
+            const c1 = fs.readFileSync(path.join(out1, f));
+            const c2 = fs.readFileSync(path.join(out2, f));
+            assert.ok(c1.equals(c2), `--quality output file "${f}" differs between two independent runs against identical input`);
+        }
     });
 
 };

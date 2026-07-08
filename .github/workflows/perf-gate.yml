@@ -1,0 +1,52 @@
+name: Performance Gate
+
+# Guards against superlinear scaling regressions in gen-docs (renderer.js).
+# See docs/backlog/adr-linear-scaling-fix.md (AC6).
+#
+# Single pinned Node version (not the 18/20/22 matrix test.yml uses) --
+# deliberate, per the ADR: cross-version timing noise on a shared
+# correctness+perf job risks flaky false-positive gate failures and
+# conflates two different failure signals. This job owns timing only.
+#
+# CONFIRMED (task-ls-01, backend-engineer): the npm script is
+# `bench:perf-gate` (backed by bench/run-perf-gate.js), not the `bench:perf`
+# name originally guessed here -- updated to match package.json's actual
+# script entry. It:
+#   1. generates the 500/1000/2000-file fixture sets via
+#      bench/generate-fixtures.js into gitignored bench/generated/
+#      (reused across runs if already present)
+#   2. times `gen-docs` against each set
+#   3. computes time(2000)/time(500), asserts < 4.5x
+#   4. prints the timing table to stdout
+#   5. exits non-zero on failure (the threshold assertion lives in the
+#      script, not in this workflow -- this job is a thin runner)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  perf-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run perf gate (500/1000/2000-file fixtures, asserts time(2000)/time(500) < 4.5x)
+        run: npm run bench:perf-gate

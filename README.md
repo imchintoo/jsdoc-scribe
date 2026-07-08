@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/jsdoc-scribe.svg)](https://www.npmjs.com/package/jsdoc-scribe)
 [![npm downloads](https://img.shields.io/npm/dm/jsdoc-scribe.svg)](https://www.npmjs.com/package/jsdoc-scribe)
-[![Test](https://github.com/imchintoo/jsdoc-scribe/actions/workflows/test.yml/badge.svg)](https://github.com/imchintoo/jsdoc-scribe/actions/workflows/test.yml)
+<!-- [![Test](https://github.com/imchintoo/jsdoc-scribe/actions/workflows/test.yml/badge.svg)](https://github.com/imchintoo/jsdoc-scribe/actions/workflows/test.yml) -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/node/v/jsdoc-scribe.svg)](https://nodejs.org)
 [![Types: included](https://img.shields.io/badge/types-included-blue.svg)](./lib/index.d.ts)
@@ -11,7 +11,7 @@
 > **No AI. No LLM. No surprises.** Same input always produces the same output.
 
 
-Two CLIs, one dependency (`typescript`, used purely as a syntax parser), **201 passing tests** (deterministic, zero network calls — same self-test suite runs on every `npm test` and before every `npm publish`):
+Two CLIs, one dependency (`typescript`, used purely as a syntax parser), **233 passing tests** (deterministic, zero network calls — same self-test suite runs on every `npm test` and before every `npm publish`):
 
 `typescript` is listed as a regular `dependency`, not a `peerDependency`, on purpose: it's the
 parser for *every* file this tool touches, `.js` included, not just `.ts` — so it can't be
@@ -83,7 +83,31 @@ Measured directly against the CLIs, single Node process, no caching between runs
 
 Real multi-file project (1,000 files, 70K total LOC): `gen-comments --write` finishes in **1.03s at 115 MB**. Both CLIs scale close to linearly with source size — the ~300-500ms floor at small sizes is Node + TypeScript-parser startup, not per-line work.
 
-One known ceiling: `gen-docs` site generation slows superlinearly past ~300-500 source files (traced to redundant path-prefix recomputation in the sidebar/label logic) — tracked for a fix, see [Known limitations](#known-limitations).
+**`gen-docs` file-count scaling (v2.4.2+):** a superlinear ceiling past ~300-500 source
+files (traced to unmemoized sidebar path-prefix recomputation, re-walking the whole
+module tree on every page) was fixed in v2.4.2 — see the CHANGELOG for the before/after
+numbers and root cause. Synthetic multi-directory fixtures (`bench/generate-fixtures.js`,
+same generator the CI perf-gate uses), single-file-count sites, `gen-docs` end to end:
+
+| Files | Wall-clock |
+|---|---|
+| 100 | 0.44s |
+| 200 | 0.61s |
+| 300 | 0.71s |
+| 400 | 0.90s |
+| 500 | 2.40s |
+| 1,000 | 4.68s |
+
+Growth from 400&rarr;1,000 files (2.5x files) is now roughly 5.2x time — close to
+proportional, a dramatic change from the pre-fix curve (400 files alone used to take
+28s; 500 files didn't reliably finish). The 2,000-file point of the CI gate's own
+`time(2000)/time(500) < 4.5x` check is enforced automatically by
+`npm run bench:perf-gate` in CI on every push/PR (`.github/workflows/perf-gate.yml`) —
+run it yourself with `npm run bench:perf-gate` for current numbers on your machine;
+we're not hand-copying a single point-in-time 2,000-file number here since the gate
+re-measures it continuously and machine-to-machine variance would make a frozen number
+stale advertising. See [Known limitations](#known-limitations) for the residual
+(unrelated) memory-footprint note at very large file counts.
 
 ---
 
@@ -535,7 +559,7 @@ Enable GitHub Pages (Settings → Pages → Source: GitHub Actions).
 
 The PR quality gate above is a template — copy it into your own project's
 `.github/workflows/`. This repo's own CI is three separate workflows you can look at
-directly: [`test.yml`](./.github/workflows/test.yml) runs the 152-test suite on Node
+directly: [`test.yml`](./.github/workflows/test.yml) runs the 233-test suite on Node
 18/20/22 for every push and PR (that's the badge at the top of this README),
 [`docs.yml`](./.github/workflows/docs.yml) is the exact Pages-deploy job shown above, and
 [`publish.yml`](./.github/workflows/publish.yml) publishes tagged releases via npm's OIDC
@@ -561,7 +585,8 @@ details.
 - Multi-declarator statements (`const a = 1, b = 2;`) get one combined block.
 - `.d.ts` files are skipped.
 - `gen-docs` doesn't serve — use `npx serve docs` or deploy statically.
-- `gen-docs` site generation degrades superlinearly past ~300-500 source files (redundant per-page path-prefix recomputation) — fix in progress, tracked in `docs/backlog/`.
+- `gen-docs`'s per-page superlinear scaling past ~300-500 files (unmemoized sidebar path-prefix recomputation) is fixed as of v2.4.2 — see [Benchmarks](#benchmarks) and the CHANGELOG. The parse phase (TS Compiler API per file) was profiled and confirmed *not* co-dominant at the file counts tested, so it stays single-threaded (`worker_threads` explicitly out of scope for this fix — see `docs/backlog/adr-linear-scaling-fix.md`).
+- `gen-docs` holds every generated page's full HTML (including its own embedded sidebar markup) in memory until the whole site has been built, then writes it all to disk — at very large file counts (order of thousands) this is a memory-footprint concern independent of the scaling fix above. Not yet sized against real hardware; tracked in `docs/backlog/task-ls-04-sidebar-node-caching.md`'s implementation notes.
 
 See [CHANGELOG.md](./CHANGELOG.md) for release history.
 

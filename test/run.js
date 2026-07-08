@@ -18,6 +18,10 @@
  *  10. import-graph  (lib/import-graph.js) — new in v1.20.0 (project dashboard)
  *  11. project-facts (lib/project-facts.js) — new in v1.20.0 (project dashboard)
  *  12. quality       (lib/quality.js) — new in v1.20.0 (code-multivitals integration)
+ *  13. site-data     (lib/site-data.js) — new in v2.2.0 (story-file-detail-redesign)
+ *  14. gen-docs       (bin/gen-docs.js) — new in v2.2.0 (--data/--from-data)
+ *  15. renderer-memoization (lib/renderer.js) — new in v2.4.2 (task-ls-05,
+ *      cross-call cache-isolation guard for the linear-scaling fix)
  */
 
 const fs   = require("fs");
@@ -228,6 +232,14 @@ require("./site-data.test.js")(check);
 // ---------------------------------------------------------------------------
 console.log("\n-- gen-docs --");
 require("./gen-docs.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 15 — renderer memoization (lib/renderer.js) — task-ls-05
+// (story-gendocs-linear-scaling: cross-call cache-isolation regression guard
+// for task-ls-03's commonRoot WeakMap + task-ls-04's per-tree-node cache)
+// ---------------------------------------------------------------------------
+console.log("\n-- renderer-memoization --");
+require("./renderer-memoization.test.js")(check);
 
 // ---------------------------------------------------------------------------
 // Summary

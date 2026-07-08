@@ -1,6 +1,6 @@
 {
     "name": "jsdoc-scribe",
-    "version": "2.4.1",
+    "version": "2.4.2",
     "description": "Automated, AST-based JSDoc comment generator and static documentation site builder for JavaScript & TypeScript. Fast, deterministic, and 100% local (No AI involved).",
     "main": "lib/index.js",
     "types": "./lib/index.d.ts",
@@ -35,8 +35,9 @@
         "docs": "node bin/gen-docs.js sample --out docs --title jsdoc-scribe --quality",
         "docs:internal": "node bin/gen-docs.js lib bin packages/eslint-plugin-jsdoc-scribe --quality --out docs-internal --title jsdoc-scribe",
         "quality": "node bin/gen-docs.js lib bin packages/eslint-plugin-jsdoc-scribe --quality --quality-reporter console",
-        "dashboard": "node bin/gen-docs.js lib bin packages/eslint-plugin-jsdoc-scribe --quality --data --out docs-dashboard --title jsdoc-scribe",
+        "dashboard": "node bin/gen-docs.js lib bin packages/eslint-plugin-jsdoc-scribe sample --quality --data --out docs-dashboard --title jsdoc-scribe",
         "test": "node test/run.js",
+        "bench:perf-gate": "node bench/run-perf-gate.js",
         "prepublishOnly": "npm test"
     },
     "keywords": [

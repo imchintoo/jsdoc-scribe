@@ -1,3 +1,26 @@
+## [2.4.2] - 2026-07-08
+
+### Fixed
+- **`gen-docs` superlinear scaling past ~300-500 source files** (`docs/backlog/story-gendocs-linear-scaling.md`, `docs/backlog/adr-linear-scaling-fix.md`). Root cause, confirmed via `node --prof` (not just a code read): `commonRoot(modules)` in `lib/renderer.js` re-walked every module's split file path on every call, reached through `moduleLabel`/`moduleHtmlPath` once per sidebar-tree leaf inside `renderTreeLevel`, itself invoked once per generated page (`buildSidebar()`) -- an O(N&sup3;) path overall, not the trie-building step (already fixed in an earlier sprint). Two changes, both additive/targeted (no restructuring of surrounding logic):
+  - `commonRoot()` is now memoized in a `WeakMap` keyed on the `modules` **array reference** (deliberately not a filePath string, to avoid two independent `buildSite()` calls bleeding a cached label into each other -- see the ADR's Alternatives).
+  - The sidebar's per-page render now precomputes each tree node's default (closed, non-active) HTML **once per `buildSite()` call** and reuses it for every page; only the active ancestor chain + active leaf are rendered fresh per page (was: the entire tree, every page). The redundant per-page `__parent`-linking walk was also folded into this one-time pass (same call chain, not called out separately in the original ticket list, disclosed in `docs/backlog/task-ls-04-sidebar-node-caching.md`'s implementation notes).
+  - `worker_threads` parallelization of the parse phase was evaluated and explicitly **not** pursued -- profiling at N=300 showed TS Compiler API parse functions at 0.0%-0.1% of JS ticks, nowhere near co-dominant with the render-phase bottleneck above.
+
+### Added
+- `bench/generate-fixtures.js` + `bench/run-perf-gate.js` (`npm run bench:perf-gate`): a deterministic (seeded-PRNG) synthetic-fixture generator and a perf-gate script asserting `time(2000 files) / time(500 files) < 4.5x`. `.github/workflows/perf-gate.yml`: runs the gate on every push/PR to `main`.
+- `test/renderer-memoization.test.js`: dedicated cross-call cache-isolation regression suite for the two caches above (two `buildSite()` calls sharing a filePath string but a different common root must not bleed a label/href between them).
+- `test/gen-docs.test.js`: a permanent full-output-tree byte-diff regression test (every generated file, not a `modules/`-only spot check, both with and without `--quality`) -- extends the existing byte-diff pattern from a one-time verification into an automated guard against future `renderer.js` regressions.
+
+### Performance
+- Wall-clock, synthetic multi-directory fixtures, `gen-docs` end to end (single machine, informal numbers -- see README Benchmarks for the full table and the CI gate for the authoritative, continuously-re-measured check): 400 files went from **28.38s pre-fix to 0.90s post-fix**; 500 files did not reliably complete pre-fix within a reasonable window and now completes in **2.40s**; 1,000 files in **4.68s**. See `docs/backlog/task-ls-02-profiling-spike.md` for the full profiling data and `docs/backlog/task-ls-04-sidebar-node-caching.md` for the post-fix numbers.
+
+### Disclosed trade-offs / known follow-ups
+- A pre-existing, unrelated memory-footprint characteristic surfaced during verification: `buildSite()` holds every generated page's full HTML (including each page's own embedded sidebar markup) in memory until the whole site is built. This is not something this fix introduced or worsened, but it means very large sites (order of thousands of files) may hit memory limits on constrained hardware independent of the wall-clock fix above -- not yet sized against realistic CI hardware, tracked as an open follow-up rather than silently declared fine. See README's Known limitations.
+- The 2,000-file point of the perf-gate's own threshold check was not hand-verified in this development environment (memory-constrained sandbox, see above) -- the CI gate (`.github/workflows/perf-gate.yml`) re-measures it on every push/PR going forward, which is the authoritative, continuously-current source rather than a single frozen number in this changelog.
+
+### Tests
+- Test suite grew from 228 to 234 assertions (2 new full-tree byte-diff tests in `test/gen-docs.test.js`, 3 new cross-call isolation tests in the new `test/renderer-memoization.test.js`). All pre-existing 228 assertions pass unchanged -- verified via byte-diff against `sample/`, both with and without `--quality`, confirming zero output/behavior change (story AC7).
+
 ## [2.4.0] - 2026-07-07
 
 ### Added

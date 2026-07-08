@@ -159,3 +159,5 @@ site-data.json
 site-data-history/
 # story-doc-version-switcher: rendered historical snapshots -- generated, never committed
 site-versions/
+# task-ls-01: synthetic perf-benchmark fixtures -- generated, never committed
+bench/generated/
