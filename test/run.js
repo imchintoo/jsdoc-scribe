@@ -22,6 +22,9 @@
  *  14. gen-docs       (bin/gen-docs.js) — new in v2.2.0 (--data/--from-data)
  *  15. renderer-memoization (lib/renderer.js) — new in v2.4.2 (task-ls-05,
  *      cross-call cache-isolation guard for the linear-scaling fix)
+ *  16. cli-failure-accounting (bin/cli.js) — new for the TS7 fix-track
+ *      (task-ts7-02 / task-ts7-04): per-file failure accounting across the
+ *      checkDrift/lint/fix, check/dry-run, and write loops.
  */
 
 const fs   = require("fs");
@@ -240,6 +243,14 @@ require("./gen-docs.test.js")(check);
 // ---------------------------------------------------------------------------
 console.log("\n-- renderer-memoization --");
 require("./renderer-memoization.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 16 — cli failure accounting (bin/cli.js) — task-ts7-02 / task-ts7-04
+// (story-ts-major-break-silent-failure: per-file failure accounting so a
+// file that throws mid-run can never be silently dropped from the result)
+// ---------------------------------------------------------------------------
+console.log("\n-- cli-failure-accounting --");
+require("./cli-failure-accounting.test.js")(check);
 
 // ---------------------------------------------------------------------------
 // Summary

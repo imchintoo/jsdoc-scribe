@@ -16,7 +16,7 @@ Minimal source snippet + the exact command you ran (`gen-comments ...` / `gen-do
 What you expected to happen instead.
 
 **Environment**
-- jsdoc-scribe version: (`npx jsdoc-scribe --version`)
+- jsdoc-scribe version: (`npx gen-comments --version`)
 - Node version:
 - OS:
 
