@@ -136,6 +136,7 @@ function main() {
         let lintTotal = 0;
         let fixedTotal = 0;
         let filesFixed = 0;
+        let failedTotal = 0;
 
         for (const file of files) {
             if (checkDrift) {
@@ -144,6 +145,7 @@ function main() {
                     moduleData = extractModule(file);
                 } catch (err) {
                     console.error(`  ${file} -> FAILED: ${err.message}`);
+                    failedTotal += 1;
                     continue;
                 }
                 const issues = detectDrift(moduleData);
@@ -168,6 +170,7 @@ function main() {
                         result = fixModule(file);
                     } catch (err) {
                         console.error(`  ${file} -> FAILED: ${err.message}`);
+                        failedTotal += 1;
                         continue;
                     }
                     if (result.fixedCount > 0) {
@@ -189,6 +192,7 @@ function main() {
                         moduleData = extractModule(file);
                     } catch (err) {
                         console.error(`  ${file} -> FAILED: ${err.message}`);
+                        failedTotal += 1;
                         continue;
                     }
                     const issues = lintModule(moduleData);
@@ -205,7 +209,8 @@ function main() {
         }
 
         if (checkDrift) {
-            if (driftTotal === 0) console.log("No drift detected. All existing JSDoc blocks match their AST.");
+            if (driftTotal === 0 && failedTotal === 0) console.log("No drift detected. All existing JSDoc blocks match their AST.");
+            else if (driftTotal === 0) console.log(`\nExisting JSDoc blocks matched their AST among successfully parsed files, but ${failedTotal} file(s) failed to parse — see above.`);
             else console.log(`\n${driftTotal} drift issue(s) found.`);
         }
         if (fix) {
@@ -213,10 +218,12 @@ function main() {
             if (lintTotal === 0) console.log("No remaining lint issues.");
             else console.log(`${lintTotal} issue(s) remain — see above (typically check-tag-names, which --fix never auto-corrects).`);
         } else if (lint) {
-            if (lintTotal === 0) console.log("No lint issues found.");
+            if (lintTotal === 0 && failedTotal === 0) console.log("No lint issues found.");
+            else if (lintTotal === 0) console.log(`\nNo issues found among successfully parsed files, but ${failedTotal} file(s) failed to parse — see above.`);
             else console.log(`\n${lintTotal} lint issue(s) found.`);
         }
-        if (driftTotal > 0 || lintTotal > 0) process.exitCode = 1;
+        if (failedTotal > 0) console.log(`\n${failedTotal} file(s) failed to parse.`);
+        if (driftTotal > 0 || lintTotal > 0 || failedTotal > 0) process.exitCode = 1;
         return;
     }
 
@@ -248,6 +255,7 @@ function main() {
         console.log(`Analysing ${files.length} file(s)...\n`);
         const { aggregateCoverage } = require("../lib/coverage.js");
         const fileResults = [];
+        let failedTotal = 0;
         for (const file of files) {
             try {
                 const stats = analyseFile(file);
@@ -258,13 +266,16 @@ function main() {
                 }
             } catch (err) {
                 console.error(`  ${file} -> FAILED: ${err.message}`);
+                failedTotal += 1;
             }
         }
         const agg = aggregateCoverage(fileResults);
         const { documented: documentedSymbols, total: totalSymbols, undocumented: undocumentedSymbols, pct } = agg;
         console.log(`\nCoverage: ${documentedSymbols}/${totalSymbols} symbols documented (${pct}%)`);
-        if (undocumentedSymbols === 0) {
+        if (undocumentedSymbols === 0 && failedTotal === 0) {
             console.log("All symbols are documented.");
+        } else if (undocumentedSymbols === 0) {
+            console.log(`All symbols documented among successfully parsed files, but ${failedTotal} file(s) failed to parse — see above.`);
         } else {
             console.log(`${undocumentedSymbols} symbol(s) missing documentation.`);
             if (check) {
@@ -274,12 +285,15 @@ function main() {
                 console.log("\nRun gen-comments --write to add the blocks shown above.");
             }
         }
+        if (failedTotal > 0) console.log(`\n${failedTotal} file(s) failed to parse.`);
+        if (failedTotal > 0) process.exitCode = 1;
         return;
     }
 
     console.log(`Scanning ${files.length} file(s)...`);
     let totalBlocks = 0;
     let touchedFiles = 0;
+    let failedTotal = 0;
     for (const file of files) {
         try {
             const count = processFile(file, { write, force });
@@ -287,12 +301,15 @@ function main() {
             if (count > 0) touchedFiles += 1;
         } catch (err) {
             console.error(`  ${file} -> FAILED: ${err.message}`);
+            failedTotal += 1;
         }
     }
 
     console.log(
         `\nDone. ${totalBlocks} comment block(s) added across ${touchedFiles} file(s) ` + `(${files.length} scanned).`,
     );
+    if (failedTotal > 0) console.log(`\n${failedTotal} file(s) failed to parse.`);
+    if (failedTotal > 0) process.exitCode = 1;
     if (!write) {
         console.log("This was a preview run — pass --write to edit the original files in place.");
     }

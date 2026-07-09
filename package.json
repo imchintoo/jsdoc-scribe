@@ -83,7 +83,7 @@
         "url": "https://github.com/imchintoo/jsdoc-scribe/issues"
     },
     "dependencies": {
-        "typescript": ">=5.0.0"
+        "typescript": ">=5.0.0 <7.0.0"
     },
     "peerDependencies": {
         "code-multivitals": ">=1.6.0"
