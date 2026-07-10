@@ -10,6 +10,9 @@ const pkg = require("../package.json");
 const root = path.resolve(__dirname, "..");
 const outDir = path.join(root, "_site");
 const docsDir = path.join(outDir, "docs");
+const blogDir = path.join(outDir, "blog");
+const docsSourceDir = path.join(root, "docs-site", "docs");
+const postsSourceDir = path.join(root, "docs-site", "posts");
 
 const demoPanels = [
     {
@@ -61,16 +64,220 @@ function attr(value) {
     return esc(value).replace(/\r?\n/g, "&#10;");
 }
 
+function absoluteUrl(relativePath) {
+    if (!relativePath || relativePath === "index.html") return site.baseUrl;
+    return new URL(relativePath.replace(/\\/g, "/"), site.baseUrl).toString();
+}
+
+function pageUrl(depth, currentPath) {
+    return absoluteUrl(currentPath || (depth ? "docs/quick-start.html" : "index.html"));
+}
+
+function imageUrl(imagePath, currentPath) {
+    if (/^https?:\/\//.test(imagePath || "")) return imagePath;
+    if (!imagePath || imagePath === site.image) return absoluteUrl(site.image);
+    const base = currentPath ? new URL(".", absoluteUrl(currentPath)).toString() : site.baseUrl;
+    return new URL(imagePath || site.image, base).toString();
+}
+
+function jsonLd(data) {
+    return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
+}
+
 function slugify(value) {
     return String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+function parseFrontMatter(source, filePath) {
+    const raw = source.replace(/^\uFEFF/, "");
+    if (!raw.startsWith("---\n") && !raw.startsWith("---\r\n")) {
+        return { data: {}, body: raw };
+    }
+    const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+    if (!match) throw new Error(`Invalid frontmatter in ${filePath}`);
+    const data = {};
+    match[1].split(/\r?\n/).forEach((line) => {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) return;
+        const idx = trimmed.indexOf(":");
+        if (idx === -1) return;
+        const key = trimmed.slice(0, idx).trim();
+        data[key] = parseFrontMatterValue(trimmed.slice(idx + 1).trim());
+    });
+    return { data, body: raw.slice(match[0].length) };
+}
+
+function parseFrontMatterValue(value) {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    if (/^\[.*\]$/.test(value)) {
+        return value.slice(1, -1).split(",").map((item) => item.trim()).filter(Boolean);
+    }
+    return value.replace(/^["']|["']$/g, "");
+}
+
+function readMarkdownFiles(dir) {
+    if (!fs.existsSync(dir)) return [];
+    return fs.readdirSync(dir)
+        .filter((name) => name.endsWith(".md"))
+        .sort()
+        .map((name) => {
+            const filePath = path.join(dir, name);
+            const parsed = parseFrontMatter(fs.readFileSync(filePath, "utf8"), filePath);
+            return { filePath, fileName: name, ...parsed.data, markdown: parsed.body.trim() };
+        });
+}
+
+function loadMarkdownContent() {
+    site.pages = readMarkdownFiles(docsSourceDir).map((doc) => ({
+        slug: doc.slug || slugify(doc.title || path.basename(doc.fileName, ".md")),
+        title: doc.title || doc.slug,
+        description: doc.description || "",
+        command: doc.command,
+        changelog: Boolean(doc.changelog),
+        sections: parseDocSections(doc.markdown)
+    }));
+    site.posts = readMarkdownFiles(postsSourceDir).map((post) => ({
+        slug: post.slug || slugify(post.title || path.basename(post.fileName, ".md")),
+        title: post.title || post.slug,
+        description: post.description || "",
+        date: post.date || new Date().toISOString().slice(0, 10),
+        readingTime: post.readingTime || estimateReadingTime(post.markdown),
+        tags: Array.isArray(post.tags) ? post.tags : [],
+        image: post.image || "../assets/preview.svg",
+        content: parsePostBlocks(post.markdown)
+    })).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+}
+
+function parseDocSections(markdown) {
+    const sections = [];
+    let current = null;
+    let paragraph = [];
+    let code = [];
+    let inCode = false;
+
+    function ensureSection() {
+        if (!current) current = { title: "Overview", body: [] };
+        return current;
+    }
+    function flushParagraph() {
+        if (paragraph.length) {
+            ensureSection().body.push(paragraph.join(" "));
+            paragraph = [];
+        }
+    }
+    function flushCode() {
+        ensureSection().body.push({ code: code.join("\n") });
+        code = [];
+    }
+    markdown.split(/\r?\n/).forEach((line) => {
+        if (line.startsWith("```")) {
+            if (inCode) {
+                flushCode();
+                inCode = false;
+            } else {
+                flushParagraph();
+                inCode = true;
+            }
+            return;
+        }
+        if (inCode) {
+            code.push(line);
+            return;
+        }
+        if (line.startsWith("## ")) {
+            flushParagraph();
+            if (current) sections.push(current);
+            current = { title: line.replace(/^##\s+/, "").trim(), body: [] };
+        } else if (line.trim()) {
+            paragraph.push(line.trim());
+        } else {
+            flushParagraph();
+        }
+    });
+    if (inCode) flushCode();
+    flushParagraph();
+    if (current) sections.push(current);
+    return sections;
+}
+
+function parsePostBlocks(markdown) {
+    const blocks = [];
+    let paragraph = [];
+    let code = [];
+    let inCode = false;
+
+    function flushParagraph() {
+        if (paragraph.length) {
+            blocks.push({ type: "paragraph", text: paragraph.join(" ") });
+            paragraph = [];
+        }
+    }
+    function flushCode() {
+        blocks.push({ type: "code", code: code.join("\n") });
+        code = [];
+    }
+    markdown.split(/\r?\n/).forEach((line) => {
+        if (line.startsWith("```")) {
+            if (inCode) {
+                flushCode();
+                inCode = false;
+            } else {
+                flushParagraph();
+                inCode = true;
+            }
+            return;
+        }
+        if (inCode) {
+            code.push(line);
+            return;
+        }
+        const image = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+        const video = line.match(/^@\[video\]\((.*)\)$/);
+        if (line.startsWith("## ")) {
+            flushParagraph();
+            blocks.push({ type: "heading", text: line.replace(/^##\s+/, "").trim() });
+        } else if (line.startsWith("> ")) {
+            flushParagraph();
+            blocks.push({ type: "quote", text: line.replace(/^>\s+/, "").trim() });
+        } else if (image) {
+            flushParagraph();
+            blocks.push({ type: "image", alt: image[1], src: image[2] });
+        } else if (video) {
+            flushParagraph();
+            blocks.push({ type: "video", ...parseInlineAttrs(video[1]) });
+        } else if (line.trim()) {
+            paragraph.push(line.trim());
+        } else {
+            flushParagraph();
+        }
+    });
+    if (inCode) flushCode();
+    flushParagraph();
+    return blocks;
+}
+
+function parseInlineAttrs(source) {
+    const attrs = {};
+    source.replace(/(\w+)="([^"]*)"/g, (_, key, value) => {
+        attrs[key] = value;
+        return "";
+    });
+    return attrs;
+}
+
+function estimateReadingTime(markdown) {
+    const words = markdown.replace(/```[\s\S]*?```/g, "").trim().split(/\s+/).filter(Boolean).length;
+    return `${Math.max(1, Math.ceil(words / 220))} min read`;
+}
+
 function navHtml(depth, activeSlug) {
     const prefix = depth ? "../" : "";
-    const docPrefix = depth ? "" : "docs/";
+    const docHref = depth ? "../docs/quick-start.html" : "docs/quick-start.html";
+    const blogHref = depth ? "../blog/index.html" : "blog/index.html";
     const docs = site.pages.map((page) => {
         const active = page.slug === activeSlug ? " active" : "";
-        return `<a class="nav-link${active}" href="${docPrefix}${page.slug}.html">${esc(page.title)}</a>`;
+        return `<a class="nav-link${active}" href="${page.slug}.html">${esc(page.title)}</a>`;
     }).join("");
     return `<header class="site-header">
         <a class="brand" href="${prefix}index.html" aria-label="jsdoc-scribe home">
@@ -78,26 +285,59 @@ function navHtml(depth, activeSlug) {
             <span>jsdoc-scribe</span>
         </a>
         <nav class="top-links" aria-label="Primary">
-            <a href="${docPrefix}quick-start.html">Docs</a>
+            <a href="${docHref}">Docs</a>
+            <a href="${blogHref}">Blog</a>
             <a href="${prefix}api/index.html">API</a>
             <a href="https://github.com/imchintoo/jsdoc-scribe">GitHub</a>
         </nav>
     </header>
-    ${depth ? `<aside class="docs-sidebar" aria-label="Documentation">${docs}<a class="nav-link" href="../api/index.html">API Reference</a></aside>` : ""}`;
+    ${activeSlug ? `<aside class="docs-sidebar" aria-label="Documentation">${docs}<a class="nav-link" href="../api/index.html">API Reference</a></aside>` : ""}`;
 }
 
-function pageShell({ title, description, body, depth = 0, activeSlug = "" }) {
+function pageShell({ title, description, body, depth = 0, activeSlug = "", currentPath = "index.html", type = "website", image, published, structuredData }) {
     const cssHref = depth ? "../assets/site.css" : "assets/site.css";
     const jsHref = depth ? "../assets/site.js" : "assets/site.js";
+    const canonical = pageUrl(depth, currentPath);
+    const metaTitle = `${title} | jsdoc-scribe`;
+    const metaDescription = description || site.description;
+    const socialImage = imageUrl(image || site.image, currentPath);
+    const schema = structuredData || {
+        "@context": "https://schema.org",
+        "@type": type === "article" ? "Article" : "WebPage",
+        headline: title,
+        description: metaDescription,
+        url: canonical,
+        image: socialImage,
+        author: { "@type": "Person", name: site.author },
+        publisher: { "@type": "Organization", name: site.title },
+        datePublished: published || undefined
+    };
     return `<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>${esc(title)} | jsdoc-scribe</title>
-    <meta name="description" content="${esc(description || site.description)}">
+    <title>${esc(metaTitle)}</title>
+    <meta name="description" content="${esc(metaDescription)}">
+    <meta name="keywords" content="${esc(site.keywords.join(", "))}">
+    <meta name="author" content="${esc(site.author)}">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <link rel="canonical" href="${esc(canonical)}">
+    <meta property="og:type" content="${esc(type)}">
+    <meta property="og:site_name" content="${esc(site.title)}">
+    <meta property="og:title" content="${esc(metaTitle)}">
+    <meta property="og:description" content="${esc(metaDescription)}">
+    <meta property="og:url" content="${esc(canonical)}">
+    <meta property="og:image" content="${esc(socialImage)}">
+    <meta property="og:locale" content="${esc(site.locale)}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="${esc(metaTitle)}">
+    <meta name="twitter:description" content="${esc(metaDescription)}">
+    <meta name="twitter:image" content="${esc(socialImage)}">
+    <link rel="alternate" type="application/rss+xml" title="jsdoc-scribe blog" href="${esc(absoluteUrl("blog/rss.xml"))}">
     <link rel="stylesheet" href="${cssHref}">
     <script src="${jsHref}" defer></script>
+    ${jsonLd(schema)}
 </head>
 <body>
     ${navHtml(depth, activeSlug)}
@@ -176,7 +416,18 @@ function renderLanding() {
     writeFile(path.join(outDir, "index.html"), pageShell({
         title: "What is jsdoc-scribe?",
         description: site.description,
-        body
+        body,
+        currentPath: "index.html",
+        structuredData: {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: site.title,
+            description: site.description,
+            url: absoluteUrl("index.html"),
+            applicationCategory: "DeveloperApplication",
+            operatingSystem: "Cross-platform",
+            author: { "@type": "Person", name: site.author }
+        }
     }));
 }
 
@@ -206,8 +457,8 @@ function renderDocPage(page, index) {
             </div>
             <div class="aside-card command-card">
                 <span class="aside-label">Try next</span>
-                <code>${esc(getPageCommand(page.slug))}</code>
-                <button class="copy-btn" type="button" data-copy="${attr(getPageCommand(page.slug))}">Copy</button>
+                <code>${esc(getPageCommand(page))}</code>
+                <button class="copy-btn" type="button" data-copy="${attr(getPageCommand(page))}">Copy</button>
             </div>
             <a class="next-card" href="${esc(nextPage.slug)}.html">
                 <span>Next guide</span>
@@ -220,11 +471,143 @@ function renderDocPage(page, index) {
         description: page.description,
         body,
         depth: 1,
-        activeSlug: page.slug
+        activeSlug: page.slug,
+        currentPath: `docs/${page.slug}.html`
     }));
 }
 
-function getPageCommand(slug) {
+function renderBlogIndex() {
+    const cards = site.posts.map((post) => `<article class="post-card reveal">
+        <a class="post-media" href="${esc(post.slug)}.html">
+            <img src="${esc(post.image)}" alt="${esc(post.title)}" loading="lazy">
+        </a>
+        <div class="post-card-body">
+            <div class="post-meta">${esc(formatDate(post.date))} · ${esc(post.readingTime)}</div>
+            <h2><a href="${esc(post.slug)}.html">${esc(post.title)}</a></h2>
+            <p>${esc(post.description)}</p>
+            <div class="tag-row">${post.tags.map((tag) => `<span>${esc(tag)}</span>`).join("")}</div>
+        </div>
+    </article>`).join("");
+    const body = `<main class="blog-home">
+        <section class="blog-hero reveal">
+            <p class="eyebrow">Blog</p>
+            <h1>Guides, release notes, and documentation craft.</h1>
+            <p class="lead">Medium-style posts for tutorials, product updates, SEO content, images, videos, and deeper integration stories around jsdoc-scribe.</p>
+        </section>
+        <section class="post-grid">${cards}</section>
+    </main>`;
+    writeFile(path.join(blogDir, "index.html"), pageShell({
+        title: "Blog",
+        description: "Guides and articles about JavaScript documentation, TypeScript documentation, JSDoc automation, and GitHub Pages publishing.",
+        body,
+        depth: 1,
+        currentPath: "blog/index.html",
+        structuredData: {
+            "@context": "https://schema.org",
+            "@type": "Blog",
+            name: "jsdoc-scribe Blog",
+            description: "Guides and articles about JavaScript documentation and jsdoc-scribe.",
+            url: absoluteUrl("blog/index.html"),
+            publisher: { "@type": "Organization", name: site.title }
+        }
+    }));
+}
+
+function renderBlogPost(post) {
+    const body = `<main class="article-layout">
+        <article class="article">
+            <header class="article-header">
+                <p class="eyebrow">Article</p>
+                <h1>${esc(post.title)}</h1>
+                <p class="lead">${esc(post.description)}</p>
+                <div class="post-meta">${esc(formatDate(post.date))} · ${esc(post.readingTime)} · ${esc(site.author)}</div>
+                <div class="tag-row">${post.tags.map((tag) => `<span>${esc(tag)}</span>`).join("")}</div>
+            </header>
+            ${renderPostBlocks(post.content)}
+        </article>
+        <aside class="article-aside">
+            <div class="aside-card progress-card">
+                <span class="aside-label">Reading progress</span>
+                <div class="progress-ring" data-progress-ring><span data-progress-value>0%</span></div>
+            </div>
+            <div class="aside-card">
+                <span class="aside-label">Share</span>
+                <a class="share-link" href="https://twitter.com/intent/tweet?url=${encodeURIComponent(absoluteUrl(`blog/${post.slug}.html`))}&text=${encodeURIComponent(post.title)}">Post on X</a>
+                <a class="share-link" href="https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(absoluteUrl(`blog/${post.slug}.html`))}">Share on LinkedIn</a>
+            </div>
+            <a class="next-card" href="index.html">
+                <span>More posts</span>
+                <strong>Back to blog</strong>
+            </a>
+        </aside>
+    </main>`;
+    writeFile(path.join(blogDir, `${post.slug}.html`), pageShell({
+        title: post.title,
+        description: post.description,
+        body,
+        depth: 1,
+        currentPath: `blog/${post.slug}.html`,
+        type: "article",
+        image: post.image,
+        published: post.date,
+        structuredData: {
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            headline: post.title,
+            description: post.description,
+            image: imageUrl(post.image, `blog/${post.slug}.html`),
+            datePublished: post.date,
+            dateModified: post.date,
+            author: { "@type": "Person", name: site.author },
+            publisher: { "@type": "Organization", name: site.title },
+            mainEntityOfPage: absoluteUrl(`blog/${post.slug}.html`)
+        }
+    }));
+}
+
+function renderPostBlocks(blocks) {
+    return blocks.map((block) => {
+        if (block.type === "paragraph") return `<p>${esc(block.text)}</p>`;
+        if (block.type === "heading") return `<h2 id="${esc(slugify(block.text))}">${esc(block.text)}</h2>`;
+        if (block.type === "quote") return `<blockquote>${esc(block.text)}</blockquote>`;
+        if (block.type === "code") {
+            return `<div class="code-wrap article-code">
+                <button class="copy-btn" type="button" data-copy="${attr(block.code)}">Copy</button>
+                <pre class="code-block"><code>${esc(block.code)}</code></pre>
+            </div>`;
+        }
+        if (block.type === "image") {
+            return `<figure class="article-figure">
+                <img src="${esc(block.src)}" alt="${esc(block.alt || "")}" loading="lazy">
+                ${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ""}
+            </figure>`;
+        }
+        if (block.type === "video") {
+            if (!block.src) {
+                return `<figure class="article-figure video-placeholder">
+                    <img src="${esc(block.poster || "../assets/preview.svg")}" alt="${esc(block.caption || "Video preview")}" loading="lazy">
+                    <figcaption>${esc(block.caption || "Add a video src to publish a playable video.")}</figcaption>
+                </figure>`;
+            }
+            return `<figure class="article-figure">
+                <video controls preload="metadata" ${block.poster ? `poster="${esc(block.poster)}"` : ""}>
+                    <source src="${esc(block.src)}">
+                </video>
+                ${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ""}
+            </figure>`;
+        }
+        return "";
+    }).join("");
+}
+
+function formatDate(value) {
+    const date = new Date(`${value}T00:00:00Z`);
+    return date.toLocaleDateString("en", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
+}
+
+function getPageCommand(page) {
+    if (page.command) return page.command;
+    const slug = page.slug || page;
     const commands = {
         "quick-start": "npx gen-comments src --write",
         cli: "gen-docs src --out docs",
@@ -401,13 +784,41 @@ a{color:inherit;text-decoration:none}
 .next-card{display:block;background:var(--ink);color:white}
 .next-card span{display:block;color:var(--lime);font:700 11px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
 .next-card strong{font-size:20px;line-height:1.2}
+.blog-home{padding:62px 7vw 90px}
+.blog-hero{max-width:860px;margin-bottom:34px}
+.blog-hero h1{font-size:clamp(42px,6vw,78px);line-height:.98;margin:0 0 18px}
+.post-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.post-card{display:grid;grid-template-columns:220px 1fr;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;transition:transform .18s,box-shadow .18s,border-color .18s}
+.post-card:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 14px 38px rgba(91,79,232,.12)}
+.post-media{background:var(--soft);min-height:210px}
+.post-media img{width:100%;height:100%;object-fit:cover;display:block}
+.post-card-body{padding:22px}
+.post-meta{color:var(--muted);font:700 12px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.04em}
+.post-card h2{font-size:24px;line-height:1.15;margin:12px 0 10px}
+.post-card p{color:var(--muted);margin:0 0 16px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.tag-row span{display:inline-flex;padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.65);color:var(--muted);font-size:12px}
+.article-layout{display:grid;grid-template-columns:minmax(0,820px) 300px;gap:38px;align-items:start;padding:62px 7vw 96px}
+.article{min-width:0}
+.article-header{margin-bottom:30px}
+.article-header h1{font-size:clamp(42px,6vw,76px);line-height:.98;margin:0 0 18px}
+.article>p{font-size:18px;line-height:1.75;color:var(--muted);margin:20px 0}
+.article h2{font-size:34px;line-height:1.12;margin:42px 0 14px;scroll-margin-top:92px}
+.article blockquote{margin:30px 0;padding:22px 26px;border-left:4px solid var(--accent);background:var(--surface);border-radius:8px;color:var(--ink);font-size:22px;line-height:1.45}
+.article-figure{margin:28px 0;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.article-figure img,.article-figure video{width:100%;display:block}
+.article-figure figcaption{padding:12px 16px;color:var(--muted);font-size:14px}
+.video-placeholder{position:relative}
+.article-aside{position:sticky;top:92px;display:grid;gap:14px}
+.share-link{display:block;padding:10px 0;color:var(--muted);border-bottom:1px solid var(--line)}
+.share-link:hover{color:var(--accent)}
 .changelog h2:first-child{margin-top:0}
 .changelog-note{background:#fffbe7}
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease;transition-delay:var(--delay,0ms)}
 .reveal.visible{opacity:1;transform:none}
-@media (max-width:1180px){.docs-layout{grid-template-columns:minmax(0,1fr);padding-right:28px}.docs-aside{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:980px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:54px}.feature-grid,.workflow-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workflow-band{grid-template-columns:1fr}.workflow-copy{position:static}.docs-sidebar{position:static;width:auto;display:flex;gap:6px;overflow:auto;padding:10px 12px}.docs-layout{margin-left:0;padding:38px 20px 70px}.nav-link{white-space:nowrap}.top-links{gap:12px}}
-@media (max-width:640px){.site-header{padding:0 16px}.top-links a:nth-child(3){display:none}.hero{padding:42px 20px}.feature-band,.workflow-band{padding:46px 20px}.feature-grid,.workflow-grid,.docs-aside{grid-template-columns:1fr}.hero h1{font-size:46px}.hero-console{font-size:13px}.demo-tabs{grid-template-columns:1fr}}
+@media (max-width:1180px){.docs-layout,.article-layout{grid-template-columns:minmax(0,1fr);padding-right:28px}.docs-aside,.article-aside{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.post-grid{grid-template-columns:1fr}}
+@media (max-width:980px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:54px}.feature-grid,.workflow-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workflow-band{grid-template-columns:1fr}.workflow-copy{position:static}.docs-sidebar{position:static;width:auto;display:flex;gap:6px;overflow:auto;padding:10px 12px}.docs-layout{margin-left:0;padding:38px 20px 70px}.article-layout,.blog-home{padding:38px 20px 70px}.nav-link{white-space:nowrap}.top-links{gap:12px}}
+@media (max-width:640px){.site-header{padding:0 16px}.top-links a:nth-child(4){display:none}.hero{padding:42px 20px}.feature-band,.workflow-band{padding:46px 20px}.feature-grid,.workflow-grid,.docs-aside,.article-aside{grid-template-columns:1fr}.hero h1{font-size:46px}.hero-console{font-size:13px}.demo-tabs{grid-template-columns:1fr}.post-card{grid-template-columns:1fr}.post-media{min-height:180px}.article-header h1,.blog-hero h1{font-size:42px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}.reveal{opacity:1;transform:none}}
 `;
     writeFile(path.join(outDir, "assets", "site.css"), css.trimStart());
@@ -494,7 +905,52 @@ function copyAssetPreviews() {
     }
 }
 
+function writeSeoFiles() {
+    const urls = [
+        { loc: "index.html", priority: "1.0" },
+        { loc: "blog/index.html", priority: "0.8" },
+        ...site.pages.map((page) => ({ loc: `docs/${page.slug}.html`, priority: "0.8" })),
+        ...site.posts.map((post) => ({ loc: `blog/${post.slug}.html`, priority: "0.7", lastmod: post.date })),
+        { loc: "api/index.html", priority: "0.7" }
+    ];
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map((entry) => `  <url>
+    <loc>${esc(absoluteUrl(entry.loc))}</loc>
+    ${entry.lastmod ? `<lastmod>${esc(entry.lastmod)}</lastmod>` : ""}
+    <changefreq>weekly</changefreq>
+    <priority>${entry.priority}</priority>
+  </url>`).join("\n")}
+</urlset>
+`;
+    writeFile(path.join(outDir, "sitemap.xml"), sitemap);
+    writeFile(path.join(outDir, "robots.txt"), `User-agent: *
+Allow: /
+
+Sitemap: ${absoluteUrl("sitemap.xml")}
+`);
+    const rssItems = site.posts.map((post) => `<item>
+    <title>${esc(post.title)}</title>
+    <link>${esc(absoluteUrl(`blog/${post.slug}.html`))}</link>
+    <guid>${esc(absoluteUrl(`blog/${post.slug}.html`))}</guid>
+    <pubDate>${new Date(`${post.date}T00:00:00Z`).toUTCString()}</pubDate>
+    <description>${esc(post.description)}</description>
+  </item>`).join("\n");
+    writeFile(path.join(blogDir, "rss.xml"), `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>jsdoc-scribe Blog</title>
+  <link>${esc(absoluteUrl("blog/index.html"))}</link>
+  <description>${esc(site.description)}</description>
+  <language>en</language>
+  ${rssItems}
+</channel>
+</rss>
+`);
+}
+
 function main() {
+    loadMarkdownContent();
     cleanDir(outDir);
     buildApiDocs();
     writeCss();
@@ -502,6 +958,9 @@ function main() {
     copyAssetPreviews();
     renderLanding();
     site.pages.forEach(renderDocPage);
+    renderBlogIndex();
+    site.posts.forEach(renderBlogPost);
+    writeSeoFiles();
     writeFile(path.join(outDir, "docs", "index.html"), '<meta http-equiv="refresh" content="0; url=quick-start.html">');
     console.log(`Built ${site.title} documentation site for v${pkg.version} in ${path.relative(root, outDir)}`);
 }
