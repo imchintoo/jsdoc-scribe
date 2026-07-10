@@ -33,6 +33,7 @@
         "demo": "node bin/cli.js sample",
         "lint": "node bin/cli.js sample --lint --fix",
         "docs": "node bin/gen-docs.js sample --out docs --title jsdoc-scribe --quality",
+        "docs:pages": "node scripts/build-pages-docs.js",
         "docs:internal": "node bin/gen-docs.js lib bin packages/eslint-plugin-jsdoc-scribe --quality --out docs-internal --title jsdoc-scribe",
         "quality": "node bin/gen-docs.js lib bin packages/eslint-plugin-jsdoc-scribe --quality --quality-reporter console",
         "dashboard": "node bin/gen-docs.js lib bin packages/eslint-plugin-jsdoc-scribe sample --quality --data --out docs-dashboard --title jsdoc-scribe",
@@ -78,7 +79,7 @@
         "type": "git",
         "url": "git+https://github.com/imchintoo/jsdoc-scribe.git"
     },
-    "homepage": "https://github.com/imchintoo/jsdoc-scribe#readme",
+    "homepage": "https://imchintoo.github.io/jsdoc-scribe/",
     "bugs": {
         "url": "https://github.com/imchintoo/jsdoc-scribe/issues"
     },

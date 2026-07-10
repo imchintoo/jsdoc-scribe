@@ -146,9 +146,12 @@ vite.config.ts.timestamp-*
 .vite/
 
 CLAUDE.md
+AGENTS.md
 docs
 docs-internal
 docs-dashboard
+_site/
+.codex
 .claude
 # jsdoc-scribe quality reporting (code-multivitals) output -- generated, never committed
 quality-results/

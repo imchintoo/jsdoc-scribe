@@ -7,6 +7,8 @@
 [![Node.js](https://img.shields.io/node/v/jsdoc-scribe.svg)](https://nodejs.org)
 [![Types: included](https://img.shields.io/badge/types-included-blue.svg)](./lib/index.d.ts)
 
+**Documentation:** https://imchintoo.github.io/jsdoc-scribe/
+
 > Automated, **AST-based** JSDoc comment generator and static documentation site builder for JavaScript & TypeScript. Fast, deterministic, and 100% local (No AI involved).
 > **No AI. No LLM. No surprises.** Same input always produces the same output.
 

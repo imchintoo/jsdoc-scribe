@@ -32,11 +32,7 @@ jobs:
         run: npm ci
 
       - name: Generate docs
-        run: |
-          node bin/gen-docs.js sample \
-            --out _site \
-            --title "${{ github.event.repository.name }}" \
-            --json
+        run: npm run docs:pages
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
