@@ -283,15 +283,28 @@ function navHtml(depth, activeSlug) {
         <a class="brand" href="${prefix}index.html" aria-label="jsdoc-scribe home">
             <span class="brand-mark">JS</span>
             <span>jsdoc-scribe</span>
+            <span class="version-badge">v${esc(pkg.version)}</span>
         </a>
         <nav class="top-links" aria-label="Primary">
             <a href="${docHref}">Docs</a>
             <a href="${blogHref}">Blog</a>
             <a href="${prefix}api/index.html">API</a>
-            <a href="https://github.com/imchintoo/jsdoc-scribe">GitHub</a>
+            <a class="icon-link npm-link" href="https://www.npmjs.com/package/jsdoc-scribe" aria-label="Open jsdoc-scribe on npm" title="npm">${iconNpm()}</a>
+            <a class="icon-link" href="https://github.com/imchintoo/jsdoc-scribe" aria-label="Open jsdoc-scribe on GitHub" title="GitHub">${iconGitHub()}</a>
         </nav>
     </header>
     ${activeSlug ? `<aside class="docs-sidebar" aria-label="Documentation">${docs}<a class="nav-link" href="../api/index.html">API Reference</a></aside>` : ""}`;
+}
+
+function breadcrumbHtml(items) {
+    return `<nav class="site-breadcrumb" aria-label="Breadcrumb">
+        ${items.map((item, index) => {
+            const label = esc(item.label);
+            const current = index === items.length - 1;
+            if (current || !item.href) return `<span aria-current="${current ? "page" : "false"}">${label}</span>`;
+            return `<a href="${esc(item.href)}">${label}</a><span class="crumb-separator">/</span>`;
+        }).join("")}
+    </nav>`;
 }
 
 function pageShell({ title, description, body, depth = 0, activeSlug = "", currentPath = "index.html", type = "website", image, published, structuredData }) {
@@ -367,6 +380,7 @@ function renderLanding() {
     </div>`).join("");
 
     const body = `<main>
+        <div class="landing-breadcrumb">${breadcrumbHtml([{ label: "Home" }])}</div>
         <section class="hero">
             <div class="hero-copy reveal">
                 <p class="eyebrow">No AI. No LLM. No surprises.</p>
@@ -439,6 +453,11 @@ function renderDocPage(page, index) {
         : page.sections.map((section) => ({ id: slugify(section.title), title: section.title }));
     const body = `<main class="docs-layout">
         <article class="docs-content">
+            ${breadcrumbHtml([
+                { label: "Home", href: "../index.html" },
+                { label: "Documentation", href: "quick-start.html" },
+                { label: page.title }
+            ])}
             <p class="eyebrow">Documentation</p>
             <h1>${esc(page.title)}</h1>
             <p class="lead">${esc(page.description)}</p>
@@ -477,24 +496,43 @@ function renderDocPage(page, index) {
 }
 
 function renderBlogIndex() {
-    const cards = site.posts.map((post) => `<article class="post-card reveal">
-        <a class="post-media" href="${esc(post.slug)}.html">
-            <img src="${esc(post.image)}" alt="${esc(post.title)}" loading="lazy">
-        </a>
-        <div class="post-card-body">
-            <div class="post-meta">${esc(formatDate(post.date))} · ${esc(post.readingTime)}</div>
+    const cards = site.posts.map((post) => `<article class="medium-row reveal">
+        <div class="medium-row-main">
+            <div class="medium-author-line">
+                <span class="author-avatar">${esc(authorInitials(site.author))}</span>
+                <span>${esc(site.author)}</span>
+                <span>${esc(formatDate(post.date))}</span>
+            </div>
             <h2><a href="${esc(post.slug)}.html">${esc(post.title)}</a></h2>
             <p>${esc(post.description)}</p>
-            <div class="tag-row">${post.tags.map((tag) => `<span>${esc(tag)}</span>`).join("")}</div>
+            <div class="medium-row-footer">
+                <span>${esc(post.readingTime)}</span>
+                ${post.tags.slice(0, 2).map((tag) => `<span class="topic-pill">${esc(tag)}</span>`).join("")}
+            </div>
         </div>
+        <a class="medium-row-media" href="${esc(post.slug)}.html" aria-label="${esc(post.title)}">
+            <img src="${esc(post.image)}" alt="${esc(post.title)}" loading="lazy">
+        </a>
     </article>`).join("");
-    const body = `<main class="blog-home">
-        <section class="blog-hero reveal">
-            <p class="eyebrow">Blog</p>
-            <h1>Guides, release notes, and documentation craft.</h1>
-            <p class="lead">Medium-style posts for tutorials, product updates, SEO content, images, videos, and deeper integration stories around jsdoc-scribe.</p>
+    const body = `<main class="medium-shell">
+        ${breadcrumbHtml([
+            { label: "Home", href: "../index.html" },
+            { label: "Blog" }
+        ])}
+        <section class="medium-list-header reveal">
+            <div>
+                <p class="medium-kicker">jsdoc-scribe blog</p>
+                <h1>Stories</h1>
+                <p>Guides, product notes, and practical writing about documentation automation.</p>
+            </div>
+            <a class="medium-outline-btn" href="../docs/quick-start.html">Read docs</a>
         </section>
-        <section class="post-grid">${cards}</section>
+        <nav class="medium-tabs" aria-label="Blog sections">
+            <a class="active" href="index.html">Published</a>
+            <a href="../docs/quick-start.html">Documentation</a>
+            <a href="../api/index.html">API Reference</a>
+        </nav>
+        <section class="medium-list">${cards}</section>
     </main>`;
     writeFile(path.join(blogDir, "index.html"), pageShell({
         title: "Blog",
@@ -514,32 +552,33 @@ function renderBlogIndex() {
 }
 
 function renderBlogPost(post) {
-    const body = `<main class="article-layout">
-        <article class="article">
-            <header class="article-header">
-                <p class="eyebrow">Article</p>
+    const body = `<main class="medium-article-shell">
+        ${breadcrumbHtml([
+            { label: "Home", href: "../index.html" },
+            { label: "Blog", href: "index.html" },
+            { label: post.title }
+        ])}
+        <article class="medium-article">
+            <header class="medium-article-header">
+                <div class="tag-row">${post.tags.map((tag) => `<span>${esc(tag)}</span>`).join("")}</div>
                 <h1>${esc(post.title)}</h1>
                 <p class="lead">${esc(post.description)}</p>
-                <div class="post-meta">${esc(formatDate(post.date))} · ${esc(post.readingTime)} · ${esc(site.author)}</div>
-                <div class="tag-row">${post.tags.map((tag) => `<span>${esc(tag)}</span>`).join("")}</div>
+                <div class="medium-byline">
+                    <span class="author-avatar large">${esc(authorInitials(site.author))}</span>
+                    <span><strong>${esc(site.author)}</strong><small>${esc(post.readingTime)} · ${esc(formatDate(post.date))}</small></span>
+                </div>
             </header>
+            <figure class="medium-hero-image">
+                <img src="${esc(post.image)}" alt="${esc(post.title)}" loading="eager">
+            </figure>
+            <div class="medium-action-rail" aria-label="Article actions">
+                <button type="button" data-copy="${attr(absoluteUrl(`blog/${post.slug}.html`))}" data-copy-mode="icon" title="Copy article link" aria-label="Copy article link">${iconCopy()}</button>
+                <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(absoluteUrl(`blog/${post.slug}.html`))}&text=${encodeURIComponent(post.title)}" title="Share on X" aria-label="Share on X">${iconX()}</a>
+                <a href="https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(absoluteUrl(`blog/${post.slug}.html`))}" title="Share on LinkedIn" aria-label="Share on LinkedIn">${iconLinkedIn()}</a>
+            </div>
             ${renderPostBlocks(post.content)}
         </article>
-        <aside class="article-aside">
-            <div class="aside-card progress-card">
-                <span class="aside-label">Reading progress</span>
-                <div class="progress-ring" data-progress-ring><span data-progress-value>0%</span></div>
-            </div>
-            <div class="aside-card">
-                <span class="aside-label">Share</span>
-                <a class="share-link" href="https://twitter.com/intent/tweet?url=${encodeURIComponent(absoluteUrl(`blog/${post.slug}.html`))}&text=${encodeURIComponent(post.title)}">Post on X</a>
-                <a class="share-link" href="https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(absoluteUrl(`blog/${post.slug}.html`))}">Share on LinkedIn</a>
-            </div>
-            <a class="next-card" href="index.html">
-                <span>More posts</span>
-                <strong>Back to blog</strong>
-            </a>
-        </aside>
+        <a class="medium-back-link" href="index.html">Back to stories</a>
     </main>`;
     writeFile(path.join(blogDir, `${post.slug}.html`), pageShell({
         title: post.title,
@@ -605,6 +644,35 @@ function formatDate(value) {
     return date.toLocaleDateString("en", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
 }
 
+function authorInitials(name) {
+    return String(name || site.title)
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0].toUpperCase())
+        .join("");
+}
+
+function iconCopy() {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+}
+
+function iconX() {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l16 16M20 4L4 20"></path></svg>';
+}
+
+function iconLinkedIn() {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 9.5V20"></path><path d="M6.5 5.5v.1"></path><path d="M11 20v-6.2c0-2.4 1.5-4.1 3.8-4.1s3.7 1.5 3.7 4.3v6"></path><path d="M11 10v10"></path></svg>';
+}
+
+function iconGitHub() {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c-5.3 0-9.5 4.3-9.5 9.6 0 4.2 2.7 7.8 6.5 9 .5.1.7-.2.7-.5v-1.8c-2.7.6-3.2-1.1-3.2-1.1-.4-1.1-1-1.4-1-1.4-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .8 1.5 2.2 1.1 2.7.8.1-.6.3-1.1.6-1.3-2.1-.2-4.4-1.1-4.4-4.7 0-1 .4-1.9 1-2.6-.1-.2-.4-1.2.1-2.5 0 0 .8-.3 2.6 1 .8-.2 1.6-.3 2.4-.3.8 0 1.6.1 2.4.3 1.8-1.2 2.6-1 2.6-1 .5 1.3.2 2.3.1 2.5.6.7 1 1.5 1 2.6 0 3.6-2.2 4.4-4.4 4.7.4.3.7.9.7 1.8v2.6c0 .3.2.6.7.5 3.8-1.3 6.5-4.8 6.5-9 .1-5.3-4.2-9.6-9.4-9.6z"></path></svg>';
+}
+
+function iconNpm() {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7h20v10H12v-2H9v2H2V7zm2 2v6h3V9H4zm5 0v4h3V9H9zm5 0v6h2V9h3v6h1V9h-6z"></path></svg>';
+}
+
 function getPageCommand(page) {
     if (page.command) return page.command;
     const slug = page.slug || page;
@@ -624,7 +692,7 @@ function getPageCommand(page) {
 function renderSection(section) {
     const id = slugify(section.title);
     const body = section.body.map((item) => {
-        if (typeof item === "string") return `<p>${esc(item)}</p>`;
+        if (typeof item === "string") return `<p>${inlineMarkdown(item)}</p>`;
         if (item.code) {
             return `<div class="code-wrap">
                 <button class="copy-btn" type="button" data-copy="${attr(item.code)}">Copy</button>
@@ -704,11 +772,22 @@ function writeCss() {
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--font-family,inherit)}
 a{color:inherit;text-decoration:none}
-.site-header{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(255,255,255,.92);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;backdrop-filter:blur(10px)}
-.brand{display:flex;align-items:center;gap:10px;font-weight:800}
-.brand-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;background:var(--ink);color:var(--lime);font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
-.top-links{display:flex;gap:18px;color:var(--muted);font-size:14px}
-.top-links a:hover{color:var(--accent)}
+.site-header{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:#101012;border-bottom:1px solid rgba(255,255,255,.12);position:sticky;top:0;z-index:20;box-shadow:0 10px 28px rgba(0,0,0,.16)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;color:white;min-width:0}
+.brand-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;background:var(--lime);color:#111113;font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+.version-badge{display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border:1px solid rgba(198,255,61,.42);border-radius:999px;color:var(--lime);background:rgba(198,255,61,.08);font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+.top-links{display:flex;align-items:center;gap:18px;color:#d7d2c8;font-size:14px}
+.top-links a:hover{color:white}
+.top-links .icon-link{display:grid;place-items:center;width:34px;height:34px;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#d7d2c8;background:rgba(255,255,255,.04);transition:background .18s,border-color .18s,color .18s,transform .18s}
+.top-links .icon-link:hover,.top-links .icon-link:focus-visible{color:white;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);transform:translateY(-1px);outline:none}
+.top-links .icon-link svg{width:19px;height:19px;fill:currentColor}
+.top-links .npm-link svg{width:25px}
+.site-breadcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:8px;color:#75716a;font-size:13px;margin:0 0 22px}
+.site-breadcrumb a{color:#75716a}
+.site-breadcrumb a:hover{color:var(--accent)}
+.site-breadcrumb span[aria-current="page"]{color:#111;font-weight:700}
+.crumb-separator{color:#b7b1a7;font-weight:400}
+.landing-breadcrumb{padding:22px 7vw 0}
 .hero{min-height:calc(100vh - 68px);display:grid;grid-template-columns:minmax(0,1.02fr) minmax(390px,.86fr);gap:44px;align-items:center;padding:72px 7vw 56px;position:relative;overflow:hidden}
 .hero::before{content:"";position:absolute;inset:auto 5vw 8vh auto;width:360px;height:360px;background:radial-gradient(circle,rgba(198,255,61,.2),transparent 65%);pointer-events:none}
 .eyebrow{margin:0 0 12px;color:var(--accent);font:700 12px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.08em}
@@ -754,11 +833,11 @@ a{color:inherit;text-decoration:none}
 .docs-sidebar{position:fixed;top:68px;bottom:0;left:0;width:260px;padding:22px 12px;background:var(--sidebar);overflow:auto}
 .nav-link{display:block;padding:9px 12px;border-radius:7px;color:var(--sidebar-text);font-size:14px}
 .nav-link:hover,.nav-link.active{background:rgba(255,255,255,.08);color:white}
-.docs-layout{margin-left:260px;display:grid;grid-template-columns:minmax(0,880px) 300px;gap:34px;align-items:start;padding:56px 42px 90px}
+.docs-layout{margin-left:260px;display:grid;grid-template-columns:minmax(0,880px) 320px;gap:38px;align-items:start;justify-content:space-between;padding:46px 48px 96px}
 .docs-content{min-width:0}
 .docs-content h1{font-size:clamp(38px,6vw,68px);line-height:1;margin:0 0 16px}
 .lead{font-size:20px;line-height:1.5;color:var(--muted);margin:0 0 34px}
-.doc-section{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:26px;margin:16px 0;scroll-margin-top:92px}
+.doc-section{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:28px;margin:16px 0;scroll-margin-top:92px;box-shadow:0 10px 28px rgba(17,17,17,.04)}
 .doc-section h2{font-size:24px;margin:0 0 12px}
 .doc-section h3{font-size:18px;margin:24px 0 10px}
 .doc-section p{color:var(--muted);margin:10px 0}
@@ -771,7 +850,7 @@ a{color:inherit;text-decoration:none}
 .copy-btn{border:1px solid var(--line);border-radius:7px;background:white;color:var(--ink);font-weight:700;font-size:12px;padding:7px 10px;cursor:pointer}
 .code-wrap .copy-btn{position:absolute;right:10px;top:10px;background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.14);color:var(--code-text)}
 .copy-btn.copied{background:var(--lime);color:var(--ink)}
-.docs-aside{position:sticky;top:92px;display:grid;gap:14px}
+.docs-aside{position:sticky;top:92px;display:grid;gap:14px;align-self:start;justify-self:end;width:320px;max-height:calc(100vh - 110px);overflow:auto;padding-bottom:4px}
 .aside-card,.next-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;box-shadow:0 8px 26px rgba(17,17,17,.05)}
 .aside-label{display:block;color:var(--accent);font:700 11px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
 .progress-card{display:flex;align-items:center;justify-content:space-between;gap:16px}
@@ -812,13 +891,64 @@ a{color:inherit;text-decoration:none}
 .article-aside{position:sticky;top:92px;display:grid;gap:14px}
 .share-link{display:block;padding:10px 0;color:var(--muted);border-bottom:1px solid var(--line)}
 .share-link:hover{color:var(--accent)}
+.medium-shell{max-width:1192px;margin:0 auto;padding:34px 24px 96px;background:#fff;min-height:calc(100vh - 68px)}
+.medium-list-header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:34px 0 30px;border-bottom:1px solid #e6e6e6}
+.medium-kicker{margin:0 0 10px;color:#6b6b6b;font-size:14px}
+.medium-list-header h1{font-size:44px;line-height:1.1;margin:0 0 10px;font-weight:800;letter-spacing:0}
+.medium-list-header p{margin:0;color:#6b6b6b;max-width:620px;font-size:16px}
+.medium-outline-btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid #191919;border-radius:999px;min-height:38px;padding:0 16px;font-size:14px;white-space:nowrap}
+.medium-outline-btn:hover{background:#191919;color:#fff}
+.medium-tabs{display:flex;gap:30px;border-bottom:1px solid #e6e6e6;margin-bottom:10px;overflow:auto}
+.medium-tabs a{padding:16px 0 14px;color:#6b6b6b;font-size:14px;white-space:nowrap}
+.medium-tabs a.active{color:#191919;border-bottom:1px solid #191919}
+.medium-list{display:grid}
+.medium-row{display:grid;grid-template-columns:minmax(0,1fr) 168px;gap:28px;padding:34px 0;border-bottom:1px solid #e6e6e6;background:#fff}
+.medium-row-main{min-width:0}
+.medium-author-line{display:flex;align-items:center;gap:8px;color:#6b6b6b;font-size:13px;margin-bottom:12px}
+.medium-author-line span+span::before{content:"";display:inline-block;width:3px;height:3px;border-radius:50%;background:#8a8a8a;margin-right:8px;vertical-align:middle}
+.author-avatar{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#191919;color:#fff;font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;flex:0 0 auto}
+.author-avatar.large{width:44px;height:44px;font-size:14px}
+.medium-row h2{font-size:22px;line-height:1.2;margin:0 0 8px;font-weight:800;letter-spacing:0}
+.medium-row h2 a:hover{text-decoration:underline}
+.medium-row p{margin:0;color:#6b6b6b;font-size:15px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.medium-row-footer{display:flex;align-items:center;gap:10px;margin-top:16px;color:#6b6b6b;font-size:13px}
+.topic-pill{background:#f2f2f2;color:#6b6b6b;border-radius:999px;padding:5px 10px}
+.medium-row-media{display:block;width:168px;height:112px;background:#f2f2f2;align-self:start}
+.medium-row-media img{width:100%;height:100%;object-fit:cover;display:block}
+.medium-article-shell{background:#fff;min-height:calc(100vh - 68px);padding:34px 24px 96px}
+.medium-article{max-width:760px;margin:0 auto;position:relative}
+.medium-article-header{margin-bottom:28px}
+.medium-article-header .tag-row{margin:0 0 20px}
+.medium-article-header .tag-row span{background:#f2f2f2;border-color:#f2f2f2;color:#6b6b6b}
+.medium-article-header h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(40px,6vw,64px);line-height:1.05;font-weight:700;letter-spacing:0;margin:0 0 18px;color:#191919}
+.medium-article-header .lead{font-size:22px;line-height:1.35;color:#6b6b6b;margin:0 0 24px}
+.medium-byline{display:flex;align-items:center;gap:12px;color:#191919;border-top:1px solid #e6e6e6;border-bottom:1px solid #e6e6e6;padding:16px 0}
+.medium-byline strong{display:block;font-size:14px;font-weight:600}
+.medium-byline small{display:block;color:#6b6b6b;font-size:13px;margin-top:3px}
+.medium-hero-image{margin:36px calc(50% - min(50vw - 24px, 980px) / 2);background:#f2f2f2}
+.medium-hero-image img{width:100%;max-height:520px;object-fit:cover;display:block}
+.medium-action-rail{position:fixed;right:28px;bottom:28px;display:grid;gap:10px;z-index:30}
+.medium-action-rail a,.medium-action-rail button{display:grid;place-items:center;width:48px;height:48px;border:1px solid #e6e6e6;border-radius:999px;background:#fff;color:#6b6b6b;font:700 12px/1 var(--font-family,inherit);cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.08);transition:transform .16s,border-color .16s,color .16s,background .16s}
+.medium-action-rail svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.medium-action-rail a:hover,.medium-action-rail button:hover{border-color:#191919;color:#191919;transform:translateY(-2px)}
+.medium-action-rail button.copied{background:#191919;color:#fff;border-color:#191919}
+.medium-article>p{font-family:Georgia,"Times New Roman",serif;font-size:21px;line-height:1.72;color:#242424;margin:28px 0}
+.medium-article h2{font-size:30px;line-height:1.2;margin:52px 0 14px;color:#191919;letter-spacing:0}
+.medium-article blockquote{font-family:Georgia,"Times New Roman",serif;margin:34px 0;padding:0 0 0 22px;border-left:3px solid #191919;color:#242424;font-size:26px;line-height:1.45;background:transparent;border-radius:0}
+.medium-article .article-figure{margin:38px calc(50% - min(50vw - 24px, 900px) / 2);background:#fff;border:0;border-radius:0}
+.medium-article .article-figure img,.medium-article .article-figure video{width:100%;display:block}
+.medium-article .article-figure figcaption{text-align:center;color:#6b6b6b;font-size:13px;padding:10px 0 0}
+.medium-article .code-wrap{margin:30px 0}
+.medium-article .code-block{border-radius:4px}
+.medium-back-link{display:block;max-width:760px;margin:46px auto 0;color:#6b6b6b;font-size:14px}
+.medium-back-link:hover{color:#191919;text-decoration:underline}
 .changelog h2:first-child{margin-top:0}
 .changelog-note{background:#fffbe7}
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease;transition-delay:var(--delay,0ms)}
 .reveal.visible{opacity:1;transform:none}
-@media (max-width:1180px){.docs-layout,.article-layout{grid-template-columns:minmax(0,1fr);padding-right:28px}.docs-aside,.article-aside{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.post-grid{grid-template-columns:1fr}}
-@media (max-width:980px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:54px}.feature-grid,.workflow-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workflow-band{grid-template-columns:1fr}.workflow-copy{position:static}.docs-sidebar{position:static;width:auto;display:flex;gap:6px;overflow:auto;padding:10px 12px}.docs-layout{margin-left:0;padding:38px 20px 70px}.article-layout,.blog-home{padding:38px 20px 70px}.nav-link{white-space:nowrap}.top-links{gap:12px}}
-@media (max-width:640px){.site-header{padding:0 16px}.top-links a:nth-child(4){display:none}.hero{padding:42px 20px}.feature-band,.workflow-band{padding:46px 20px}.feature-grid,.workflow-grid,.docs-aside,.article-aside{grid-template-columns:1fr}.hero h1{font-size:46px}.hero-console{font-size:13px}.demo-tabs{grid-template-columns:1fr}.post-card{grid-template-columns:1fr}.post-media{min-height:180px}.article-header h1,.blog-hero h1{font-size:42px}}
+@media (max-width:1180px){.docs-layout,.article-layout{grid-template-columns:minmax(0,1fr);padding-right:28px}.docs-aside,.article-aside{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.post-grid{grid-template-columns:1fr}.medium-hero-image,.medium-article .article-figure{margin-left:0;margin-right:0}}
+@media (max-width:980px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:54px}.feature-grid,.workflow-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workflow-band{grid-template-columns:1fr}.workflow-copy{position:static}.docs-sidebar{position:static;width:auto;display:flex;gap:6px;overflow:auto;padding:10px 12px}.docs-layout{margin-left:0;padding:38px 20px 70px}.article-layout,.blog-home{padding:38px 20px 70px}.medium-shell,.medium-article-shell{padding:38px 20px 70px}.nav-link{white-space:nowrap}.top-links{gap:12px}}
+@media (max-width:640px){.site-header{padding:0 16px}.brand span:not(.brand-mark):not(.version-badge){display:none}.top-links{gap:8px}.top-links .icon-link{width:32px;height:32px}.hero{padding:42px 20px}.feature-band,.workflow-band{padding:46px 20px}.feature-grid,.workflow-grid,.docs-aside,.article-aside{grid-template-columns:1fr}.hero h1{font-size:46px}.hero-console{font-size:13px}.demo-tabs{grid-template-columns:1fr}.post-card,.medium-row{grid-template-columns:1fr}.post-media{min-height:180px}.medium-row-media{width:100%;height:180px;order:-1}.medium-list-header{display:block}.medium-outline-btn{margin-top:18px}.medium-article-header h1,.blog-hero h1,.medium-list-header h1{font-size:42px}.medium-article>p{font-size:19px}.medium-article blockquote{font-size:23px}.medium-action-rail{right:16px;bottom:16px}.medium-action-rail a,.medium-action-rail button{width:44px;height:44px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}.reveal{opacity:1;transform:none}}
 `;
     writeFile(path.join(outDir, "assets", "site.css"), css.trimStart());
@@ -842,10 +972,16 @@ function writeClientJs() {
         button.addEventListener("click", function(){
             var text = button.getAttribute("data-copy") || "";
             navigator.clipboard.writeText(text).then(function(){
-                var old = button.textContent;
-                button.textContent = "Copied";
+                var iconMode = button.getAttribute("data-copy-mode") === "icon";
+                var old = iconMode ? button.getAttribute("title") : button.textContent;
+                if (!iconMode) button.textContent = "Copied";
+                if (iconMode) button.setAttribute("title", "Copied");
                 button.classList.add("copied");
-                setTimeout(function(){ button.textContent = old; button.classList.remove("copied"); }, 1300);
+                setTimeout(function(){
+                    if (!iconMode) button.textContent = old;
+                    if (iconMode) button.setAttribute("title", old || "Copy article link");
+                    button.classList.remove("copied");
+                }, 1300);
             }).catch(function(){ button.textContent = "Copy failed"; });
         });
     });
@@ -894,6 +1030,54 @@ function buildApiDocs() {
         "--json"
     ], { cwd: root, stdio: "inherit" });
     if (result.status !== 0) process.exit(result.status || 1);
+}
+
+function enhanceApiDocs() {
+    const apiOutDir = path.join(outDir, "api");
+    const htmlFiles = [];
+
+    function walk(dir) {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) walk(full);
+            if (entry.isFile() && entry.name.endsWith(".html")) htmlFiles.push(full);
+        }
+    }
+
+    walk(apiOutDir);
+    for (const file of htmlFiles) {
+        const isModulePage = file.includes(`${path.sep}modules${path.sep}`);
+        let html = fs.readFileSync(file, "utf8")
+            .replace(/<span class="version-switcher-static">Current<\/span>/g, `<span class="version-switcher-static">v${esc(pkg.version)}</span>`);
+
+        if (isModulePage) {
+            html = html.replace(
+                /<div class="breadcrumb"><a href="\.\.\/index\.html">jsdoc-scribe API<\/a> \/ /,
+                '<div class="breadcrumb"><a href="../../index.html">Home</a> / <a href="../index.html">API Reference</a> / '
+            );
+        } else if (!html.includes('<div class="breadcrumb">')) {
+            html = html.replace(
+                '<div class="page-header">',
+                '<div class="page-header"><div class="breadcrumb"><a href="../index.html">Home</a> / API Reference</div>'
+            );
+        }
+
+        fs.writeFileSync(file, html);
+    }
+
+    const cssPath = path.join(apiOutDir, "assets", "style.css");
+    fs.appendFileSync(cssPath, `
+.topnav{background:#101012;border-bottom-color:rgba(255,255,255,.12);box-shadow:0 10px 28px rgba(0,0,0,.16)}
+.topnav-crumb,.topnav-crumb a,.version-switcher-static{color:#d7d2c8}
+.topnav-crumb a:hover{color:#fff}
+.search-box{background:#18181b;border-color:rgba(255,255,255,.14);color:#f5f4f0}
+.search-box:focus{background:#202024;border-color:var(--lime)}
+.search-kbd{background:rgba(255,255,255,.12);color:#d7d2c8}
+.hamburger span{background:#d7d2c8}
+.breadcrumb{display:flex;flex-wrap:wrap;gap:8px;color:#75716a;font-size:13px;margin-bottom:12px}
+.breadcrumb a{color:#75716a}
+.breadcrumb a:hover{color:var(--accent)}
+`);
 }
 
 function copyAssetPreviews() {
@@ -953,6 +1137,7 @@ function main() {
     loadMarkdownContent();
     cleanDir(outDir);
     buildApiDocs();
+    enhanceApiDocs();
     writeCss();
     writeClientJs();
     copyAssetPreviews();
