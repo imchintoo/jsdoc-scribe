@@ -6,14 +6,25 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/node/v/jsdoc-scribe.svg)](https://nodejs.org)
 [![Types: included](https://img.shields.io/badge/types-included-blue.svg)](./lib/index.d.ts)
-
-**Documentation:** https://imchintoo.github.io/jsdoc-scribe/
+[![Documentation](https://img.shields.io/badge/docs-live-brightgreen.svg)](https://imchintoo.github.io/jsdoc-scribe/)
 
 > Automated, **AST-based** JSDoc comment generator and static documentation site builder for JavaScript & TypeScript. Fast, deterministic, and 100% local (No AI involved).
 > **No AI. No LLM. No surprises.** Same input always produces the same output.
 
+## Documentation
 
-Two CLIs, one dependency (`typescript`, used purely as a syntax parser), **233 passing tests** (deterministic, zero network calls — same self-test suite runs on every `npm test` and before every `npm publish`):
+The official documentation site is available at **[imchintoo.github.io/jsdoc-scribe](https://imchintoo.github.io/jsdoc-scribe/)**.
+
+| Resource | Link |
+|---|---|
+| Website | [What is jsdoc-scribe?](https://imchintoo.github.io/jsdoc-scribe/) |
+| Quick Start | [Install and generate your first docs](https://imchintoo.github.io/jsdoc-scribe/docs/quick-start.html) |
+| CLI Usage | [Commands, checks, lint, and fix](https://imchintoo.github.io/jsdoc-scribe/docs/cli.html) |
+| GitHub Pages | [Deploy generated docs](https://imchintoo.github.io/jsdoc-scribe/docs/github-pages.html) |
+| API Reference | [Generated API docs](https://imchintoo.github.io/jsdoc-scribe/api/) |
+| Blog | [Guides and release notes](https://imchintoo.github.io/jsdoc-scribe/blog/) |
+
+Two CLIs, one dependency (`typescript`, used purely as a syntax parser), **234 passing tests** (deterministic, zero network calls — same self-test suite runs on every `npm test` and before every `npm publish`):
 
 `typescript` is listed as a regular `dependency`, not a `peerDependency`, on purpose: it's the
 parser for *every* file this tool touches, `.js` included, not just `.ts` — so it can't be
@@ -561,7 +572,7 @@ Enable GitHub Pages (Settings → Pages → Source: GitHub Actions).
 
 The PR quality gate above is a template — copy it into your own project's
 `.github/workflows/`. This repo's own CI is three separate workflows you can look at
-directly: [`test.yml`](./.github/workflows/test.yml) runs the 233-test suite on Node
+directly: [`test.yml`](./.github/workflows/test.yml) runs the 234-test suite on Node
 18/20/22 for every push and PR (that's the badge at the top of this README),
 [`docs.yml`](./.github/workflows/docs.yml) is the exact Pages-deploy job shown above, and
 [`publish.yml`](./.github/workflows/publish.yml) publishes tagged releases via npm's OIDC
