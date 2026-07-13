@@ -1031,6 +1031,8 @@ a{color:inherit;text-decoration:none}
 .medium-action-rail a:hover,.medium-action-rail button:hover{border-color:#191919;color:#191919;transform:translateY(-2px)}
 .medium-action-rail button.copied{background:#191919;color:#fff;border-color:#191919}
 .medium-article>p{font-family:Georgia,"Times New Roman",serif;font-size:21px;line-height:1.72;color:#242424;margin:28px 0}
+.medium-article ul,.medium-article ol{font-family:Georgia,"Times New Roman",serif;font-size:21px;line-height:1.72;color:#242424;margin:20px 0;padding-left:30px}
+.medium-article li{margin:8px 0}
 .medium-article h2{font-size:30px;line-height:1.2;margin:52px 0 14px;color:#191919;letter-spacing:0}
 .medium-article blockquote{font-family:Georgia,"Times New Roman",serif;margin:34px 0;padding:0 0 0 22px;border-left:3px solid #191919;color:#242424;font-size:26px;line-height:1.45;background:transparent;border-radius:0}
 .medium-article .article-figure{margin:38px calc(50% - min(50vw - 24px, 900px) / 2);background:#fff;border:0;border-radius:0}
@@ -1181,9 +1183,10 @@ function enhanceApiDocs() {
 function copyAssetPreviews() {
     const assetsDir = path.join(root, "assets");
     if (!fs.existsSync(assetsDir)) return;
-    for (const name of ["preview.svg", "preview-quality.svg"]) {
+    ensureDir(path.join(outDir, "assets"));
+    for (const name of fs.readdirSync(assetsDir)) {
         const src = path.join(assetsDir, name);
-        if (fs.existsSync(src)) fs.copyFileSync(src, path.join(outDir, "assets", name));
+        if (fs.statSync(src).isFile()) fs.copyFileSync(src, path.join(outDir, "assets", name));
     }
 }
 

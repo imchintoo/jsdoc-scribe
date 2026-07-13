@@ -12,8 +12,6 @@ Every engineering leader dreads the "cost-cutting" mandate. But what happens whe
 
 This is the story of how missing documentation held a client hostage, how manual attempts to fix it slashed efficiency, and the automation tool that ultimately cut transition overhead by 50% while saving the team, the budget, and the software itself.
 
-![jsdoc-scribe generated documentation preview](../assets/halving-engineering-overhead-documentation-automation.png)
-
 ## The Corporate Gridlock
 
 The directive from leadership was simple: **reduce operational expenditures immediately.** 
