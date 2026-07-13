@@ -205,6 +205,7 @@ function parsePostBlocks(markdown) {
     const blocks = [];
     let paragraph = [];
     let code = [];
+    let list = null;
     let inCode = false;
 
     function flushParagraph() {
@@ -217,6 +218,12 @@ function parsePostBlocks(markdown) {
         blocks.push({ type: "code", code: code.join("\n") });
         code = [];
     }
+    function flushList() {
+        if (list) {
+            blocks.push(list);
+            list = null;
+        }
+    }
     markdown.split(/\r?\n/).forEach((line) => {
         if (line.startsWith("```")) {
             if (inCode) {
@@ -224,6 +231,7 @@ function parsePostBlocks(markdown) {
                 inCode = false;
             } else {
                 flushParagraph();
+                flushList();
                 inCode = true;
             }
             return;
@@ -234,26 +242,43 @@ function parsePostBlocks(markdown) {
         }
         const image = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
         const video = line.match(/^@\[video\]\((.*)\)$/);
+        const ulItem = line.match(/^\s*[-*]\s+(.*)$/);
+        const olItem = line.match(/^\s*\d+\.\s+(.*)$/);
         if (line.startsWith("## ")) {
             flushParagraph();
+            flushList();
             blocks.push({ type: "heading", text: line.replace(/^##\s+/, "").trim() });
         } else if (line.startsWith("> ")) {
             flushParagraph();
+            flushList();
             blocks.push({ type: "quote", text: line.replace(/^>\s+/, "").trim() });
         } else if (image) {
             flushParagraph();
+            flushList();
             blocks.push({ type: "image", alt: image[1], src: image[2] });
         } else if (video) {
             flushParagraph();
+            flushList();
             blocks.push({ type: "video", ...parseInlineAttrs(video[1]) });
+        } else if (ulItem || olItem) {
+            flushParagraph();
+            const ordered = Boolean(olItem);
+            if (!list || list.ordered !== ordered) {
+                flushList();
+                list = { type: "list", ordered: ordered, items: [] };
+            }
+            list.items.push((olItem || ulItem)[1].trim());
         } else if (line.trim()) {
+            flushList();
             paragraph.push(line.trim());
         } else {
             flushParagraph();
+            flushList();
         }
     });
     if (inCode) flushCode();
     flushParagraph();
+    flushList();
     return blocks;
 }
 
@@ -606,9 +631,13 @@ function renderBlogPost(post) {
 
 function renderPostBlocks(blocks) {
     return blocks.map((block) => {
-        if (block.type === "paragraph") return `<p>${esc(block.text)}</p>`;
+        if (block.type === "paragraph") return `<p>${inlineMarkdown(block.text)}</p>`;
         if (block.type === "heading") return `<h2 id="${esc(slugify(block.text))}">${esc(block.text)}</h2>`;
-        if (block.type === "quote") return `<blockquote>${esc(block.text)}</blockquote>`;
+        if (block.type === "quote") return `<blockquote>${inlineMarkdown(block.text)}</blockquote>`;
+        if (block.type === "list") {
+            const tag = block.ordered ? "ol" : "ul";
+            return `<${tag}>${block.items.map((item) => `<li>${inlineMarkdown(item)}</li>`).join("")}</${tag}>`;
+        }
         if (block.type === "code") {
             return `<div class="code-wrap article-code">
                 <button class="copy-btn" type="button" data-copy="${attr(block.code)}">Copy</button>
@@ -708,61 +737,130 @@ function renderSection(section) {
 }
 
 function inlineMarkdown(text) {
-    return esc(text)
-        .replace(/`([^`]+)`/g, "<code>$1</code>")
-        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    const escaped = esc(text);
+    const codeSpans = [];
+    let result = escaped.replace(/`([^`]+)`/g, (_, code) => {
+        codeSpans.push(code);
+        return `@@CODESPAN${codeSpans.length - 1}@@`;
+    });
+    result = result
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => `<a href="${url}">${label}</a>`)
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*\n]+)\*/g, "<em>$1</em>");
+    return result.replace(/@@CODESPAN(\d+)@@/g, (_, idx) => `<code>${codeSpans[Number(idx)]}</code>`);
+}
+
+/**
+ * General-purpose markdown -> HTML block converter. Handles headings,
+ * paragraphs, unordered/ordered lists, blockquotes, and fenced code blocks
+ * (rendered with the same `.code-wrap`/copy-button markup used elsewhere on
+ * the site). Inline formatting (bold/italic/code/links) is delegated to
+ * `inlineMarkdown` so both stay in sync.
+ *
+ * `headingOffset`/`maxHeadingLevel` let a caller demote heading levels (used
+ * by the changelog page, whose own `#`/`##`/`###` markers should never
+ * outrank the page's own `<h1>`).
+ */
+function markdownToHtml(markdown, options) {
+    const opts = options || {};
+    const headingOffset = opts.headingOffset || 0;
+    const maxHeadingLevel = opts.maxHeadingLevel || 6;
+    const lines = String(markdown || "").replace(/\r\n/g, "\n").split("\n");
+    const html = [];
+    let paragraph = [];
+    let list = null;
+
+    function flushParagraph() {
+        if (paragraph.length) {
+            html.push(`<p>${inlineMarkdown(paragraph.join(" "))}</p>`);
+            paragraph = [];
+        }
+    }
+    function closeList() {
+        if (list) {
+            html.push(`</${list.type}>`);
+            list = null;
+        }
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (line.startsWith("```")) {
+            flushParagraph();
+            closeList();
+            const code = [];
+            i++;
+            while (i < lines.length && !lines[i].startsWith("```")) {
+                code.push(lines[i]);
+                i++;
+            }
+            html.push(`<div class="code-wrap">
+                <button class="copy-btn" type="button" data-copy="${attr(code.join("\n"))}">Copy</button>
+                <pre class="code-block"><code>${esc(code.join("\n"))}</code></pre>
+            </div>`);
+            continue;
+        }
+
+        const heading = line.match(/^(#{1,6})\s+(.*)$/);
+        if (heading) {
+            flushParagraph();
+            closeList();
+            const level = Math.min(heading[1].length + headingOffset, maxHeadingLevel);
+            html.push(`<h${level}>${inlineMarkdown(heading[2].trim())}</h${level}>`);
+            continue;
+        }
+
+        if (/^\s*>\s?/.test(line) && line.trim() !== "") {
+            flushParagraph();
+            closeList();
+            const quote = [line.replace(/^\s*>\s?/, "")];
+            while (i + 1 < lines.length && /^\s*>\s?/.test(lines[i + 1])) {
+                i++;
+                quote.push(lines[i].replace(/^\s*>\s?/, ""));
+            }
+            html.push(`<blockquote>${inlineMarkdown(quote.join(" ").trim())}</blockquote>`);
+            continue;
+        }
+
+        const ulItem = line.match(/^\s*[-*]\s+(.*)$/);
+        const olItem = line.match(/^\s*\d+\.\s+(.*)$/);
+        if (ulItem || olItem) {
+            flushParagraph();
+            const type = olItem ? "ol" : "ul";
+            if (!list || list.type !== type) {
+                closeList();
+                html.push(`<${type}>`);
+                list = { type: type };
+            }
+            html.push(`<li>${inlineMarkdown((olItem || ulItem)[1].trim())}</li>`);
+            continue;
+        }
+
+        if (!line.trim()) {
+            flushParagraph();
+            closeList();
+            continue;
+        }
+
+        closeList();
+        paragraph.push(line.trim());
+    }
+    flushParagraph();
+    closeList();
+    return html.join("\n");
 }
 
 function renderChangelog() {
     const changelogPath = path.join(root, "CHANGELOG.md");
     const source = fs.existsSync(changelogPath) ? fs.readFileSync(changelogPath, "utf8") : "";
-    const lines = source.split(/\r?\n/).slice(0, 220);
-    const html = [];
-    let inList = false;
-    let inCode = false;
-
-    function closeList() {
-        if (inList) {
-            html.push("</ul>");
-            inList = false;
-        }
-    }
-
-    for (const line of lines) {
-        if (line.startsWith("```")) {
-            closeList();
-            html.push(inCode ? "</code></pre>" : '<pre class="code-block"><code>');
-            inCode = !inCode;
-            continue;
-        }
-        if (inCode) {
-            html.push(esc(line) + "\n");
-            continue;
-        }
-        if (/^#{1,3}\s+/.test(line)) {
-            closeList();
-            const level = Math.min((line.match(/^#+/) || ["##"])[0].length + 1, 3);
-            html.push(`<h${level}>${inlineMarkdown(line.replace(/^#+\s+/, ""))}</h${level}>`);
-        } else if (/^\s*[-*]\s+/.test(line)) {
-            if (!inList) {
-                html.push("<ul>");
-                inList = true;
-            }
-            html.push(`<li>${inlineMarkdown(line.replace(/^\s*[-*]\s+/, ""))}</li>`);
-        } else if (line.trim()) {
-            closeList();
-            html.push(`<p>${inlineMarkdown(line.trim())}</p>`);
-        } else {
-            closeList();
-        }
-    }
-    closeList();
-    if (inCode) html.push("</code></pre>");
+    const excerpt = source.split(/\r?\n/).slice(0, 220).join("\n");
+    const html = markdownToHtml(excerpt, { headingOffset: 1, maxHeadingLevel: 3 });
     return `<section class="doc-section changelog-note reveal" id="latest-entries">
         <h2>Latest entries</h2>
         <p>This page shows the latest entries from CHANGELOG.md. See the repository for the complete release history.</p>
     </section>
-    <section class="doc-section changelog reveal" id="release-notes">${html.join("\n")}</section>`;
+    <section class="doc-section changelog reveal" id="release-notes">${html}</section>`;
 }
 
 function writeCss() {
