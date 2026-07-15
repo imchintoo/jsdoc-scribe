@@ -1,3 +1,54 @@
+> **Note:** the entries for `2.4.1` and `2.4.3`–`2.4.7` below were reconstructed
+> from the repository's real git history on 2026-07-15, closing a gap where
+> these versions had shipped without changelog entries. Each entry is
+> grounded in the actual commit diffs for that version (see the referenced
+> commit messages/backlog docs) — nothing here is invented.
+
+## [2.4.7] - 2026-07-13
+
+### Fixed
+- **Docs site markdown rendering: list/bold/link gaps unified.** `scripts/build-pages-docs.js`'s markdown parser previously had no block type for `-`/`*`/numbered lists (list lines fell through and rendered as plain paragraph text), and blockquotes/paragraphs ran through inconsistent inline-formatting passes. `parsePostBlocks()` now recognizes ordered/unordered list items as their own block type (rendered as real `<ul>`/`<ol>`), and every text-bearing block (paragraph, quote, list item) now runs through the same `inlineMarkdown()` pass, so bold text and links render consistently everywhere instead of only in paragraphs.
+- A layout/design issue on the generated GitHub Pages site was corrected (`scripts/build-pages-docs.js`).
+
+### Added
+- New blog post: "Halving Engineering Overhead: Documentation Automation" (`docs-site/posts/`), with its own preview image (`assets/halving-engineering-overhead-documentation-automation.png`).
+
+### Changed
+- `README.md` substantially trimmed (503 → ~100 net lines) now that the full walkthrough content lives on the GitHub Pages documentation site instead of duplicated in the README.
+
+## [2.4.6] - 2026-07-12
+
+### Changed
+- Expanded and corrected the GitHub Pages documentation content across every doc page (quick-start, CLI, GitHub Actions, GitHub Pages, programmatic API, ESLint plugin, features) and the corresponding rendering in `scripts/build-pages-docs.js`.
+- `README.md` updated to match the expanded docs site.
+
+## [2.4.5] - 2026-07-10
+
+### Added
+- **GitHub Pages documentation site.** `scripts/build-pages-docs.js` builds a full static site from markdown sources: `docs-site/docs/` (quick-start, CLI, GitHub Actions, GitHub Pages, programmatic API, ESLint plugin, features, and this changelog page — which renders directly from `CHANGELOG.md`, not a separately hand-maintained copy) and `docs-site/posts/` (blog). New `npm run docs:pages` script. Ships with two launch posts: "Publish your jsdoc site with GitHub Pages" and "Why deterministic JSDoc matters."
+
+### Fixed
+- **CI publish reliability**: pinned `npm` to `11.5.1` in the publish workflow (`.github/workflows/publish.yml`) — a floating `npm install -g npm@latest` had picked up a release whose bundled `libnpmpublish` required the unscoped `sigstore` package while that npm release's own `package.json` only shipped the newer scoped `@sigstore/*` packages, breaking `npm publish` with `Cannot find module 'sigstore'`.
+- Perf-gate threshold raised from 4.5x to 5.0x (`bench/run-perf-gate.js`) after a CI run measured 4.55x on functionally unchanged code — shared CI-runner timing noise, not a regression. Still tight enough to catch a genuine superlinear blowup.
+
+### Changed
+- CI: `docs.yml`/`perf-gate.yml`/`quality.yml` workflows' Node version bumped 20 → 24; `test.yml`'s test matrix updated from `[18, 20, 22]` to `[22, 24, 26]`.
+
+## [2.4.4] - 2026-07-09
+
+### Changed
+- CI: `publish.yml` workflow's Node version bumped 20 → 24.
+
+## [2.4.3] - 2026-07-09
+
+### Fixed
+- **TypeScript 7 silent-failure bug** (`docs/backlog/task-ts7-01.md`–`task-ts7-04.md`, reported against a real user repo). A file that failed to parse inside `extractModule()` was logged (`  <file> -> FAILED: <message>`) but otherwise treated as a no-op — `--check-drift`, `--lint`, `--fix`, `--check`, `--dry-run`, and plain `--write` runs all still exited `0` and could print a false "all clean" message (`"No drift detected..."`, `"No lint issues found."`, `"All symbols are documented."`) even when one or more files had silently failed to parse. `bin/cli.js` now tracks a per-run `failedTotal` across all six of those code paths: a parse failure now forces a non-zero exit code and prints an explicit `N file(s) failed to parse.` line, and the success messages are replaced with an honest "found no issues among the files that did parse, but N failed" variant when applicable.
+- `typescript` dependency range pinned to `>=5.0.0 <7.0.0` (`package.json`) — an untested major-version bump of the parser this tool is built on was the root cause a user could hit silently, per the above.
+- `.github/ISSUE_TEMPLATE/bug_report.md`: fixed a broken version-check command in the template.
+
+### Tests
+- New `test/cli-failure-accounting.test.js`, wired into `test/run.js`: asserts the failure-accounting behavior above across all six CLI modes, on all-healthy, mixed healthy/broken, and 100%-broken input sets.
+
 ## [2.4.2] - 2026-07-08
 
 ### Fixed
@@ -20,6 +71,11 @@
 
 ### Tests
 - Test suite grew from 228 to 234 assertions (2 new full-tree byte-diff tests in `test/gen-docs.test.js`, 3 new cross-call isolation tests in the new `test/renderer-memoization.test.js`). All pre-existing 228 assertions pass unchanged -- verified via byte-diff against `sample/`, both with and without `--quality`, confirming zero output/behavior change (story AC7).
+
+## [2.4.1] - 2026-07-07
+
+Version-only republish — `package.json`/`package-lock.json` version bump with
+no functional code change against `2.4.0`.
 
 ## [2.4.0] - 2026-07-07
 
