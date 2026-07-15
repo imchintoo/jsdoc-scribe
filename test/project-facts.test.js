@@ -18,6 +18,7 @@ const {
     getProjectStructure,
     getWorkspacePackages,
     getFrameworkSignals,
+    getArchitectureSignals,
     getTestInfo,
     getAllFacts,
 } = require("../lib/project-facts.js");
@@ -268,6 +269,123 @@ module.exports = function runProjectFactsTests(check) {
         ]);
     });
 
+    check("getArchitectureSignals: detects 'CLI tool' from a non-empty package.json bin field", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ bin: { "my-cli": "./bin/cli.js" } }));
+        const signals = getArchitectureSignals(dir);
+        assert.strictEqual(signals.length, 1);
+        assert.strictEqual(signals[0].name, "CLI tool");
+        assert.match(signals[0].evidence, /my-cli/);
+    });
+
+    check("getArchitectureSignals: detects 'Publishable library' from main/exports, preferring exports in the evidence text", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ main: "index.js", exports: { ".": "./index.js" } }));
+        const signals = getArchitectureSignals(dir);
+        assert.strictEqual(signals.length, 1);
+        assert.strictEqual(signals[0].name, "Publishable library");
+        assert.match(signals[0].evidence, /"exports"/);
+    });
+
+    check("getArchitectureSignals: detects 'Monorepo (npm workspaces)' and names the resolved packages in evidence", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ workspaces: ["packages/*"] }));
+        fs.mkdirSync(path.join(dir, "packages", "pkg-a"), { recursive: true });
+        fs.writeFileSync(path.join(dir, "packages", "pkg-a", "package.json"), JSON.stringify({ name: "pkg-a" }));
+        const signals = getArchitectureSignals(dir);
+        assert.strictEqual(signals.length, 1);
+        assert.strictEqual(signals[0].name, "Monorepo (npm workspaces)");
+        assert.match(signals[0].evidence, /pkg-a/);
+    });
+
+    check("getArchitectureSignals: detects 'Backend/API service' only from a dependency-confidence framework signal", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ dependencies: { express: "^4.0.0" } }));
+        const signals = getArchitectureSignals(dir);
+        assert.strictEqual(signals.length, 1);
+        assert.strictEqual(signals[0].name, "Backend/API service");
+    });
+
+    check("getArchitectureSignals: 'Backend/API service' does NOT fire from a file-heuristic-only framework signal", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({}));
+        fs.mkdirSync(path.join(dir, "src"));
+        fs.writeFileSync(path.join(dir, "src", "App.jsx"), ""); // file-heuristic React only, no dependency
+        const signals = getArchitectureSignals(dir);
+        assert.ok(!signals.some((s) => s.name === "Frontend application"), "file-heuristic-only signals must not promote to an architecture claim");
+    });
+
+    check("getArchitectureSignals: detects 'MVC-influenced layout' when at least 2 of controllers/models/views exist", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({}));
+        fs.mkdirSync(path.join(dir, "src", "controllers"), { recursive: true });
+        fs.mkdirSync(path.join(dir, "src", "models"), { recursive: true });
+        const signals = getArchitectureSignals(dir);
+        assert.strictEqual(signals.length, 1);
+        assert.strictEqual(signals[0].name, "MVC-influenced layout");
+        assert.match(signals[0].evidence, /controllers/);
+        assert.match(signals[0].evidence, /models/);
+    });
+
+    check("getArchitectureSignals: does NOT fire MVC on just 1 matching directory name", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({}));
+        fs.mkdirSync(path.join(dir, "src", "controllers"), { recursive: true });
+        assert.deepStrictEqual(getArchitectureSignals(dir), []);
+    });
+
+    check("getArchitectureSignals: detects 'Layered/service-oriented layout' from either directory-name group, reported as one signal even if both groups match", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({}));
+        fs.mkdirSync(path.join(dir, "src", "routes"), { recursive: true });
+        fs.mkdirSync(path.join(dir, "src", "services"), { recursive: true });
+        fs.mkdirSync(path.join(dir, "src", "domain"), { recursive: true });
+        fs.mkdirSync(path.join(dir, "src", "application"), { recursive: true });
+        const signals = getArchitectureSignals(dir);
+        assert.strictEqual(signals.length, 1, "both matching groups should still produce exactly one 'Layered/service-oriented layout' signal, not two");
+        assert.strictEqual(signals[0].name, "Layered/service-oriented layout");
+        assert.match(signals[0].evidence, /routes/);
+        assert.match(signals[0].evidence, /domain/);
+    });
+
+    check("getArchitectureSignals: multiple independent signals co-occur on one fixture (never collapsed into a single label)", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ bin: { cli: "./bin/cli.js" }, main: "index.js", dependencies: { "@nestjs/core": "^10.0.0" } }));
+        fs.mkdirSync(path.join(dir, "src", "controllers"), { recursive: true });
+        fs.mkdirSync(path.join(dir, "src", "models"), { recursive: true });
+        const signals = getArchitectureSignals(dir);
+        const names = signals.map((s) => s.name).sort();
+        assert.deepStrictEqual(names, ["Backend/API service", "CLI tool", "MVC-influenced layout", "Publishable library"]);
+    });
+
+    check("getArchitectureSignals: returns an empty array on a plain repo with none of the 7 signals", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ dependencies: { lodash: "^4.0.0" } }));
+        fs.mkdirSync(path.join(dir, "lib"));
+        assert.deepStrictEqual(getArchitectureSignals(dir), []);
+    });
+
+    check("getArchitectureSignals: this repo's own real signals report CLI tool + Publishable library + Monorepo + Layered/service-oriented layout", () => {
+        // Verified against this repo's actual real directory tree (`find .
+        // -mindepth 1 -maxdepth 3 -type d`) before writing this assertion,
+        // not assumed: root package.json has both bin.gen-comments/
+        // bin.gen-docs and exports, one real npm workspace
+        // (eslint-plugin-jsdoc-scribe), and sample/express/ genuinely has
+        // both routes/ and services/ directories (fixture data, but the
+        // detector has no way to know that -- and per the ADR it
+        // shouldn't guess intent, only report what it found). No MVC
+        // signal (only controllers/ exists, not 2 of the 3 names), no
+        // Backend/API service or Frontend application (no framework
+        // dependency at confidence: "dependency" anywhere in this repo).
+        const signals = getArchitectureSignals(path.resolve(__dirname, ".."));
+        assert.deepStrictEqual(signals, [
+            { name: "CLI tool", evidence: "package.json \"bin\": gen-comments, gen-docs" },
+            { name: "Publishable library", evidence: "package.json has a \"exports\" field" },
+            { name: "Monorepo (npm workspaces)", evidence: "1 workspace package(s): eslint-plugin-jsdoc-scribe" },
+            { name: "Layered/service-oriented layout", evidence: "directories present: routes, services" },
+        ]);
+    });
+
     check("getTestInfo: reports no framework and no HTTP API", () => {
         const facts = getTestInfo(tmpRepo());
         assert.strictEqual(facts.framework, null);
@@ -291,6 +409,7 @@ module.exports = function runProjectFactsTests(check) {
         assert.ok("structure" in facts);
         assert.ok("workspacePackages" in facts);
         assert.ok("frameworkSignals" in facts);
+        assert.ok("architectureSignals" in facts);
         assert.ok("test" in facts);
     });
 };
