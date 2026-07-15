@@ -17,6 +17,7 @@ const {
     getGlobalDependencies,
     getProjectStructure,
     getWorkspacePackages,
+    getFrameworkSignals,
     getTestInfo,
     getAllFacts,
 } = require("../lib/project-facts.js");
@@ -189,6 +190,84 @@ module.exports = function runProjectFactsTests(check) {
         assert.ok(names.includes("eslint-plugin-jsdoc-scribe"), "expected this repo's real workspace package to be detected");
     });
 
+    check("getFrameworkSignals: detects a root-level dependency with correct evidence", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ dependencies: { react: "^18.0.0" } }));
+        const signals = getFrameworkSignals(dir);
+        assert.strictEqual(signals.length, 1);
+        assert.strictEqual(signals[0].name, "React");
+        assert.strictEqual(signals[0].confidence, "dependency");
+        assert.match(signals[0].evidence, /"react" in package\.json dependencies/);
+    });
+
+    check("getFrameworkSignals: detects multiple frameworks across dependencies/devDependencies/peerDependencies", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({
+            dependencies: { express: "^4.0.0" },
+            devDependencies: { "@angular/core": "^17.0.0" },
+            peerDependencies: { vue: "^3.0.0" },
+        }));
+        const signals = getFrameworkSignals(dir);
+        const names = signals.map((s) => s.name).sort();
+        assert.deepStrictEqual(names, ["Angular", "Express", "Vue"]);
+        assert.ok(signals.every((s) => s.confidence === "dependency"));
+    });
+
+    check("getFrameworkSignals: detects a framework dependency declared only in a workspace package, not the root", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ workspaces: ["packages/*"] }));
+        fs.mkdirSync(path.join(dir, "packages", "web"), { recursive: true });
+        fs.writeFileSync(path.join(dir, "packages", "web", "package.json"), JSON.stringify({ name: "web", dependencies: { next: "^14.0.0" } }));
+        const signals = getFrameworkSignals(dir);
+        assert.strictEqual(signals.length, 1);
+        assert.strictEqual(signals[0].name, "Next.js");
+        assert.match(signals[0].evidence, /packages\/web\/package\.json/);
+    });
+
+    check("getFrameworkSignals: falls back to a file-heuristic signal when JSX files exist with no matching dependency", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({}));
+        fs.mkdirSync(path.join(dir, "src"));
+        fs.writeFileSync(path.join(dir, "src", "App.jsx"), "");
+        const signals = getFrameworkSignals(dir);
+        assert.strictEqual(signals.length, 1);
+        assert.strictEqual(signals[0].name, "React");
+        assert.strictEqual(signals[0].confidence, "file-heuristic");
+    });
+
+    check("getFrameworkSignals: does not emit a file-heuristic signal when dependency evidence already covers it", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ dependencies: { react: "^18.0.0" } }));
+        fs.mkdirSync(path.join(dir, "src"));
+        fs.writeFileSync(path.join(dir, "src", "App.jsx"), "");
+        const signals = getFrameworkSignals(dir);
+        assert.strictEqual(signals.length, 1, "should not double-report React via both dependency and file-heuristic");
+        assert.strictEqual(signals[0].confidence, "dependency");
+    });
+
+    check("getFrameworkSignals: returns an empty array on a plain repo with no framework signals", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ dependencies: { lodash: "^4.0.0" } }));
+        fs.mkdirSync(path.join(dir, "lib"));
+        fs.writeFileSync(path.join(dir, "lib", "index.js"), "");
+        assert.deepStrictEqual(getFrameworkSignals(dir), []);
+    });
+
+    check("getFrameworkSignals: this repo's own real facts report exactly one file-heuristic React signal, no dependency-based false positives", () => {
+        // jsdoc-scribe itself is plain Node/TS tooling with no framework
+        // dependency in any package.json (root or the eslint-plugin
+        // workspace) -- but sample/react/*.tsx fixtures do exist, so the
+        // file-heuristic fallback is expected to fire for React and
+        // nothing else (no .vue anywhere, no @nestjs/core/@angular/core/
+        // express/next dependency anywhere). Asserting the exact signal
+        // (not just "some signals exist") so a future false positive
+        // from an unrelated new dependency/fixture would fail this test.
+        const signals = getFrameworkSignals(path.resolve(__dirname, ".."));
+        assert.deepStrictEqual(signals, [
+            { name: "React", confidence: "file-heuristic", evidence: ".tsx files present, no matching dependency found in any package.json" },
+        ]);
+    });
+
     check("getTestInfo: reports no framework and no HTTP API", () => {
         const facts = getTestInfo(tmpRepo());
         assert.strictEqual(facts.framework, null);
@@ -211,6 +290,7 @@ module.exports = function runProjectFactsTests(check) {
         assert.ok("globalDependencies" in facts);
         assert.ok("structure" in facts);
         assert.ok("workspacePackages" in facts);
+        assert.ok("frameworkSignals" in facts);
         assert.ok("test" in facts);
     });
 };
