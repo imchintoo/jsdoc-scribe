@@ -16,6 +16,7 @@ const {
     getPackageManager,
     getGlobalDependencies,
     getProjectStructure,
+    getWorkspacePackages,
     getTestInfo,
     getAllFacts,
 } = require("../lib/project-facts.js");
@@ -100,6 +101,94 @@ module.exports = function runProjectFactsTests(check) {
         assert.match(custom.description, /no description/);
     });
 
+    check("getProjectStructure: reports per-directory file-extension counts", () => {
+        const dir = tmpRepo();
+        fs.mkdirSync(path.join(dir, "lib"));
+        fs.writeFileSync(path.join(dir, "lib", "foo.js"), "");
+        fs.writeFileSync(path.join(dir, "lib", "bar.ts"), "");
+        fs.writeFileSync(path.join(dir, "lib", "baz.js"), "");
+        const structure = getProjectStructure(dir);
+        const lib = structure.find((s) => s.name === "lib");
+        assert.deepStrictEqual(lib.files, { ".js": 2, ".ts": 1 });
+    });
+
+    check("getProjectStructure: recognizes .test.js/.spec.js/.d.ts as their own extension bucket", () => {
+        const dir = tmpRepo();
+        fs.mkdirSync(path.join(dir, "test"));
+        fs.writeFileSync(path.join(dir, "test", "foo.test.js"), "");
+        fs.writeFileSync(path.join(dir, "test", "bar.spec.js"), "");
+        fs.writeFileSync(path.join(dir, "test", "run.js"), "");
+        const structure = getProjectStructure(dir);
+        const testDir = structure.find((s) => s.name === "test");
+        assert.strictEqual(testDir.files[".test.js"], 1);
+        assert.strictEqual(testDir.files[".spec.js"], 1);
+        assert.strictEqual(testDir.files[".js"], 1, "run.js should fall into the plain .js bucket, not .test.js/.spec.js");
+    });
+
+    check("getProjectStructure: walks nested directories and attaches children up to the default depth", () => {
+        const dir = tmpRepo();
+        fs.mkdirSync(path.join(dir, "lib", "sub"), { recursive: true });
+        fs.writeFileSync(path.join(dir, "lib", "sub", "deep.js"), "");
+        const structure = getProjectStructure(dir);
+        const lib = structure.find((s) => s.name === "lib");
+        assert.ok(Array.isArray(lib.children), "lib should have a children array");
+        const sub = lib.children.find((c) => c.name === "sub");
+        assert.ok(sub, "nested 'sub' directory should be present");
+        assert.strictEqual(sub.files[".js"], 1);
+    });
+
+    check("getProjectStructure: respects a custom depth option", () => {
+        const dir = tmpRepo();
+        fs.mkdirSync(path.join(dir, "a", "b", "c"), { recursive: true });
+        const shallow = getProjectStructure(dir, { depth: 1 });
+        const a1 = shallow.find((s) => s.name === "a");
+        assert.strictEqual(a1.children, undefined, "depth: 1 should not descend into children at all");
+
+        const deep = getProjectStructure(dir, { depth: 3 });
+        const a3 = deep.find((s) => s.name === "a");
+        const b = a3.children.find((c) => c.name === "b");
+        assert.ok(b.children.find((c) => c.name === "c"), "depth: 3 should reach 'c'");
+    });
+
+    check("getProjectStructure: excludes ignored directory names at any depth, not just top-level", () => {
+        const dir = tmpRepo();
+        fs.mkdirSync(path.join(dir, "a", "node_modules"), { recursive: true });
+        fs.mkdirSync(path.join(dir, "a", "real-sub"), { recursive: true });
+        const structure = getProjectStructure(dir);
+        const a = structure.find((s) => s.name === "a");
+        const childNames = a.children.map((c) => c.name);
+        assert.ok(!childNames.includes("node_modules"));
+        assert.ok(childNames.includes("real-sub"));
+    });
+
+    check("getWorkspacePackages: resolves 'dir/*' glob-style workspace patterns against real package.json files", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ workspaces: ["packages/*"] }));
+        fs.mkdirSync(path.join(dir, "packages", "pkg-a"), { recursive: true });
+        fs.writeFileSync(path.join(dir, "packages", "pkg-a", "package.json"), JSON.stringify({ name: "pkg-a", description: "Package A" }));
+        fs.mkdirSync(path.join(dir, "packages", "pkg-b"), { recursive: true });
+        fs.writeFileSync(path.join(dir, "packages", "pkg-b", "package.json"), JSON.stringify({ name: "pkg-b" }));
+        const packages = getWorkspacePackages(dir);
+        assert.strictEqual(packages.length, 2);
+        assert.strictEqual(packages[0].name, "pkg-a");
+        assert.strictEqual(packages[0].description, "Package A");
+        assert.strictEqual(packages[0].path, "packages/pkg-a");
+        assert.strictEqual(packages[1].name, "pkg-b");
+        assert.strictEqual(packages[1].description, null);
+    });
+
+    check("getWorkspacePackages: returns an empty array when no workspaces field is present", () => {
+        const dir = tmpRepo();
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({}));
+        assert.deepStrictEqual(getWorkspacePackages(dir), []);
+    });
+
+    check("getWorkspacePackages: resolves this repo's own real workspace ('packages/eslint-plugin-jsdoc-scribe')", () => {
+        const packages = getWorkspacePackages(path.resolve(__dirname, ".."));
+        const names = packages.map((p) => p.name);
+        assert.ok(names.includes("eslint-plugin-jsdoc-scribe"), "expected this repo's real workspace package to be detected");
+    });
+
     check("getTestInfo: reports no framework and no HTTP API", () => {
         const facts = getTestInfo(tmpRepo());
         assert.strictEqual(facts.framework, null);
@@ -121,6 +210,7 @@ module.exports = function runProjectFactsTests(check) {
         assert.ok("packageManager" in facts);
         assert.ok("globalDependencies" in facts);
         assert.ok("structure" in facts);
+        assert.ok("workspacePackages" in facts);
         assert.ok("test" in facts);
     });
 };
