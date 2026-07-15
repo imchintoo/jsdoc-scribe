@@ -7,7 +7,8 @@
  */
 
 const assert  = require("assert");
-const { buildSite, pathTree, ancestorChain, cardBreadcrumb, CSS_STRUCTURE } = require("../lib/renderer.js");
+const { buildSite, pathTree, ancestorChain, cardBreadcrumb, CSS_STRUCTURE,
+        buildArchitectureSection, renderStructureNode, buildArchitecturePage } = require("../lib/renderer.js");
 
 // ---------------------------------------------------------------------------
 // Mock helpers
@@ -755,26 +756,26 @@ module.exports = function runRendererTests(check) {
         assert.ok(CSS_STRUCTURE.includes("max-width:720px"), "mobile 2-column strip media query missing");
     });
 
-    check("CSS_STRUCTURE: adr-phase-n corrected/new design tokens present, matching the real mockup values", () => {
-        assert.ok(CSS_STRUCTURE.includes("Space+Grotesk") && CSS_STRUCTURE.includes("JetBrains+Mono"), "Google Fonts @import for Space Grotesk / JetBrains Mono missing");
-        assert.ok(CSS_STRUCTURE.includes('--font-display:"Space Grotesk"'), "--font-display token missing/wrong");
+    check("CSS_STRUCTURE: phase-o design-system-v2 tokens present, matching the jsdoc-scribe Figma Make reference", () => {
+        assert.ok(CSS_STRUCTURE.includes("IBM+Plex+Sans") && CSS_STRUCTURE.includes("JetBrains+Mono"), "Google Fonts @import for IBM Plex Sans / JetBrains Mono missing");
+        assert.ok(CSS_STRUCTURE.includes('--font-display:"Geist"'), "--font-display token missing/wrong");
+        assert.ok(CSS_STRUCTURE.includes('--font-body:"IBM Plex Sans"'), "--font-body token missing/wrong");
         assert.ok(CSS_STRUCTURE.includes('--font-mono:"JetBrains Mono"'), "--font-mono token missing/wrong");
-        assert.ok(CSS_STRUCTURE.includes("--coral:#FF4B2E"), "--coral not corrected to the real mockup value (was #FF6452)");
-        assert.ok(CSS_STRUCTURE.includes("--coral-hover:") && CSS_STRUCTURE.includes("--coral-press:"), "--coral-hover/--coral-press tokens missing");
-        assert.ok(CSS_STRUCTURE.includes("--purple-hover:") && CSS_STRUCTURE.includes("--purple-press:"), "--purple-hover/--purple-press tokens missing");
-        assert.ok(CSS_STRUCTURE.includes("--lime-hover:") && CSS_STRUCTURE.includes("--lime-press:"), "--lime-hover/--lime-press tokens missing");
-        assert.ok(CSS_STRUCTURE.includes("--black-soft:") && CSS_STRUCTURE.includes("--offwhite-soft:"), "--black-soft/--offwhite-soft tokens missing");
-        assert.ok(CSS_STRUCTURE.includes("--text-on-lime:") && CSS_STRUCTURE.includes("--text-button:"), "--text-on-lime/--text-button tokens missing");
+        assert.ok(CSS_STRUCTURE.includes("--bg:#0F1115"), "--bg not set to the reference's dark canvas value");
+        assert.ok(CSS_STRUCTURE.includes("--surface:#171A20"), "--surface not set to the reference's dark card value");
+        assert.ok(CSS_STRUCTURE.includes("--accent:#7382FF") && CSS_STRUCTURE.includes("--accent-hover:#4D5BFF"), "--accent/--accent-hover not set to the reference's brand values");
+        assert.ok(CSS_STRUCTURE.includes("--success:#34D399") && CSS_STRUCTURE.includes("--warning:#FBBF24") && CSS_STRUCTURE.includes("--danger:#F87171") && CSS_STRUCTURE.includes("--info:#38BDF8"), "semantic status tokens missing/wrong");
         ["--radius-sm", "--radius-md", "--radius-lg", "--radius-xl", "--radius-pill"].forEach(function (t) {
             assert.ok(CSS_STRUCTURE.includes(t + ":"), t + " radius-scale token missing");
         });
+        assert.ok(CSS_STRUCTURE.includes("--ease:cubic-bezier(0.215,0.610,0.355,1.000)"), "--ease motion token missing/wrong");
         assert.ok(CSS_STRUCTURE.includes("--shadow-card:") && CSS_STRUCTURE.includes("--shadow-inset-dark:"), "shadow tokens missing");
-        assert.ok(CSS_STRUCTURE.includes(".badge-pill{") && CSS_STRUCTURE.includes("var(--radius-pill)"), "badge-pill not wired to the radius-pill token");
-        assert.ok(CSS_STRUCTURE.includes(".focus-btn{") && CSS_STRUCTURE.includes("var(--text-mono-badge)"), "focus-btn not wired to the mono-badge type token");
-        assert.ok(CSS_STRUCTURE.includes(".insight-row{") && CSS_STRUCTURE.includes("var(--border-on-light)"), "insight-row not wired to the border-on-light token");
+        assert.ok(CSS_STRUCTURE.includes(".icon{"), "shared .icon class missing (SVG icon system)");
+        assert.ok(CSS_STRUCTURE.includes(".qhero{") && CSS_STRUCTURE.includes(".qhero-gauge-svg{"), "qhero/gauge-svg positioning rules missing");
+        assert.ok(CSS_STRUCTURE.includes(".sidebar-mark{"), "sidebar brand mark styling missing");
     });
 
-    check("gen-docs default (--quality-less) output is byte-for-byte unaffected by the adr-phase-n token pass", () => {
+    check("gen-docs default (--quality-less) output is byte-for-byte unaffected by the phase-o token pass", () => {
         const modules = [makeMod("/proj/src/a.ts", { functions: [makeFunc("run")] })];
         const before = buildSite(modules, { projectName: "Test", version: "1.0.0" });
         const after = buildSite(modules, { projectName: "Test", version: "1.0.0" });
@@ -788,6 +789,18 @@ module.exports = function runRendererTests(check) {
         assert.ok(CSS_STRUCTURE.includes(".qfn-grade{"), ".qfn-grade missing");
         assert.ok(CSS_STRUCTURE.includes(".qfn-metric-dots{"), ".qfn-metric-dots missing");
         assert.ok(CSS_STRUCTURE.includes(".qfn-smells{"), ".qfn-smells missing");
+    });
+
+    check("CSS_STRUCTURE: architecture tree/badge redesign selectors present (2026-07-15)", () => {
+        assert.ok(CSS_STRUCTURE.includes(".arch-tree"), ".arch-tree wrapper selector missing");
+        assert.ok(CSS_STRUCTURE.includes(".arch-tree .collapse-body"), "scoped tree-indent/guide-line rule missing");
+        assert.ok(CSS_STRUCTURE.includes(".arch-badges{"), ".arch-badges missing");
+        assert.ok(CSS_STRUCTURE.includes(".arch-badge{"), ".arch-badge missing");
+        assert.ok(CSS_STRUCTURE.includes(".arch-node-name{"), ".arch-node-name missing");
+    });
+
+    check("CSS_STRUCTURE/renderer: sidebar width increased to 224px (2026-07-15 detail-page-polish)", () => {
+        assert.ok(CSS_STRUCTURE.includes("--sidebar-w:224px"), "--sidebar-w should be 224px, not the old 192px");
     });
 
     check("buildFunctionHealthLookup: matches by name + point-in-range, tightest (smallest) range wins on ambiguity", () => {
@@ -882,6 +895,321 @@ module.exports = function runRendererTests(check) {
         const pages = buildSite(modules, { projectName: "Test" });
         const modPage = pages.find(p => p.path.startsWith("modules/"));
         assert.ok(!modPage.html.includes("qfn-chip-row"), "qfn-chip-row must not appear without --quality");
+    });
+
+    // -----------------------------------------------------------------------
+    // task-arch-04 — Architecture page (buildArchitectureSection /
+    // renderStructureNode / buildArchitecturePage). See
+    // docs/backlog/adr-architecture-render-phase4.md and
+    // docs/backlog/ux-architecture-render-phase4.md.
+    // -----------------------------------------------------------------------
+
+    function makeStructureNode(overrides) {
+        return Object.assign({
+            name: "lib",
+            description: "Core library.",
+            files: { ".js": 3 },
+            children: undefined,
+        }, overrides);
+    }
+
+    function makeFacts(overrides) {
+        return Object.assign({
+            structure: [],
+            workspacePackages: [],
+            frameworkSignals: [],
+            architectureSignals: [],
+            architecturePatterns: [],
+        }, overrides);
+    }
+
+    check("buildArchitectureSection: returns \"\" when facts is absent", () => {
+        assert.strictEqual(buildArchitectureSection(null), "");
+        assert.strictEqual(buildArchitectureSection(undefined), "");
+    });
+
+    check("buildArchitectureSection: returns \"\" when every relevant field is empty", () => {
+        assert.strictEqual(buildArchitectureSection(makeFacts()), "");
+    });
+
+    check("buildArchitectureSection: non-empty facts render pattern -> framework -> structure sections in DOM order (UX §1/§3)", () => {
+        const facts = makeFacts({
+            architectureSignals: [{ name: "CLI tool", evidence: 'package.json "bin": jsdoc-scribe' }],
+            frameworkSignals: [{ name: "React", confidence: "dependency", evidence: '"react" in package.json dependencies' }],
+            structure: [makeStructureNode()],
+        });
+        const html = buildArchitectureSection(facts);
+        const patternIdx = html.indexOf("WHAT KIND OF PROJECT IS THIS");
+        const frameworkIdx = html.indexOf("WHAT IT'S BUILT WITH");
+        const structureIdx = html.indexOf("HOW IT'S ORGANIZED");
+        assert.ok(patternIdx !== -1 && frameworkIdx !== -1 && structureIdx !== -1, "all three section titles should be present");
+        assert.ok(patternIdx < frameworkIdx && frameworkIdx < structureIdx, "sections must appear in pattern -> framework -> structure DOM order");
+    });
+
+    check("buildArchitectureSection: pattern-signal section omitted when architectureSignals is empty (framework/structure still render)", () => {
+        const facts = makeFacts({
+            frameworkSignals: [{ name: "Vue", confidence: "dependency", evidence: '"vue" in package.json dependencies' }],
+            structure: [makeStructureNode()],
+        });
+        const html = buildArchitectureSection(facts);
+        assert.ok(!html.includes("WHAT KIND OF PROJECT IS THIS"), "pattern section should be omitted with zero architecture signals");
+        assert.ok(html.includes("WHAT IT'S BUILT WITH"), "framework section should still render");
+        assert.ok(html.includes("HOW IT'S ORGANIZED"), "structure section should still render");
+    });
+
+    check("buildArchitectureSection: structure section still renders (with a .qempty message) when structure is [] but another category is non-empty", () => {
+        const facts = makeFacts({
+            architectureSignals: [{ name: "Publishable library", evidence: 'package.json has a "exports" field' }],
+        });
+        const html = buildArchitectureSection(facts);
+        assert.ok(html.includes("HOW IT'S ORGANIZED"), "structure section header should still render");
+        assert.ok(html.includes("No subdirectories found at the top level of this project."), "empty-structure message missing");
+        assert.ok(html.includes("qempty"), "empty-structure message should use the .qempty style");
+    });
+
+    check("buildArchitectureSection: workspace packages render as .module-card entries, description line omitted only when null", () => {
+        const facts = makeFacts({
+            workspacePackages: [
+                { name: "eslint-plugin-jsdoc-scribe", path: "packages/eslint-plugin-jsdoc-scribe", description: "ESLint rules for jsdoc-scribe." },
+                { name: "no-desc-pkg", path: "packages/no-desc-pkg", description: null },
+            ],
+            structure: [makeStructureNode()],
+        });
+        const html = buildArchitectureSection(facts);
+        assert.ok(html.includes("Workspace packages"), "Workspace packages sub-heading missing");
+        assert.ok(html.includes("module-grid") && html.includes("module-card"), "expected reuse of .module-grid/.module-card");
+        assert.ok(html.includes("eslint-plugin-jsdoc-scribe") && html.includes("ESLint rules for jsdoc-scribe."), "package name/description missing");
+        assert.ok(html.includes("no-desc-pkg"), "package with a null description should still render its card");
+    });
+
+    check("buildArchitectureSection: architecturePatterns render as their own section with name/evidence/description/Learn-more link (2026-07-15)", () => {
+        const facts = makeFacts({
+            architecturePatterns: [
+                {
+                    name: "Layered (N-Tier)",
+                    description: "Code is split into horizontal layers -- presentation, business logic, data access.",
+                    link: "https://en.wikipedia.org/wiki/Multitier_architecture",
+                    evidence: "directories present: controllers, services",
+                },
+            ],
+        });
+        const html = buildArchitectureSection(facts);
+        assert.ok(html.includes("ARCHITECTURAL PATTERN"), "expected an ARCHITECTURAL PATTERN(S) section heading");
+        assert.ok(html.includes("Layered (N-Tier)"), "pattern name missing");
+        assert.ok(html.includes("directories present: controllers, services"), "evidence line missing");
+        assert.ok(html.includes("Code is split into horizontal layers"), "description missing");
+        assert.ok(html.includes('href="https://en.wikipedia.org/wiki/Multitier_architecture"'), "Learn-more link missing/wrong URL");
+        assert.ok(html.includes("target=\"_blank\""), "external reference link should open in a new tab");
+    });
+
+    check("buildArchitectureSection: architecturePatterns section is omitted (not an empty heading) when the array is empty", () => {
+        const html = buildArchitectureSection(makeFacts({ structure: [makeStructureNode()] }));
+        assert.ok(!html.includes("ARCHITECTURAL PATTERN"), "should not render the section heading with zero detected patterns");
+    });
+
+    check("buildArchitectureSection: architecturePatterns alone (everything else empty) is still enough to render the page section", () => {
+        const html = buildArchitectureSection(makeFacts({
+            architecturePatterns: [{ name: "Monolith", description: "x".repeat(50), link: "https://en.wikipedia.org/wiki/Monolithic_application", evidence: "single package.json" }],
+        }));
+        assert.notStrictEqual(html, "", "a non-empty architecturePatterns array alone should be enough for buildArchitectureSection to render something");
+        assert.ok(html.includes("Monolith"));
+    });
+
+    check("buildArchitectureSubtitle: includes the architecture-pattern count segment alongside the existing three", () => {
+        const facts = makeFacts({
+            architectureSignals: [{ name: "CLI tool", evidence: "x" }],
+            architecturePatterns: [{ name: "Monolith", description: "x".repeat(50), link: "https://en.wikipedia.org/wiki/Monolithic_application", evidence: "x" }],
+            structure: [makeStructureNode()],
+        });
+        const modules = [];
+        const page = buildArchitecturePage(facts, modules, "Test", "1.0.0", pathTree(modules), "", new Map(), false);
+        assert.ok(page.html.includes("1 architecture pattern"), "expected the new architecture-pattern count segment in the subtitle");
+    });
+
+    // -- phrasing-table fidelity (UX §2.5), one example per table row --------
+
+    check("buildArchitectureSection: CLI tool phrasing matches UX §2.5's template", () => {
+        const html = buildArchitectureSection(makeFacts({ architectureSignals: [{ name: "CLI tool", evidence: 'package.json "bin": jsdoc-scribe' }] }));
+        assert.ok(html.includes("package.json declares a"), "missing lead-in clause");
+        assert.ok(html.includes("<code>bin</code>"), "bin should render as code, not a raw label");
+        assert.ok(html.includes("<code>jsdoc-scribe</code>"), "bin name should render as code");
+        assert.ok(html.includes("this can be run as a command from the terminal."), "missing trailing clause");
+        assert.ok(!html.includes('package.json "bin": jsdoc-scribe'), "raw evidence string must never appear un-wrapped");
+    });
+
+    check("buildArchitectureSection: Publishable library phrasing matches UX §2.5's template (exports field)", () => {
+        const html = buildArchitectureSection(makeFacts({ architectureSignals: [{ name: "Publishable library", evidence: 'package.json has a "exports" field' }] }));
+        assert.ok(html.includes("<code>exports</code>"), "field name should render as code");
+        assert.ok(html.includes("that's how a package exposes its public API to whoever installs it."), "missing trailing clause");
+    });
+
+    check("buildArchitectureSection: Monorepo phrasing matches UX §2.5's template", () => {
+        const evidence = "3 workspace package(s): eslint-plugin-jsdoc-scribe, pkg-b, pkg-c";
+        const html = buildArchitectureSection(makeFacts({ architectureSignals: [{ name: "Monorepo (npm workspaces)", evidence }] }));
+        assert.ok(html.includes("this repo hosts 3 workspace packages"), "missing lead-in clause with real count");
+        assert.ok(html.includes("<code>eslint-plugin-jsdoc-scribe</code>"), "package name should render as code");
+        assert.ok(html.includes("managed via npm workspaces."), "missing trailing clause");
+    });
+
+    check("buildArchitectureSection: Backend/API service phrasing matches UX §2.5's template", () => {
+        const html = buildArchitectureSection(makeFacts({ architectureSignals: [{ name: "Backend/API service", evidence: "framework dependency: Express, NestJS" }] }));
+        assert.ok(html.includes("depends on server frameworks (Express, NestJS)"), "missing named frameworks clause");
+        assert.ok(html.includes("typically used to build an API or backend."), "missing trailing clause");
+    });
+
+    check("buildArchitectureSection: MVC-influenced layout phrasing matches UX §2.5's template", () => {
+        const html = buildArchitectureSection(makeFacts({ architectureSignals: [{ name: "MVC-influenced layout", evidence: "directories present: controllers, models, views" }] }));
+        assert.ok(html.includes("<code>controllers/</code>") && html.includes("<code>models/</code>") && html.includes("<code>views/</code>"), "directory names should render as code with trailing slash");
+        assert.ok(html.includes("a naming convention commonly associated with MVC."), "missing trailing clause");
+    });
+
+    check("buildArchitectureSection: Layered/service-oriented layout phrasing matches UX §2.5's template", () => {
+        const html = buildArchitectureSection(makeFacts({ architectureSignals: [{ name: "Layered/service-oriented layout", evidence: "directories present: routes, services" }] }));
+        assert.ok(html.includes("directory names like"), "missing lead-in clause");
+        assert.ok(html.includes("<code>routes/</code>") && html.includes("<code>services/</code>"), "directory names should render as code");
+        assert.ok(html.includes("suggest the code is organized by responsibility, in layers."), "missing trailing clause");
+    });
+
+    check("buildArchitectureSection: unmatched architecture-signal evidence shape falls back to the general rule, never raw/un-wrapped (UX §2.5)", () => {
+        const html = buildArchitectureSection(makeFacts({ architectureSignals: [{ name: "Frontend application", evidence: "framework dependency: React, Next.js" }] }));
+        assert.ok(html.includes("React, Next.js"), "actual evidence should still be named");
+        assert.ok(html.includes("Frontend application"), "signal name should render as the card title");
+    });
+
+    check("buildArchitectureSection: framework dependency-confidence phrasing matches UX §2.5's template + DEPENDENCY MATCH chip", () => {
+        const html = buildArchitectureSection(makeFacts({ frameworkSignals: [{ name: "React", confidence: "dependency", evidence: '"react" in package.json dependencies' }] }));
+        assert.ok(html.includes("package.json lists it as a dependency"), "missing lead-in clause");
+        assert.ok(html.includes('<code>"react"</code>'), "dependency marker should render as code");
+        assert.ok(html.includes("DEPENDENCY MATCH"), "expected DEPENDENCY MATCH chip text");
+        assert.ok(!html.includes("confidence"), "the literal word 'confidence' must never render");
+        assert.ok(!html.includes(">dependency<"), "the raw enum value must never render bare");
+    });
+
+    check("buildArchitectureSection: framework file-heuristic phrasing matches UX §2.5's template + FILE PATTERN chip", () => {
+        const html = buildArchitectureSection(makeFacts({ frameworkSignals: [{ name: "React", confidence: "file-heuristic", evidence: ".tsx files present, no matching dependency found in any package.json" }] }));
+        assert.ok(html.includes("no <code>react</code> dependency found"), "missing negative-dependency clause with the correct marker");
+        assert.ok(html.includes("<code>.tsx</code> files"), "extension should render as code");
+        assert.ok(html.includes("common signal for React."), "missing trailing clause");
+        assert.ok(html.includes("FILE PATTERN"), "expected FILE PATTERN chip text");
+    });
+
+    // -- renderStructureNode ---------------------------------------------------
+
+    check("renderStructureNode: depth-0 node renders <details open>, depth>0 renders collapsed by default (UX §2.6)", () => {
+        const node = makeStructureNode({ children: [makeStructureNode({ name: "utils", children: undefined })] });
+        const topHtml = renderStructureNode(node, 0);
+        assert.ok(topHtml.startsWith("<details open>"), "depth-0 node should render <details open>");
+        const nestedHtml = renderStructureNode(node.children[0], 1);
+        assert.ok(nestedHtml.startsWith("<details><summary"), "depth>0 node should render collapsed (<details> without open)");
+        assert.ok(topHtml.includes("<details><summary"), "nested child inside a depth-0 node's own recursive render should itself be collapsed");
+        assert.ok(topHtml.includes("collapse-toggle") && topHtml.includes("collapse-body"), "expected reuse of .collapse-toggle/.collapse-body, not sidebar-item-details");
+    });
+
+    check("renderStructureNode: a children array over 40 entries renders only the first 40 plus a static +N more line", () => {
+        const many = [];
+        for (let i = 0; i < 45; i++) {
+            many.push(makeStructureNode({ name: "dir" + String(i).padStart(2, "0"), children: undefined, description: null }));
+        }
+        const node = makeStructureNode({ name: "root", children: many });
+        const html = renderStructureNode(node, 0);
+        assert.ok(html.includes("dir00"), "first entry missing");
+        assert.ok(html.includes("dir39"), "40th entry (index 39) should be present");
+        assert.ok(!html.includes("dir40"), "41st entry should NOT be rendered (cap is 40)");
+        assert.ok(html.includes("+5 more"), "expected a static '+5 more' line for the remaining 5 entries");
+    });
+
+    check("renderStructureNode: KNOWN_DIR_DESCRIPTIONS sentinel is never rendered verbatim; a real description renders", () => {
+        const sentinelHtml = renderStructureNode(makeStructureNode({ description: "(no description on file -- inspect directly)" }), 0);
+        const realHtml = renderStructureNode(makeStructureNode({ description: "Core library." }), 0);
+        assert.ok(!sentinelHtml.includes("no description on file"), "sentinel fallback description must never render verbatim");
+        assert.ok(realHtml.includes("Core library."), "a real KNOWN_DIR_DESCRIPTIONS description should render");
+    });
+
+    check("renderStructureNode: file-type badges render per category, colored, with a folder-count badge (2026-07-15 tree/badge redesign)", () => {
+        const node = makeStructureNode({
+            files: { ".js": 12, ".test.js": 4, ".md": 2, ".json": 1, ".yml": 1, ".txt": 1 },
+            children: [makeStructureNode({ name: "utils", children: undefined })],
+        });
+        const html = renderStructureNode(node, 0);
+        assert.ok(html.includes("arch-badges"), "expected the .arch-badges wrapper");
+        // .js + .test.js both end in .js -> bucketed into one "JavaScript" badge (16 total)
+        assert.ok(html.includes(">16 JavaScript<"), "JavaScript badge should sum .js + .test.js counts");
+        // .md/.yml/.txt don't match any headline category -> bucketed as "other" (2+1+1=4)
+        assert.ok(html.includes(">4 other<"), "uncategorized extensions should sum into one 'other' badge");
+        // 1 child directory -> a folder-count badge
+        assert.ok(html.includes(">1 folder<"), "expected a singular '1 folder' badge for the one child directory");
+        assert.ok(html.includes("arch-node-name"), "directory name should render with the .arch-node-name class");
+    });
+
+    check("renderStructureNode: TypeScript/CSS/JSON categories each get their own colored badge", () => {
+        const node = makeStructureNode({
+            files: { ".ts": 5, ".tsx": 3, ".css": 2, ".scss": 1, ".json": 4 },
+            children: undefined,
+        });
+        const html = renderStructureNode(node, 0);
+        assert.ok(html.includes(">8 TypeScript<"), "TypeScript badge should sum .ts + .tsx");
+        assert.ok(html.includes(">3 CSS<"), "CSS badge should sum .css + .scss");
+        assert.ok(html.includes(">4 JSON<"), "JSON badge missing");
+        assert.ok(!html.includes(">0 folder"), "no folder badge should render when there are no children");
+    });
+
+    check("buildArchitectureSection: structure tree is wrapped in .arch-tree for the tree-indent/guide-line CSS", () => {
+        const html = buildArchitectureSection(makeFacts({ structure: [makeStructureNode()] }));
+        assert.ok(html.includes('class="arch-tree"'), "expected the .arch-tree wrapper div around the rendered structure");
+    });
+
+    // -- buildArchitecturePage / buildSite integration --------------------------
+
+    check("buildSite: options.facts present and non-empty -> architecture.html page + sidebar navbutton on every page", () => {
+        const modules = [makeMod("/proj/src/a.ts")];
+        const facts = makeFacts({ architectureSignals: [{ name: "CLI tool", evidence: 'package.json "bin": jsdoc-scribe' }] });
+        const pages = buildSite(modules, { projectName: "Test", facts });
+        const archPage = pages.find(p => p.path === "architecture.html");
+        assert.ok(archPage, "architecture.html should be generated when facts has at least one signal");
+        assert.ok(archPage.html.includes(">Architecture<"), "page title missing");
+        const idx = pages.find(p => p.path === "index.html");
+        assert.ok(idx.html.includes('href="architecture.html">Architecture</a>'), "Architecture navbutton missing from index.html sidebar");
+        const modPage = pages.find(p => p.path.startsWith("modules/"));
+        assert.ok(modPage.html.includes('href="../architecture.html">Architecture</a>'), "Architecture navbutton missing from module page sidebar (relative href)");
+    });
+
+    check("buildSite: options.facts absent -> no architecture.html page, no navbutton anywhere (unchanged existing behavior)", () => {
+        const modules = [makeMod("/proj/src/a.ts")];
+        const pages = buildSite(modules, { projectName: "Test" });
+        assert.ok(!pages.some(p => p.path === "architecture.html"), "architecture.html should not exist without facts");
+        const idx = pages.find(p => p.path === "index.html");
+        assert.ok(!idx.html.includes(">Architecture</a>"), "no Architecture navbutton should appear without facts");
+    });
+
+    check("buildSite: options.facts present but every category empty -> no architecture.html page, no navbutton (ADR Decision 3)", () => {
+        const modules = [makeMod("/proj/src/a.ts")];
+        const pages = buildSite(modules, { projectName: "Test", facts: makeFacts() });
+        assert.ok(!pages.some(p => p.path === "architecture.html"), "architecture.html should not exist when facts are all-empty");
+        const idx = pages.find(p => p.path === "index.html");
+        assert.ok(!idx.html.includes(">Architecture</a>"), "no Architecture navbutton should appear when facts are all-empty");
+    });
+
+    check("buildSite: options.isSnapshot true -> architecture.html never rendered even when facts are present (ADR Decision 6)", () => {
+        const modules = [makeMod("/proj/src/a.ts")];
+        const facts = makeFacts({ architectureSignals: [{ name: "CLI tool", evidence: 'package.json "bin": jsdoc-scribe' }] });
+        const pages = buildSite(modules, { projectName: "Test", facts, isSnapshot: true });
+        assert.ok(!pages.some(p => p.path === "architecture.html"), "architecture.html must never render for a historical snapshot render, even with facts present");
+    });
+
+    check("buildArchitecturePage: subtitle omits zero-count segments (UX §2.1)", () => {
+        const modules = [makeMod("/proj/src/a.ts")];
+        const facts = makeFacts({ structure: [makeStructureNode()] });
+        const page = buildArchitecturePage(facts, modules, "Test", "1.0.0", pathTree(modules), "", new Map(), false);
+        assert.ok(page, "buildArchitecturePage should return a page when structure is non-empty");
+        assert.ok(page.html.includes("1 top-level directory"), "structure count segment missing");
+        assert.ok(!page.html.includes("pattern signal"), "zero-count pattern-signal segment should be omitted");
+        assert.ok(!page.html.includes("framework signal"), "zero-count framework-signal segment should be omitted");
+    });
+
+    check("buildArchitecturePage: returns null when buildArchitectureSection(facts) is empty", () => {
+        const modules = [makeMod("/proj/src/a.ts")];
+        const result = buildArchitecturePage(makeFacts(), modules, "Test", "1.0.0", pathTree(modules), "", new Map(), false);
+        assert.strictEqual(result, null, "buildArchitecturePage should return null for empty facts");
     });
 
 };

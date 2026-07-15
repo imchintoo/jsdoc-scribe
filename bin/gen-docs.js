@@ -8,6 +8,7 @@ const { extractModule }  = require("../lib/extractor.js");
 const { buildSite, moduleLabel, moduleHtmlPath } = require("../lib/renderer.js");
 const { loadConfig, mergeConfig } = require("../lib/config.js");
 const { buildImportGraph, findOrphanFiles } = require("../lib/import-graph.js");
+const { getAllFacts } = require("../lib/project-facts.js");
 const quality = require("../lib/quality.js");
 const siteData = require("../lib/site-data.js");
 const pkg = require("../package.json");
@@ -592,6 +593,9 @@ function writeSite(modules, outDir, projectName, projectVersion, opts, silent, q
         versions: switcherVersions,
         currentVersionId: currentVersionId,
         isSnapshot: isSnapshot,
+        // task-arch-04 / ADR Decision 6: never surface facts on a historical
+        // snapshot render -- versionOpts is only set by renderVersionSnapshot().
+        facts: versionOpts ? null : (opts.facts || null),
     });
     fs.mkdirSync(path.join(outDir, "modules"), { recursive: true });
 
@@ -661,6 +665,14 @@ function main() {
     const projectName   = resolveTitle(opts.title);
     const projectVersion = resolveVersion();
 
+    // task-arch-04: computed once per live/main run (ADR Decision 6). Never
+    // persisted to opts (config file), same "one-off flag" pattern as
+    // opts.data above. writeSite() is the single place that decides whether
+    // to actually use it -- it forces facts to null for a historical
+    // site-versions/ snapshot render (versionOpts set) regardless of this
+    // value, so no exclusion logic is needed here.
+    opts.facts = getAllFacts(process.cwd());
+
     // --from-data: fast path -- skip collectAllFiles()/extractModule()/
     // runQuality()/buildImportGraph() entirely, load a previously-written
     // site-data.json instead (ADR Decision 4/5). Mutually exercised
@@ -723,7 +735,7 @@ function main() {
         return;
     }
 
-    // ── Watch mode ────────────────────────────────────────────────────────────
+    // ── Watch mode ───────────────────────────────────────────────
     function stamp() { return new Date().toLocaleTimeString(); }
     console.log(`[watch] Watching ${files.length} file(s). Output: ${path.relative(process.cwd(), outDir) || outDir}`);
     if (opts.ignore.length) console.log(`[watch] ignoring: ${opts.ignore.join(", ")}`);

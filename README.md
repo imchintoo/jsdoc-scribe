@@ -177,6 +177,12 @@ token) are the same workflows running live.
   maintainability, duplicate-code, orphan-file detection) against the same files it
   documents. It's an optional `peerDependency` — never installed by default, and `gen-docs`
   behaves identically whether it's present or not.
+- **Architecture Insight page.** Every `gen-docs` run now includes an Architecture page:
+  a plain-English read of your folder structure, detected framework/stack (React, Express,
+  NestJS, etc.), and architecture-pattern signals (CLI tool, publishable library, monorepo,
+  layered/MVC layout) — each shown with the actual evidence, never a bare guess. No new
+  flag, no AI, generated automatically alongside the rest of the site. Details:
+  [Architecture Insight](https://imchintoo.github.io/jsdoc-scribe/docs/architecture-insight.html).
 - **Config file support.** `.jsdoc-scribe.json` for `gen-docs` output dir, title, source
   URL, and ignore globs — CLI flags override it. Full reference: [Features](https://imchintoo.github.io/jsdoc-scribe/docs/features.html).
 
