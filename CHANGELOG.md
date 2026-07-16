@@ -4,6 +4,23 @@
 > grounded in the actual commit diffs for that version (see the referenced
 > commit messages/backlog docs) — nothing here is invented.
 
+## [Unreleased]
+
+### Added
+- **Architecture Insight page.** `gen-docs` now builds an "Architecture" page inside the generated site, read directly off the target project's `package.json` and folder layout (no AI, nothing guessed — every line shows its own evidence):
+  - **Architecture-pattern signals** (`lib/project-facts.js`, `getArchitecturePatterns`) — 23 patterns detected (CLI tool, publishable library, monorepo, Layered, MVC, Hexagonal, Onion, Repository, Vertical Slice, Feature-Based, Modular Monolith, Monolith, Serverless, and more), each returned with the concrete evidence that triggered it (a `bin` entry, an `exports` field, an npm `workspaces` list, matching directory names) rather than a single confident label — real projects usually match more than one pattern at once.
+  - **Framework/stack detection** — React, Next.js, Angular, Vue, Express, and NestJS detected from dependencies, each marked as a dependency match or a lower-confidence file-pattern guess.
+  - **Folder structure map** — a collapsible directory tree with a plain-English file-count summary per directory, plus workspace package listing for monorepos.
+  - Wired through `bin/gen-docs.js` (`getAllFacts(process.cwd())`, computed once per live run) and the programmatic API (`lib/docs.js`'s `generateSite()` via an opt-in `rootDir` option — omitted `rootDir` keeps prior behavior unchanged, no Architecture page).
+  - Per ADR Decision 6: facts are never computed or shown on a historical `site-versions/` snapshot render, only on the live/current-`docs/` output.
+  - The page (and its sidebar link) is omitted entirely when a project has zero detectable signals, rather than rendering empty.
+  - Docs: new [Architecture Insight](https://imchintoo.github.io/jsdoc-scribe/docs/architecture-insight.html) page; README feature list updated.
+
+### Fixed
+- **Module pages missing `.index-content` layout wrapper.** The Architecture Insight work (above) introduced `.index-content` as the shared padding/width wrapper for the index and Architecture pages, but per-module pages were never updated to use it — leaving module pages visually inconsistent (missing the same side padding and max-width as every other page). `buildSite()` in `lib/renderer.js` now wraps each module page's body in `<div class="index-content">` to match.
+- **Code-scanning: `architectureSignalSentence` and `buildArchitectureSection` over complexity threshold** (`lib/renderer.js`, GitHub Advanced Security / code-multivitals alerts blocking PR #10). Both refactored from large inline branch/concatenation chains into small dispatch/helper functions with identical output (verified byte-for-byte against the prior implementation across 21+ fixtures, plus the full `renderer.test.js` phrasing-table suite) — `architectureSignalSentence` now dispatches through a `ARCHITECTURE_SIGNAL_SENTENCES` lookup table instead of an if/else chain; `buildArchitectureSection` is split into `buildArchitectureSignalsSection`/`buildArchitecturePatternsSection`/`buildFrameworkSignalsSection`/`buildStructureSection`/`buildStructureBodyHtml`. Cyclomatic complexity 22→12, Halstead volume 1716→under threshold; total repo-wide code-scanning errors 54→52 with zero new alerts introduced.
+- **`getArchitecturePatterns` dogfood test asserted patterns that don't exist in this repo's real tree** (`test/project-facts.test.js`). The test claimed `sample/express/repositories`, a `components`-shaped `sample/react`, and a `sample/nestjs/modules` directory all existed and asserted MVC/Repository Pattern/Component-Based/Feature-Based were detected — none of those directories actually exist (verified via direct `find`), so the assertion was broken from the commit that introduced it, independent of anything in this PR. Rewritten to assert what's actually true today: only Layered (N-Tier) fires, not Monolith.
+
 ## [2.4.7] - 2026-07-13
 
 ### Fixed
