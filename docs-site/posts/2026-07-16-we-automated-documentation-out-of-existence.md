@@ -5,7 +5,7 @@ description: The story of jsdoc-scribe — a free, 100% local, AST-based JSDoc g
 date: 2026-07-16
 readingTime: 7 min read
 tags: [SoftwareEngineering, Documentation, DevOps, TypeScript, NodeJS, EngineeringManagement]
-image: ../assets/preview.svg
+image: ../assets/we-automated-documentation-out-of-existence.png
 ---
 
 Ask any engineering manager what slows down onboarding, and "documentation" rarely tops the list out loud — but it's almost always the real answer underneath. Code gets shipped. Docs, if they exist at all, get written once, during a burst of good intentions, and then rot the moment the next PR merges. Six months later, the only reliable documentation left is whatever lives in the heads of two or three senior engineers.
