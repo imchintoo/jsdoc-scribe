@@ -500,22 +500,30 @@ module.exports = function runProjectFactsTests(check) {
         assert.deepStrictEqual(getArchitecturePatterns(dir), []);
     });
 
-    check("getArchitecturePatterns: this repo's own real directory tree reports Layered, MVC, Repository, Component-Based, Feature-Based", () => {
-        // Verified directly against this repo's real tree before writing
-        // this assertion (sample/express/{controllers,services,routes,
-        // repositories} and sample/react/{Button,Card,...} under a
-        // "components"-shaped path exist as real fixture files, plus a
-        // real "modules" directory somewhere in sample/nestjs -- same
-        // "report what's actually there, fixture or not" stance the
-        // getArchitectureSignals sanity check above already takes). No
-        // Monolith (this repo itself IS a small workspace/monorepo via
-        // packages/eslint-plugin-jsdoc-scribe).
+    check("getArchitecturePatterns: this repo's own real directory tree reports Layered (N-Tier), not Monolith", () => {
+        // Re-verified against this repo's real tree on 2026-07-16: the
+        // previous version of this assertion claimed sample/express had a
+        // repositories/ dir, sample/react's Button/Card/TextInput/UserRow
+        // sat under a "components"-shaped path, and sample/nestjs had a
+        // modules/ directory -- none of that is true. `find sample -type d
+        // -name <name>` for models/views/repositories/components/modules
+        // returns nothing anywhere in the tree: sample/express only has
+        // controllers/middleware/routes/services (no repositories/),
+        // sample/react's files sit flat at sample/react/ with no
+        // components/ wrapper, and sample/nestjs's module is a file
+        // (users.module.ts), not a modules/ directory. So MVC, Repository
+        // Pattern, Component-Based, and Feature-Based genuinely don't fire
+        // today -- only Layered (N-Tier) does, from sample/express's
+        // controllers+services+routes ("report what's actually there,
+        // fixture or not" stance the getArchitectureSignals sanity check
+        // above already takes). No Monolith (this repo itself IS a small
+        // workspace/monorepo via packages/eslint-plugin-jsdoc-scribe).
         const names = getArchitecturePatterns(path.resolve(__dirname, "..")).map((p) => p.name);
         assert.ok(names.includes("Layered (N-Tier)"));
-        assert.ok(names.includes("MVC (Model-View-Controller)"));
-        assert.ok(names.includes("Repository Pattern"));
-        assert.ok(names.includes("Component-Based"));
-        assert.ok(names.includes("Feature-Based"));
+        assert.ok(!names.includes("MVC (Model-View-Controller)"), "no models/ or views/ directory exists anywhere in this repo's real tree");
+        assert.ok(!names.includes("Repository Pattern"), "no repositories/ or repository/ directory exists anywhere in this repo's real tree");
+        assert.ok(!names.includes("Component-Based"), "no components/ directory exists anywhere in this repo's real tree");
+        assert.ok(!names.includes("Feature-Based"), "no top-level features/ or modules/ directory exists in this repo's real tree");
         assert.ok(!names.includes("Monolith"), "this repo has a workspace package, so it should not also read as a pure Monolith");
     });
 
