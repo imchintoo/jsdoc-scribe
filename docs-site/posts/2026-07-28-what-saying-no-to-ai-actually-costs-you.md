@@ -5,7 +5,7 @@ description: jsdoc-scribe is built to never call an LLM. That is an easy line to
 date: 2026-07-28
 readingTime: 6 min read
 tags: [AI, DeveloperTools, EngineeringManagement, Security, Documentation]
-image: ../assets/what-saying-no-to-ai-actually-costs-you.svg
+image: ../assets/what-saying-no-to-ai-actually-costs-you.png
 ---
 
 Most vendor pitches about "no AI" stop at the applause line: your code never leaves your machine, there's no hallucination risk, nothing to disclose in a security review. All true, and all things we've said on this blog before. What we haven't done yet is argue the other side of it — what you actually give up when a tool refuses to touch a model, and whether that trade is still worth it once you look at it honestly instead of as a selling point.
