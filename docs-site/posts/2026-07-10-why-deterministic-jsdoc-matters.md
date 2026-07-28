@@ -5,7 +5,7 @@ description: A practical look at why teams should prefer repeatable AST-based do
 date: 2026-07-10
 readingTime: 4 min read
 tags: [JSDoc, TypeScript, Documentation]
-image: ../assets/preview.svg
+image: ../assets/why-deterministic-jsdoc-matters.png
 ---
 
 # Why Deterministic JSDoc Matters in JavaScript and TypeScript Projects

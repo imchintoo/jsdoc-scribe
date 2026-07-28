@@ -144,7 +144,7 @@ function loadMarkdownContent() {
         date: post.date || new Date().toISOString().slice(0, 10),
         readingTime: post.readingTime || estimateReadingTime(post.markdown),
         tags: Array.isArray(post.tags) ? post.tags : [],
-        image: post.image || "../assets/preview.svg",
+        image: post.image || `../assets/${post.slug}.png`,
         content: parsePostBlocks(post.markdown)
     })).sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
