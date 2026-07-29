@@ -5,7 +5,7 @@ description: A security questionnaire is the single biggest cause of stalled B2B
 date: 2026-07-29
 readingTime: 7 min read
 tags: [Security, Procurement, Compliance, CTO, EngineeringManagement, Documentation]
-image: ../assets/preview.svg
+image: ../assets/the-question-that-stalls-your-deal.png
 ---
 
 Every CTO who has sat through a vendor evaluation knows the moment. The demo goes well, the pricing is fine, procurement is ready to move — and then a security questionnaire lands in someone's inbox. Three weeks later, the deal that was supposed to close is still stuck, because nobody on the vendor's side can give a clean, one-sentence answer to "where does our data go once it touches your product."
