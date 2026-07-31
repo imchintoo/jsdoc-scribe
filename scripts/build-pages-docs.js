@@ -653,7 +653,7 @@ function renderPostBlocks(blocks) {
         if (block.type === "video") {
             if (!block.src) {
                 return `<figure class="article-figure video-placeholder">
-                    <img src="${esc(block.poster || "../assets/preview.svg")}" alt="${esc(block.caption || "Video preview")}" loading="lazy">
+                    <img src="${esc(block.poster || "../assets/preview.png")}" alt="${esc(block.caption || "Video preview")}" loading="lazy">
                     <figcaption>${esc(block.caption || "Add a video src to publish a playable video.")}</figcaption>
                 </figure>`;
             }
