@@ -120,6 +120,35 @@ module.exports = function runFixTests(check) {
         assert.match(out, /TODO: describe what this does\./);
     });
 
+    // 2026-07-31 regression guard: a SINGLE-LINE blank block on a generic
+    // (non-function-like) symbol -- e.g. "/** */" -- used to corrupt the file.
+    // lightFixGenericBlock() did `lines.splice(1, 0, ...)` on a 1-element
+    // `lines` array, which inserts AFTER the only element instead of before
+    // the (non-existent) 2nd one, landing the TODO text outside the closing
+    // "*/" and producing invalid JS. Function-like symbols were never
+    // affected (they use rebuildFunctionBlock's full-rebuild path, not
+    // lightFixGenericBlock) -- this guard specifically targets a class,
+    // Strategy 2's path, with a genuinely single-line raw comment.
+    check("fix: single-line blank block (\"/** */\") on a class does not corrupt the file", () => {
+        const file = tmpFile("single-line-blank.js", [
+            "/** */",
+            "class Widget {",
+            "  /**",
+            "   * Renders the widget.",
+            "   * @returns {null} always null.",
+            "   */",
+            "  render() { return null; }",
+            "}",
+            "module.exports = { Widget };",
+        ].join("\n") + "\n");
+        fixModule(file);
+        const out = fs.readFileSync(file, "utf8");
+        assert.doesNotThrow(() => new (require("vm").Script)(out), "fixed output must still be syntactically valid JS");
+        assert.match(out, /\/\*\*\n\s*\* TODO: describe what this does\.\n\s*\*\//, "expected a proper 3-line expanded block, not text spliced after the closing */");
+        assert.ok(!/\*\/\s*\n\s*\*\s+TODO/.test(out), "TODO text must never land outside the closing */");
+    });
+
+
     check("fix: empty-tags strips trailing text after a no-description tag but keeps the tag", () => {
         const file = tmpFile("empty-tag.js", [
             "/**",

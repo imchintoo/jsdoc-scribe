@@ -37,6 +37,17 @@ export interface BuildSiteOptions {
 export interface GenerateSiteOptions extends BuildSiteOptions {
     extensions?: string[];
     ignoreDirs?: Set<string>;
+    /**
+     * Opt-in (task-arch-04): when provided, `getAllFacts(rootDir)` is computed
+     * and passed through as `facts`, so the generated site includes the
+     * Architecture page. Omitted/falsy leaves `facts` undefined -- `buildSite()`
+     * treats that as "no Architecture page." Added 2026-07-31: this option was
+     * already implemented and documented in `generateSite()`'s own JSDoc
+     * (lib/docs.js) but missing from this hand-written declaration, so
+     * TypeScript consumers of `require("jsdoc-scribe/docs")` couldn't pass it
+     * without a type error.
+     */
+    rootDir?: string;
 }
 
 /** Render a full multi-page HTML site from already-extracted ModuleDocs. */

@@ -231,11 +231,13 @@ function main() {
     if (coverageBadge) {
         const { aggregateCoverage, renderBadgeSvg } = require("../lib/coverage.js");
         const fileResults = [];
+        let failedTotal = 0;
         for (const file of files) {
             try {
                 fileResults.push(analyseFile(file));
             } catch (err) {
                 console.error(`  ${file} -> FAILED: ${err.message}`);
+                failedTotal += 1;
             }
         }
         const agg = aggregateCoverage(fileResults);
@@ -247,6 +249,14 @@ function main() {
         console.log(`Coverage: ${agg.documented}/${agg.total} symbols documented (${agg.pct}%)`);
         console.log(`Wrote ${svgPath}`);
         console.log(`Wrote ${jsonPath}`);
+        // Same silent-failure class the TS7 fix-track closed for --check-drift/
+        // --lint/--fix/--check/--dry-run/write below -- this mode was missed.
+        // A badge computed from a partial (silently-failed) file set is
+        // misleading, not just incomplete, so it must not exit 0.
+        if (failedTotal > 0) {
+            console.log(`\n${failedTotal} file(s) failed to parse and were excluded from this coverage figure.`);
+            process.exitCode = 1;
+        }
         return;
     }
 
