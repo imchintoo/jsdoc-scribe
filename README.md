@@ -184,7 +184,9 @@ token) are the same workflows running live.
   flag, no AI, generated automatically alongside the rest of the site. Details:
   [Architecture Insight](https://imchintoo.github.io/jsdoc-scribe/docs/architecture-insight.html).
 - **Config file support.** `.jsdoc-scribe.json` for `gen-docs` output dir, title, source
-  URL, and ignore globs — CLI flags override it. Full reference: [Features](https://imchintoo.github.io/jsdoc-scribe/docs/features.html).
+  URL, and ignore globs — CLI flags override the file for every option except `ignore`,
+  where the two combine (both sets of patterns apply). Full reference:
+  [Features](https://imchintoo.github.io/jsdoc-scribe/docs/features.html).
 
 ---
 

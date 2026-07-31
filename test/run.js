@@ -25,6 +25,8 @@
  *  16. cli-failure-accounting (bin/cli.js) — new for the TS7 fix-track
  *      (task-ts7-02 / task-ts7-04): per-file failure accounting across the
  *      checkDrift/lint/fix, check/dry-run, and write loops.
+ *  17. docs-api (lib/docs.js) — added 2026-07-31, the public
+ *      require("jsdoc-scribe/docs") entry point's first direct coverage.
  */
 
 const fs   = require("fs");
@@ -42,16 +44,47 @@ function tmpFile(name, content) {
 
 let passed = 0;
 let failed = 0;
+// 2026-07-31: test/docs.test.js is the first suite whose subject (extractModules/
+// generateSite) is genuinely Promise-based (Promise.allSettled/async), not just
+// synchronous work returned eagerly. check() previously only handled a `fn()`
+// that either returns synchronously or throws synchronously -- an async fn()
+// returns a pending Promise immediately, which check() would have counted as an
+// unconditional pass (no throw, since a rejection only surfaces later as an
+// unhandled rejection, never caught by this try/catch). Fixed by detecting a
+// thenable return and tracking it in pendingAsyncChecks, awaited via
+// Promise.all() before the Summary section below computes the final counts and
+// exit code -- every one of the other 16 suites returns undefined from every
+// check() call and is completely unaffected (pendingAsyncChecks stays empty for
+// them, so Promise.all([]) resolves on the very next microtask tick).
+const pendingAsyncChecks = [];
 function check(label, fn) {
+    let result;
     try {
-        fn();
-        passed += 1;
-        console.log("  ok - " + label);
+        result = fn();
     } catch (err) {
         failed += 1;
         console.error("  FAIL - " + label);
         console.error("       " + err.message);
+        return;
     }
+    if (result && typeof result.then === "function") {
+        pendingAsyncChecks.push(
+            result.then(
+                function () {
+                    passed += 1;
+                    console.log("  ok - " + label);
+                },
+                function (err) {
+                    failed += 1;
+                    console.error("  FAIL - " + label);
+                    console.error("       " + err.message);
+                },
+            ),
+        );
+        return;
+    }
+    passed += 1;
+    console.log("  ok - " + label);
 }
 
 // ---------------------------------------------------------------------------
@@ -253,7 +286,19 @@ console.log("\n-- cli-failure-accounting --");
 require("./cli-failure-accounting.test.js")(check);
 
 // ---------------------------------------------------------------------------
+// Suite 17 — docs API (lib/docs.js) — added 2026-07-31: the public
+// `require("jsdoc-scribe/docs")` entry point had zero test coverage before
+// this. Its two functions unique to this wrapper (extractModules,
+// generateSite) are genuinely async -- see the check()/pendingAsyncChecks
+// note above for how this runner handles that.
+// ---------------------------------------------------------------------------
+console.log("\n-- docs-api --");
+require("./docs.test.js")(check);
+
+// ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
-console.log("\n" + passed + " test(s) passed." + (failed ? "  " + failed + " FAILED." : ""));
-if (failed > 0) process.exit(1);
+Promise.all(pendingAsyncChecks).then(function () {
+    console.log("\n" + passed + " test(s) passed." + (failed ? "  " + failed + " FAILED." : ""));
+    if (failed > 0) process.exit(1);
+});
