@@ -632,9 +632,22 @@ function writeSite(modules, outDir, projectName, projectVersion, opts, silent, q
 
 function build(files, outDir, projectName, projectVersion, opts, silent, qualityData) {
     const modules = [];
+    let failedTotal = 0;
     for (const file of files) {
         try { modules.push(extractModule(file)); }
-        catch (err) { console.error(`  ${file} -> FAILED: ${err.message}`); }
+        catch (err) {
+            console.error(`  ${file} -> FAILED: ${err.message}`);
+            failedTotal += 1;
+        }
+    }
+    // 2026-07-31 (task-ts7-05-style fix): same silent-failure class the TS7
+    // fix-track already closed in bin/cli.js -- a per-file parse failure here
+    // was logged but never surfaced via exit code, so a `gen-docs` run where
+    // every file fails to parse (e.g. an incompatible typescript major)
+    // still exited 0 and quietly wrote a site missing those modules.
+    if (failedTotal > 0) {
+        console.error(`\n${failedTotal} file(s) failed to parse and were excluded from the generated site.`);
+        process.exitCode = 1;
     }
     return writeSite(modules, outDir, projectName, projectVersion, opts, silent, qualityData);
 }
