@@ -5,7 +5,7 @@ const site = {
     baseUrl: "https://imchintoo.github.io/jsdoc-scribe/",
     author: "Chintan Goswami",
     locale: "en_US",
-    image: "assets/preview.svg",
+    image: "assets/preview.png",
     keywords: [
         "jsdoc generator",
         "javascript documentation",
