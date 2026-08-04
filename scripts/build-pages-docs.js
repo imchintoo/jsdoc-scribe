@@ -453,7 +453,7 @@ function renderLanding() {
         </section>
     </main>`;
     writeFile(path.join(outDir, "index.html"), pageShell({
-        title: "What is jsdoc-scribe?",
+        title: "JSDoc & TypeScript Documentation Generator",
         description: site.description,
         body,
         currentPath: "index.html",
@@ -576,6 +576,34 @@ function renderBlogIndex() {
     }));
 }
 
+function relatedPosts(post, limit) {
+    const max = limit || 3;
+    const others = site.posts.filter((candidate) => candidate.slug !== post.slug);
+    const tagged = others.filter((candidate) => candidate.tags.some((tag) => post.tags.includes(tag)));
+    const picked = tagged.slice(0, max);
+    if (picked.length < max) {
+        for (const candidate of others) {
+            if (picked.length >= max) break;
+            if (!picked.includes(candidate)) picked.push(candidate);
+        }
+    }
+    return picked.slice(0, max);
+}
+
+function relatedPostsHtml(post) {
+    const picks = relatedPosts(post);
+    if (!picks.length) return "";
+    const cards = picks.map((related) => `<a class="related-card" href="${esc(related.slug)}.html">
+        ${related.tags[0] ? `<span class="related-kicker">${esc(related.tags[0])}</span>` : ""}
+        <strong>${esc(related.title)}</strong>
+        <span class="related-meta">${esc(related.readingTime)}</span>
+    </a>`).join("");
+    return `<section class="related-posts" aria-label="Related reading">
+        <h2>Continue reading</h2>
+        <div class="related-grid">${cards}</div>
+    </section>`;
+}
+
 function renderBlogPost(post) {
     const body = `<main class="medium-article-shell">
         ${breadcrumbHtml([
@@ -602,6 +630,7 @@ function renderBlogPost(post) {
                 <a href="https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(absoluteUrl(`blog/${post.slug}.html`))}" title="Share on LinkedIn" aria-label="Share on LinkedIn">${iconLinkedIn()}</a>
             </div>
             ${renderPostBlocks(post.content)}
+            ${relatedPostsHtml(post)}
         </article>
         <a class="medium-back-link" href="index.html">Back to stories</a>
     </main>`;
@@ -1042,13 +1071,21 @@ a{color:inherit;text-decoration:none}
 .medium-article .code-block{border-radius:4px}
 .medium-back-link{display:block;max-width:760px;margin:46px auto 0;color:#6b6b6b;font-size:14px}
 .medium-back-link:hover{color:#191919;text-decoration:underline}
+.related-posts{margin:56px 0 8px;padding-top:36px;border-top:1px solid #e6e6e6}
+.related-posts h2{font-size:22px;line-height:1.2;margin:0 0 18px;color:#191919;letter-spacing:0}
+.related-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.related-card{display:block;padding:18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);transition:transform .18s,box-shadow .18s,border-color .18s}
+.related-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 12px 30px rgba(91,79,232,.12)}
+.related-kicker{display:block;color:var(--accent);font:700 11px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.related-card strong{display:block;font-size:15px;line-height:1.35;color:var(--ink)}
+.related-meta{display:block;margin-top:8px;color:var(--muted);font-size:12px}
 .changelog h2:first-child{margin-top:0}
 .changelog-note{background:#fffbe7}
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease;transition-delay:var(--delay,0ms)}
 .reveal.visible{opacity:1;transform:none}
 @media (max-width:1180px){.docs-layout,.article-layout{grid-template-columns:minmax(0,1fr);padding-right:28px}.docs-aside,.article-aside{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.post-grid{grid-template-columns:1fr}.medium-hero-image,.medium-article .article-figure{margin-left:0;margin-right:0}}
-@media (max-width:980px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:54px}.feature-grid,.workflow-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workflow-band{grid-template-columns:1fr}.workflow-copy{position:static}.docs-sidebar{position:static;width:auto;display:flex;gap:6px;overflow:auto;padding:10px 12px}.docs-layout{margin-left:0;padding:38px 20px 70px}.article-layout,.blog-home{padding:38px 20px 70px}.medium-shell,.medium-article-shell{padding:38px 20px 70px}.nav-link{white-space:nowrap}.top-links{gap:12px}}
-@media (max-width:640px){.site-header{padding:0 16px}.brand span:not(.brand-mark):not(.version-badge){display:none}.top-links{gap:8px}.top-links .icon-link{width:32px;height:32px}.hero{padding:42px 20px}.feature-band,.workflow-band{padding:46px 20px}.feature-grid,.workflow-grid,.docs-aside,.article-aside{grid-template-columns:1fr}.hero h1{font-size:46px}.hero-console{font-size:13px}.demo-tabs{grid-template-columns:1fr}.post-card,.medium-row{grid-template-columns:1fr}.post-media{min-height:180px}.medium-row-media{width:100%;height:180px;order:-1}.medium-list-header{display:block}.medium-outline-btn{margin-top:18px}.medium-article-header h1,.blog-hero h1,.medium-list-header h1{font-size:42px}.medium-article>p{font-size:19px}.medium-article blockquote{font-size:23px}.medium-action-rail{right:16px;bottom:16px}.medium-action-rail a,.medium-action-rail button{width:44px;height:44px}}
+@media (max-width:980px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:54px}.feature-grid,.workflow-grid,.related-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workflow-band{grid-template-columns:1fr}.workflow-copy{position:static}.docs-sidebar{position:static;width:auto;display:flex;gap:6px;overflow:auto;padding:10px 12px}.docs-layout{margin-left:0;padding:38px 20px 70px}.article-layout,.blog-home{padding:38px 20px 70px}.medium-shell,.medium-article-shell{padding:38px 20px 70px}.nav-link{white-space:nowrap}.top-links{gap:12px}}
+@media (max-width:640px){.site-header{padding:0 16px}.brand span:not(.brand-mark):not(.version-badge){display:none}.top-links{gap:8px}.top-links .icon-link{width:32px;height:32px}.hero{padding:42px 20px}.feature-band,.workflow-band{padding:46px 20px}.feature-grid,.workflow-grid,.docs-aside,.article-aside,.related-grid{grid-template-columns:1fr}.hero h1{font-size:46px}.hero-console{font-size:13px}.demo-tabs{grid-template-columns:1fr}.post-card,.medium-row{grid-template-columns:1fr}.post-media{min-height:180px}.medium-row-media{width:100%;height:180px;order:-1}.medium-list-header{display:block}.medium-outline-btn{margin-top:18px}.medium-article-header h1,.blog-hero h1,.medium-list-header h1{font-size:42px}.medium-article>p{font-size:19px}.medium-article blockquote{font-size:23px}.medium-action-rail{right:16px;bottom:16px}.medium-action-rail a,.medium-action-rail button{width:44px;height:44px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}.reveal{opacity:1;transform:none}}
 `;
     writeFile(path.join(outDir, "assets", "site.css"), css.trimStart());
