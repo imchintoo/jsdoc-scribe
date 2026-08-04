@@ -1227,6 +1227,22 @@ function copyAssetPreviews() {
     }
 }
 
+/**
+ * Copies every file in docs-site/static/ verbatim to the built site's root
+ * (_site/). For static, unmodified files that must live at the domain root
+ * to work — search-engine ownership verification files (Google/Bing), a
+ * future CNAME for a custom domain, favicon.ico, etc. Anything dropped in
+ * docs-site/static/ ships as-is on the next deploy, no code change needed.
+ */
+function copyStaticRootFiles() {
+    const staticDir = path.join(root, "docs-site", "static");
+    if (!fs.existsSync(staticDir)) return;
+    for (const name of fs.readdirSync(staticDir)) {
+        const src = path.join(staticDir, name);
+        if (fs.statSync(src).isFile()) fs.copyFileSync(src, path.join(outDir, name));
+    }
+}
+
 function writeSeoFiles() {
     const urls = [
         { loc: "index.html", priority: "1.0" },
@@ -1279,6 +1295,7 @@ function main() {
     writeCss();
     writeClientJs();
     copyAssetPreviews();
+    copyStaticRootFiles();
     renderLanding();
     site.pages.forEach(renderDocPage);
     renderBlogIndex();
