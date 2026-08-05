@@ -1164,9 +1164,37 @@ function buildApiDocs() {
         "jsdoc-scribe API",
         "--source-url",
         "https://github.com/imchintoo/jsdoc-scribe/blob/main",
+        "--base-url",
+        absoluteUrl("api/"),
+        "--description",
+        "API reference for jsdoc-scribe's gen-comments, gen-docs, and lint modules — generated directly from the source's own JSDoc.",
         "--json"
     ], { cwd: root, stdio: "inherit" });
     if (result.status !== 0) process.exit(result.status || 1);
+}
+
+/**
+ * Walks the built API section and returns every generated .html page as a
+ * sitemap-relative path (e.g. "api/modules/lib__extractor.html"). Runs after
+ * buildApiDocs()/enhanceApiDocs() so writeSeoFiles() can list each of the
+ * ~30-40 individual module/health-detail/architecture pages instead of just
+ * api/index.html — the sitemap gap both SEO audits' page-count didn't catch
+ * (they only checked the homepage) but a full-site review should.
+ */
+function listApiPages() {
+    const apiOutDir = path.join(outDir, "api");
+    if (!fs.existsSync(apiOutDir)) return [];
+    const results = [];
+    (function walk(dir) {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) walk(full);
+            else if (entry.isFile() && entry.name.endsWith(".html")) {
+                results.push(path.relative(outDir, full).split(path.sep).join("/"));
+            }
+        }
+    })(apiOutDir);
+    return results.sort();
 }
 
 function enhanceApiDocs() {
@@ -1244,12 +1272,17 @@ function copyStaticRootFiles() {
 }
 
 function writeSeoFiles() {
+    const apiPages = listApiPages();
     const urls = [
         { loc: "index.html", priority: "1.0" },
         { loc: "blog/index.html", priority: "0.8" },
         ...site.pages.map((page) => ({ loc: `docs/${page.slug}.html`, priority: "0.8" })),
         ...site.posts.map((post) => ({ loc: `blog/${post.slug}.html`, priority: "0.7", lastmod: post.date })),
-        { loc: "api/index.html", priority: "0.7" }
+        // api/index.html gets the higher priority explicitly; every other API
+        // page (modules/*, architecture.html, health-*.html) is a real,
+        // individually-indexable page and belongs in the sitemap too — not
+        // just the section's landing page.
+        ...apiPages.map((loc) => ({ loc, priority: loc === "api/index.html" ? "0.7" : "0.5" }))
     ];
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

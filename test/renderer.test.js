@@ -1212,4 +1212,56 @@ module.exports = function runRendererTests(check) {
         assert.strictEqual(result, null, "buildArchitecturePage should return null for empty facts");
     });
 
+    // -- SEO metadata (options.baseUrl / options.description) -------------------
+
+    check("buildSite: no baseUrl/description -> every page still gets a robots meta tag, but no description/canonical/OG (unchanged default behavior otherwise)", () => {
+        const modules = [makeMod("/proj/src/a.ts")];
+        const pages = buildSite(modules, { projectName: "Test" });
+        const idx = pages.find(p => p.path === "index.html");
+        const modPage = pages.find(p => p.path.startsWith("modules/"));
+        assert.ok(idx.html.includes('<meta name="robots" content="index, follow">'), "index.html should always get a robots meta tag");
+        assert.ok(modPage.html.includes('<meta name="robots" content="index, follow">'), "module page should always get a robots meta tag");
+        assert.ok(!idx.html.includes('name="description"'), "no description meta without options.description");
+        assert.ok(!idx.html.includes('rel="canonical"'), "no canonical link without options.baseUrl");
+        assert.ok(!idx.html.includes('og:title'), "no OpenGraph tags without options.baseUrl");
+    });
+
+    check("buildSite: options.description -> index.html and module pages (with no file-level description) get the site-wide meta description", () => {
+        const modules = [makeMod("/proj/src/a.ts")]; // description: null, per makeMod's default
+        const pages = buildSite(modules, { projectName: "Test", description: "Site-wide fallback description." });
+        const idx = pages.find(p => p.path === "index.html");
+        const modPage = pages.find(p => p.path.startsWith("modules/"));
+        assert.ok(idx.html.includes('<meta name="description" content="Site-wide fallback description.">'), "index.html missing site-wide description");
+        assert.ok(modPage.html.includes('<meta name="description" content="Site-wide fallback description.">'), "module page should fall back to site-wide description when the file has none");
+    });
+
+    check("buildSite: a module's own file-level description wins over the site-wide fallback", () => {
+        const modules = [makeMod("/proj/src/a.ts", { description: "This file's own real description." })];
+        const pages = buildSite(modules, { projectName: "Test", description: "Site-wide fallback description." });
+        const modPage = pages.find(p => p.path.startsWith("modules/"));
+        assert.ok(modPage.html.includes('<meta name="description" content="This file&#39;s own real description.">') || modPage.html.includes("This file's own real description."), "module page should prefer its own file-level description over the site-wide fallback");
+        assert.ok(!modPage.html.includes("Site-wide fallback description."), "site-wide fallback should not appear when the file has its own description");
+    });
+
+    check("buildSite: options.baseUrl -> canonical + OpenGraph tags on index.html, each module page, and architecture.html, each with the correct absolute URL", () => {
+        const modules = [makeMod("/proj/src/a.ts")];
+        const facts = makeFacts({ architectureSignals: [{ name: "CLI tool", evidence: 'package.json "bin": jsdoc-scribe' }] });
+        const pages = buildSite(modules, { projectName: "Test", baseUrl: "https://example.com/docs/", description: "Desc.", facts });
+        const idx = pages.find(p => p.path === "index.html");
+        const modPage = pages.find(p => p.path.startsWith("modules/"));
+        const archPage = pages.find(p => p.path === "architecture.html");
+        assert.ok(idx.html.includes('<link rel="canonical" href="https://example.com/docs/index.html">'), "index.html canonical missing/wrong");
+        assert.ok(idx.html.includes('property="og:title"'), "index.html missing og:title");
+        assert.ok(modPage.html.includes(`<link rel="canonical" href="https://example.com/docs/${modPage.path}">`), "module page canonical should match its own output path exactly");
+        assert.ok(archPage.html.includes('<link rel="canonical" href="https://example.com/docs/architecture.html">'), "architecture.html canonical missing/wrong");
+    });
+
+    check("buildSite: two identical calls with baseUrl/description set still produce byte-identical output (determinism holds for the new SEO metadata too)", () => {
+        const modules = [makeMod("/proj/src/a.ts")];
+        const options = { projectName: "Test", baseUrl: "https://example.com/docs/", description: "Desc." };
+        const before = buildSite(modules, options);
+        const after = buildSite(modules, options);
+        before.forEach((p, i) => assert.strictEqual(p.html, after[i].html, p.path + " is not byte-identical across two identical calls with SEO options set"));
+    });
+
 };
