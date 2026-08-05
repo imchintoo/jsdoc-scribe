@@ -29,6 +29,12 @@ Options:
   --readme,           -r         Also write README.md
   --ignore <glob>,    -I <glob>  Exclude files matching glob   (repeatable)
   --source-url <url>, -s <url>   GitHub base URL for source links
+  --base-url <url>               Absolute URL the site will be served from --
+                                   turns on <link rel="canonical"> + OpenGraph
+                                   tags on every page (SEO; optional)
+  --description <text>           Site-wide meta description fallback (SEO;
+                                   optional -- module pages prefer their own
+                                   file's JSDoc description when present)
   --config <file>,    -c <file>  Path to config file           (default: .jsdoc-scribe.json)
   --watch,            -W         Watch for changes and rebuild automatically
   --help,             -h         Show this help.
@@ -93,7 +99,7 @@ function parseArgs(argv) {
     const args = {
         inputs: [], out: undefined, title: undefined,
         json: undefined, readme: undefined, watch: false,
-        ignore: [], sourceUrl: undefined, configPath: undefined,
+        ignore: [], sourceUrl: undefined, baseUrl: undefined, description: undefined, configPath: undefined,
         help: false, version: false,
         quality: false, qualityReporter: undefined, qualityProfile: undefined,
         qualityConfig: undefined, qualityBaseline: undefined, qualitySaveBaseline: undefined,
@@ -122,6 +128,8 @@ function parseArgs(argv) {
         else if ((a === "--title"     || a === "-t") && argv[i+1]) { args.title     = argv[++i]; }
         else if ((a === "--config"    || a === "-c") && argv[i+1]) { args.configPath= argv[++i]; }
         else if ((a === "--source-url"|| a === "-s") && argv[i+1]) { args.sourceUrl = argv[++i]; }
+        else if (a === "--base-url"                  && argv[i+1]) { args.baseUrl    = argv[++i]; }
+        else if (a === "--description"                && argv[i+1]) { args.description = argv[++i]; }
         else if ((a === "--ignore"    || a === "-I") && argv[i+1]) { args.ignore.push(argv[++i]); }
         else if (!a.startsWith("-")) args.inputs.push(a);
         i++;
@@ -589,6 +597,8 @@ function writeSite(modules, outDir, projectName, projectVersion, opts, silent, q
         projectName,
         version: projectVersion,
         sourceUrl: opts.sourceUrl,
+        baseUrl: opts.baseUrl,
+        description: opts.description,
         quality: qualityData || null,
         versions: switcherVersions,
         currentVersionId: currentVersionId,

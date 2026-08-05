@@ -32,6 +32,20 @@ export function extractModules(files: string[]): Promise<ModuleDoc[]>;
 export interface BuildSiteOptions {
     projectName?: string;
     version?: string;
+    /**
+     * Absolute base URL the generated site will be served from (e.g.
+     * "https://example.com/docs/", trailing slash). When given, every page
+     * gets a `<link rel="canonical">` plus matching OpenGraph tags. Omitted
+     * by default -- without it, pages get a meta description/robots tag but
+     * no canonical/OG (a relative or guessed URL would be worse than none).
+     */
+    baseUrl?: string;
+    /**
+     * Site-wide fallback meta description. Module pages prefer their own
+     * source file's top-of-file JSDoc description when present, and only
+     * fall back to this value when the file has none.
+     */
+    description?: string;
 }
 
 export interface GenerateSiteOptions extends BuildSiteOptions {
