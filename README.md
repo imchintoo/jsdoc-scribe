@@ -88,6 +88,38 @@ shape. jsdoc-scribe only knows what's structurally true in the AST — a param n
 type, a class hierarchy. It will never write "this exists to work around a vendor API quirk"
 for you, because it doesn't know that and won't pretend to.
 
+## Supported
+
+jsdoc-scribe works on **any plain JavaScript or TypeScript file** — it reads the real AST, not
+framework-specific conventions, so there's no allowlist of "supported frameworks" gating whether
+`gen-comments`/`gen-docs` will run. What *is* framework-aware is the **Architecture Insight**
+page (`gen-docs`'s auto-generated read of your stack) — it explicitly detects and names these,
+from your `package.json` dependencies (a `.tsx`/`.vue` file extension is used as a lower-confidence
+fallback when no dependency evidence exists):
+
+| Stack | Detected via | Try it against a real fixture |
+|---|---|---|
+| **React** | `react` dependency, or `.tsx`/`.jsx` files | [`sample/react/`](./sample/react) — function components, props, hooks |
+| **Next.js** | `next` dependency | [`sample/nextjs/`](./sample/nextjs) — App Router route handler, `app/` page, `pages/` dynamic route |
+| **Angular** | `@angular/core` dependency | [`sample/angular/`](./sample/angular) — component, service, pipe, directive |
+| **Vue** | `vue` dependency, or `.vue` files | detected via dependency/file-extension signals; no dedicated `sample/vue` fixture yet |
+| **Express** | `express` dependency | [`sample/express/`](./sample/express) — app entry, routes, a controller, a service, auth middleware |
+| **NestJS** | `@nestjs/core` dependency | [`sample/nestjs/`](./sample/nestjs) — `@Controller`/`@Injectable` classes, a guard, a module |
+| **Plain JavaScript** (CommonJS, no framework) | always — this is the baseline case | [`sample/vanilla-js/`](./sample/vanilla-js) — logger, event emitter, retry helper, validators |
+| **Plain TypeScript** (no framework) | always | [`sample/*.ts`](./sample) top-level — DI container, error hierarchy, event bus, HTTP middleware, models, API layer |
+
+Node.js `>=14` is the only runtime requirement (see [`engines`](./package.json)); CI tests against
+Node 22/24/26. `typescript` (`>=5.0.0 <7.0.0`) is the one runtime dependency, used purely as a
+syntax parser — every file jsdoc-scribe touches goes through it, `.js` included, not just `.ts`.
+
+Run any CLI directly against a sample to see real output on real code, not a toy snippet:
+
+```bash
+gen-comments sample/nestjs --dry-run   # decorator-heavy NestJS classes
+gen-comments sample/express --check    # coverage check on an undocumented Express app
+gen-docs sample --out docs --title "jsdoc-scribe sample" --quality
+```
+
 ## What's in the box
 
 | Tool | What it does |
@@ -100,7 +132,14 @@ for you, because it doesn't know that and won't pretend to.
   does; `--lint --fix` auto-corrects what's mechanically safe (tag order, stray asterisks) and
   leaves a `TODO:` placeholder for what needs a human, never invented text. Already on ESLint?
   The same rules ship as a native flat-config plugin —
-  [`eslint-plugin-jsdoc-scribe`](./packages/eslint-plugin-jsdoc-scribe/README.md).
+  [`eslint-plugin-jsdoc-scribe`](./packages/eslint-plugin-jsdoc-scribe/README.md) — **not yet
+  published to npm standalone**; this repo dogfoods it directly via npm workspaces (see
+  [`eslint.config.js`](./eslint.config.js), `npm run eslint`).
+- **ESLint + Prettier, set up the way any other Node project would be.** `npm run eslint`
+  lints `lib/`/`bin/`/`scripts/`/`packages/*` using `eslint-plugin-jsdoc-scribe`'s own
+  `configs.recommended` preset as-is — no project-specific rule overrides. `npm run format`/
+  `npm run format:check` runs Prettier. Both run in CI (`.github/workflows/test.yml`,
+  report-only for now — see that workflow's inline comment for why).
 - **`--check-drift`** flags JSDoc that no longer matches the code it's describing — a param
   renamed or removed, a return type that changed — the "docs quietly went stale" problem, caught
   in CI before merge.
