@@ -740,7 +740,7 @@ function getPageCommand(page) {
         "github-actions": "npx gen-comments src --check",
         "github-pages": "npm run docs:pages",
         "programmatic-api": "require('jsdoc-scribe/docs')",
-        "eslint-plugin": "npm install -D eslint-plugin-jsdoc-scribe",
+        "eslint-plugin": "require('eslint-plugin-jsdoc-scribe')",
         features: "gen-comments src --lint --fix",
         changelog: "npm view jsdoc-scribe version"
     };
@@ -883,11 +883,16 @@ function markdownToHtml(markdown, options) {
 function renderChangelog() {
     const changelogPath = path.join(root, "CHANGELOG.md");
     const source = fs.existsSync(changelogPath) ? fs.readFileSync(changelogPath, "utf8") : "";
-    const excerpt = source.split(/\r?\n/).slice(0, 220).join("\n");
-    const html = markdownToHtml(excerpt, { headingOffset: 1, maxHeadingLevel: 3 });
+    // Renders the full file -- previously hard-capped to the first 220 lines
+    // (`.slice(0, 220)`), which on this project's real CHANGELOG.md only ever
+    // covered the newest ~8-9 of 30+ released versions, silently dropping the
+    // rest from the public GitHub Pages changelog page. No cap now: every
+    // version in CHANGELOG.md renders, matching "the complete release
+    // history" the page's own copy already claimed to show.
+    const html = markdownToHtml(source, { headingOffset: 1, maxHeadingLevel: 3 });
     return `<section class="doc-section changelog-note reveal" id="latest-entries">
-        <h2>Latest entries</h2>
-        <p>This page shows the latest entries from CHANGELOG.md. See the repository for the complete release history.</p>
+        <h2>Release history</h2>
+        <p>Every release, rendered directly from CHANGELOG.md -- nothing excerpted or hidden.</p>
     </section>
     <section class="doc-section changelog reveal" id="release-notes">${html}</section>`;
 }
