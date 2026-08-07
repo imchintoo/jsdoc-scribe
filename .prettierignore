@@ -1,0 +1,12 @@
+node_modules
+docs
+docs-internal
+docs-dashboard
+_site
+quality-results
+bench/generated
+sample
+coverage
+CHANGELOG.md
+package-lock.json
+*.min.js

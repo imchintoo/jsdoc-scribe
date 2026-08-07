@@ -11,11 +11,22 @@ normal `eslint`/`eslint --fix` run, without a second CLI to wire into CI.
 
 ## Install
 
+**Not published to npm yet** -- this package currently lives only inside the
+[jsdoc-scribe monorepo](https://github.com/imchintoo/jsdoc-scribe) as an npm workspace
+(`packages/eslint-plugin-jsdoc-scribe`). The root repo's own `eslint.config.js` depends on it as
+`"eslint-plugin-jsdoc-scribe": "^0.2.0"` and npm workspaces resolves that to this local package,
+not the registry -- that's the only reason it works there without being published.
+
+To use it in your own project today:
+
 ```bash
-npm install --save-dev eslint-plugin-jsdoc-scribe
+git clone https://github.com/imchintoo/jsdoc-scribe.git
+# then require ./jsdoc-scribe/packages/eslint-plugin-jsdoc-scribe by relative path,
+# or copy the packages/eslint-plugin-jsdoc-scribe/ directory into your own repo.
 ```
 
-Requires `eslint@>=9.0.0` (flat config).
+`npm install --save-dev eslint-plugin-jsdoc-scribe` will 404 until this package is published
+standalone -- not yet done. Requires `eslint@>=9.0.0` (flat config) once you do have it installed.
 
 ## Usage
 
