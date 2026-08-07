@@ -4,6 +4,15 @@
 > grounded in the actual commit diffs for that version (see the referenced
 > commit messages/backlog docs) — nothing here is invented.
 
+## [2.5.1] - 2026-07-31
+
+### Changed
+- **README rewritten end to end** (`README.md`) -- restructured around a Preview section, the `--quality` Code Health dashboard preview, a real-world sample-code table (`sample/express`, `sample/nestjs`, `sample/vanilla-js`, top-level `sample/*.ts`), a Benchmarks table, Install, "Three ways to use jsdoc-scribe" (CLI / programmatic API / GitHub Actions), Highlights, and Known limitations -- so a developer landing on the repo cold sees what's supported and how to try it before anything else.
+- Hand-drawn `assets/preview.svg` mockup replaced with a real generated screenshot, `assets/preview.png` (plus `assets/preview-quality.png` for the Code Health dashboard preview); `docs-site/site.js`'s default social-share image and `scripts/build-pages-docs.js`'s video-block placeholder both updated to point at the new `.png`.
+
+### Fixed
+- **GitHub Pages changelog page only ever showed the newest ~8-9 releases.** `scripts/build-pages-docs.js`'s `renderChangelog()` hard-capped the rendered output to the first 220 lines of `CHANGELOG.md` (`.slice(0, 220)`), silently dropping every older version despite the page's own copy claiming to show "the complete release history." This patch itself is the version that most visibly exposed the gap, since it shipped with no changelog entry of its own -- `CHANGELOG.md` had a real release with nothing recorded for it. Both are fixed together: the 220-line cap is removed (the full file now renders), and this entry closes the gap for `2.5.1` itself.
+
 ## [2.5.0] - 2026-07-31
 
 ### Added

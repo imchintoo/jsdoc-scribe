@@ -55,6 +55,11 @@ Same string every time for the same kind of gap, which means `grep -r "TODO: des
 
 ## Getting it running
 
+> **Update (2026-08-07):** `eslint-plugin-jsdoc-scribe` isn't published to npm yet -- it currently
+> only ships inside this repo's own workspace. The command below is aspirational until that
+> changes; see the [ESLint Plugin Integration](../docs/eslint-plugin.html) doc for how to use it
+> today.
+
 ```bash
 npm install --save-dev eslint-plugin-jsdoc-scribe
 ```

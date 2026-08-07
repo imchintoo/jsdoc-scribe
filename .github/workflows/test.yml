@@ -28,3 +28,33 @@ jobs:
 
       - name: Run test suite
         run: npm test
+
+  lint:
+    runs-on: ubuntu-latest
+    # Dogfoods this project's own eslint-plugin-jsdoc-scribe (packages/eslint-plugin-jsdoc-scribe,
+    # resolved locally via npm workspaces -- not published to npm) against lib/bin/scripts/packages
+    # via the plugin's own `configs.recommended` preset, no custom rule overrides (see eslint.config.js).
+    # Deliberately NON-BLOCKING for now (continue-on-error), same rationale as quality.yml's
+    # code-multivitals rollout: this is ESLint's first run against this codebase, so there's no
+    # team-agreed error/warning baseline to gate merges on yet. Report-only until a few runs have
+    # been reviewed and a real baseline is picked -- flip continue-on-error to false once that's done.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint (eslint-plugin-jsdoc-scribe's own recommended rules)
+        continue-on-error: true
+        run: npm run eslint
+
+      - name: Check Prettier formatting
+        continue-on-error: true
+        run: npm run format:check

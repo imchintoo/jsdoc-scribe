@@ -2,7 +2,7 @@
 slug: eslint-plugin
 title: ESLint Plugin Integration
 description: Use jsdoc-scribe lint rules through ESLint flat config.
-command: npm install -D eslint-plugin-jsdoc-scribe
+command: require('eslint-plugin-jsdoc-scribe')
 ---
 
 ## What the ESLint integration does
@@ -19,10 +19,19 @@ For strict teams, start with warnings locally and errors in CI. That gives contr
 
 ## Install
 
-Install the plugin package next to ESLint.
+**Not yet published to npm** -- `eslint-plugin-jsdoc-scribe` currently only ships as a workspace
+package inside this monorepo (`packages/eslint-plugin-jsdoc-scribe`), consumed internally by this
+repo's own `eslint.config.js` via npm workspaces. `npm install eslint-plugin-jsdoc-scribe` in an
+external project will fail with a 404 until it's published standalone.
+
+Until then, use it in one of two ways:
 
 ```bash
-npm install --save-dev eslint eslint-plugin-jsdoc-scribe
+# Option 1: clone this repo and depend on the workspace package directly
+# (packages/eslint-plugin-jsdoc-scribe), same as this repo's own eslint.config.js does.
+
+# Option 2: copy packages/eslint-plugin-jsdoc-scribe/ into your own repo and
+# require it by relative path instead of by package name.
 ```
 
 ## Flat config

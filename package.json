@@ -39,6 +39,10 @@
         "dashboard": "node bin/gen-docs.js lib bin packages/eslint-plugin-jsdoc-scribe sample --quality --data --out docs-dashboard --title jsdoc-scribe",
         "test": "node test/run.js",
         "bench:perf-gate": "node bench/run-perf-gate.js",
+        "eslint": "eslint .",
+        "eslint:fix": "eslint . --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
         "prepublishOnly": "npm test"
     },
     "keywords": [
@@ -103,6 +107,9 @@
         "packages/*"
     ],
     "devDependencies": {
-        "code-multivitals": "^1.6.1"
+        "code-multivitals": "^1.6.1",
+        "eslint": "^10.8.0",
+        "eslint-plugin-jsdoc-scribe": "^0.2.0",
+        "prettier": "^3.9.6"
     }
 }
