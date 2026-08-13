@@ -1,0 +1,96 @@
+{
+  "generatedAt": "2026-08-13T07:08:52.952Z",
+  "entries": [
+    {
+      "name": "React",
+      "generated": true,
+      "detectionMethod": "Detected via \"react\" in package.json dependencies or via .tsx files present (fallback heuristic)",
+      "sampleTargets": [
+        "sample/react"
+      ],
+      "demoFile": "sample/react/Button.tsx",
+      "before": "import React from \"react\";\n\ninterface ButtonProps {\n    label: string;\n    onClick: () => void;\n    disabled?: boolean;\n}\n\nexport function Button(props: ButtonProps) {\n    return React.createElement(\n        \"button\",\n        { onClick: props.onClick, disabled: props.disabled },\n        props.label,\n    );\n}\n",
+      "after": "import React from \"react\";\n\n/**\n * @interface ButtonProps\n * @property {string} label\n * @property {() => void} onClick\n * @property {boolean} disabled\n */\ninterface ButtonProps {\n    label: string;\n    onClick: () => void;\n    disabled?: boolean;\n}\n\n/**\n * Button.\n * @param {ButtonProps} props - properties object.\n * @returns {any}\n */\nexport function Button(props: ButtonProps) {\n    return React.createElement(\n        \"button\",\n        { onClick: props.onClick, disabled: props.disabled },\n        props.label,\n    );\n}\n"
+    },
+    {
+      "name": "Next.js",
+      "generated": true,
+      "detectionMethod": "Detected via \"next\" in package.json dependencies",
+      "sampleTargets": [
+        "sample/nextjs"
+      ],
+      "demoFile": "sample/nextjs/app/api/users/route.ts",
+      "before": "import { NextRequest, NextResponse } from \"next/server\";\n\nexport async function GET(request: NextRequest): Promise<NextResponse> {\n    return NextResponse.json({ users: [] });\n}\n\nexport async function POST(request: NextRequest): Promise<NextResponse> {\n    const body = await request.json();\n    return NextResponse.json({ created: true, body }, { status: 201 });\n}\n",
+      "after": "import { NextRequest, NextResponse } from \"next/server\";\n\n/**\n * Returns the .\n * @async\n * @param {NextRequest} request - HTTP request object.\n * @returns {Promise<NextResponse>}\n */\nexport async function GET(request: NextRequest): Promise<NextResponse> {\n    return NextResponse.json({ users: [] });\n}\n\n/**\n * Post.\n * @async\n * @param {NextRequest} request - HTTP request object.\n * @returns {Promise<NextResponse>}\n */\nexport async function POST(request: NextRequest): Promise<NextResponse> {\n    /**\n     * @constant body\n     * @type {any}\n     */\n    const body = await request.json();\n    return NextResponse.json({ created: true, body }, { status: 201 });\n}\n"
+    },
+    {
+      "name": "Angular",
+      "generated": true,
+      "detectionMethod": "Detected via \"@angular/core\" in package.json dependencies",
+      "sampleTargets": [
+        "sample/angular"
+      ],
+      "demoFile": "sample/angular/user.service.ts",
+      "before": "import { Injectable } from \"@angular/core\";\n\n@Injectable({\n    providedIn: \"root\",\n})\nexport class UserService {\n    list(): string[] {\n        return [\"Ada\", \"Grace\"];\n    }\n}\n",
+      "after": "import { Injectable } from \"@angular/core\";\n\n/**\n * Service responsible for user operations.\n */\n@Injectable({\n    providedIn: \"root\",\n})\nexport class UserService {\n    /**\n     * Lists the available .\n     * @returns {string[]}\n     */\n    list(): string[] {\n        return [\"Ada\", \"Grace\"];\n    }\n}\n"
+    },
+    {
+      "name": "Vue",
+      "generated": false,
+      "detectionMethod": "Detected via \"vue\" in package.json dependencies or via .vue files present (fallback heuristic)",
+      "sampleTargets": null,
+      "demoFile": null,
+      "before": null,
+      "after": null
+    },
+    {
+      "name": "Express",
+      "generated": true,
+      "detectionMethod": "Detected via \"express\" in package.json dependencies",
+      "sampleTargets": [
+        "sample/express"
+      ],
+      "demoFile": "sample/express/routes/task.routes.ts",
+      "before": "import { Router } from \"express\";\nimport { taskController } from \"../controllers/task.controller\";\nimport { requireAuth, requireRole } from \"../middleware/auth.middleware\";\n\nexport const taskRouter = Router();\n\ntaskRouter.use(requireAuth);\n\ntaskRouter.post(\"/\", (req, res, next) => taskController.create(req, res, next));\ntaskRouter.get(\"/\", (req, res, next) => taskController.list(req, res, next));\ntaskRouter.get(\"/overdue-summary\", (req, res, next) => taskController.overdueSummary(req, res, next));\ntaskRouter.get(\"/:id\", (req, res, next) => taskController.getById(req, res, next));\ntaskRouter.patch(\"/:id\", (req, res, next) => taskController.update(req, res, next));\ntaskRouter.delete(\"/:id\", requireRole([\"admin\", \"owner\"]), (req, res, next) => taskController.delete(req, res, next));\n",
+      "after": "import { Router } from \"express\";\nimport { taskController } from \"../controllers/task.controller\";\nimport { requireAuth, requireRole } from \"../middleware/auth.middleware\";\n\n/**\n * @constant taskRouter\n * @type {any}\n */\nexport const taskRouter = Router();\n\ntaskRouter.use(requireAuth);\n\ntaskRouter.post(\"/\", (req, res, next) => taskController.create(req, res, next));\ntaskRouter.get(\"/\", (req, res, next) => taskController.list(req, res, next));\ntaskRouter.get(\"/overdue-summary\", (req, res, next) => taskController.overdueSummary(req, res, next));\ntaskRouter.get(\"/:id\", (req, res, next) => taskController.getById(req, res, next));\ntaskRouter.patch(\"/:id\", (req, res, next) => taskController.update(req, res, next));\ntaskRouter.delete(\"/:id\", requireRole([\"admin\", \"owner\"]), (req, res, next) => taskController.delete(req, res, next));\n"
+    },
+    {
+      "name": "NestJS",
+      "generated": true,
+      "detectionMethod": "Detected via \"@nestjs/core\" in package.json dependencies",
+      "sampleTargets": [
+        "sample/nestjs"
+      ],
+      "demoFile": "sample/nestjs/auth/roles.guard.ts",
+      "before": "import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from \"@nestjs/common\";\nimport { UserRole } from \"../users/entities/user.entity\";\n\ninterface RequestWithRole {\n    headers: Record<string, string | undefined>;\n}\n\n@Injectable()\nexport class RolesGuard implements CanActivate {\n    canActivate(context: ExecutionContext): boolean {\n        const request = context.switchToHttp().getRequest<RequestWithRole>();\n        const role = request.headers[\"x-user-role\"];\n        if (role !== UserRole.Admin) {\n            throw new ForbiddenException(\"This action requires the admin role\");\n        }\n        return true;\n    }\n}\n",
+      "after": "import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from \"@nestjs/common\";\nimport { UserRole } from \"../users/entities/user.entity\";\n\n/**\n * @interface RequestWithRole\n * @property {Record<string, string | undefined>} headers\n */\ninterface RequestWithRole {\n    headers: Record<string, string | undefined>;\n}\n\n/**\n * Represents a roles guard.\n * @implements CanActivate\n */\n@Injectable()\nexport class RolesGuard implements CanActivate {\n    /**\n     * Returns whether the activate is permitted.\n     * @param {ExecutionContext} context - execution context.\n     * @returns {boolean}\n     * @throws {ForbiddenException}\n     */\n    canActivate(context: ExecutionContext): boolean {\n        /**\n         * @constant request\n         * @type {any}\n         */\n        const request = context.switchToHttp().getRequest<RequestWithRole>();\n        /**\n         * @constant role\n         * @type {any}\n         */\n        const role = request.headers[\"x-user-role\"];\n        if (role !== UserRole.Admin) {\n            throw new ForbiddenException(\"This action requires the admin role\");\n        }\n        return true;\n    }\n}\n"
+    },
+    {
+      "name": "Plain JS",
+      "generated": true,
+      "detectionMethod": "No dependency or file-extension signal matched by getFrameworkSignals() for plain .js files (confirmed by running the real detector against a bare probe project) — detected by process of elimination against the other six frameworks, not a positive signal.",
+      "sampleTargets": [
+        "sample/vanilla-js"
+      ],
+      "demoFile": "sample/vanilla-js/validators.js",
+      "before": "function isInRange(value, min, max) {\n    return typeof value === \"number\" && value >= min && value <= max;\n}\n",
+      "after": "/**\n * Returns whether the in is range.\n * @param {any} value - value to process.\n * @param {any} min - minimum allowed value.\n * @param {any} max - maximum allowed value.\n * @returns {any}\n */\nfunction isInRange(value, min, max) {\n    return typeof value === \"number\" && value >= min && value <= max;\n}\n"
+    },
+    {
+      "name": "Plain TS",
+      "generated": true,
+      "detectionMethod": "No dependency or file-extension signal matched by getFrameworkSignals() for plain .ts files (confirmed by running the real detector against a bare probe project) — detected by process of elimination against the other six frameworks, not a positive signal.",
+      "sampleTargets": [
+        "sample/api.ts",
+        "sample/models.ts",
+        "sample/errors.ts",
+        "sample/events.ts",
+        "sample/middleware.ts",
+        "sample/container.ts"
+      ],
+      "demoFile": "sample/errors.ts",
+      "before": "export function formatErrorForLog(err: AppError): string {\n    return `${err.timestamp} [${err.status}] ${err.code}: ${err.message}`;\n}\n",
+      "after": "/**\n * Formats the error for log.\n * @param {AppError} err - error instance.\n * @returns {string}\n */\nexport function formatErrorForLog(err: AppError): string {\n    return `${err.timestamp} [${err.status}] ${err.code}: ${err.message}`;\n}\n"
+    }
+  ]
+}

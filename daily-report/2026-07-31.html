@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jsdoc-scribe — Daily Market &amp; Content Report — 2026-07-31</title>
+<style>
+  :root{--ink:#1a1d23;--muted:#5b6472;--line:#e4e7ec;--accent:#2f6fed;--bg-soft:#f6f8fb;--good:#12805c;--warn:#b6540a;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+  header.rep{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+  header.rep h1{font-size:1.5rem;margin:0 0 6px}
+  header.rep .meta{color:var(--muted);font-size:.92rem}
+  .badge{display:inline-block;background:var(--ink);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:4px;margin-right:8px}
+  .badge.role-a{background:var(--accent)}
+  .badge.role-b{background:var(--good)}
+  section{margin-bottom:36px}
+  h2{font-size:1.15rem;border-left:4px solid var(--accent);padding-left:10px;margin:0 0 14px}
+  h3{font-size:1rem;margin:20px 0 8px}
+  p{margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600}
+  ul{margin:0 0 14px;padding-left:20px}
+  li{margin-bottom:6px}
+  .card{background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+  .tag{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.78rem;color:var(--muted);margin:2px 4px 2px 0}
+  .status-covered{color:var(--muted)}
+  .status-open{color:var(--good);font-weight:600}
+  .source-list{font-size:.85rem;color:var(--muted)}
+  .source-list a{color:var(--accent)}
+  footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem}
+  .decision{border:1px solid var(--accent);border-radius:8px;padding:16px 18px;background:#eef4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="rep">
+  <span class="badge role-a">Market Analyst</span><span class="badge role-b">Content Writer</span>
+  <h1>Daily Report — jsdoc-scribe Content Pipeline</h1>
+  <div class="meta">Date: 2026-07-31 (Friday) &middot; Prepared for: Chintan Goswami &middot; Scope: npm package + docs site (imchintoo.github.io/jsdoc-scribe)</div>
+</header>
+
+<section>
+  <h2>1. Brand &amp; keyword visibility check</h2>
+  <p>Direct search for <code>jsdoc-scribe</code> continues to return zero third-party mentions, reviews, or "alternatives to" roundups — seventh consecutive check (2026-07-23 through today) with no organic visibility change. Results still resolve to unrelated namesakes: core <code>jsdoc</code>, <code>scribe.js-ocr</code>, PHP's <code>@knuckleswtf/scribe</code>, and the unrelated Node.js "Scribe" project at scribe-js.readthedocs.io.</p>
+  <div class="card">
+    <strong>Implication:</strong> unchanged — zero organic search competition, zero organic discovery. No new activity in the naming space today.
+  </div>
+</section>
+
+<section>
+  <h2>2. Competitive landscape snapshot</h2>
+  <table>
+    <tr><th>Tool</th><th>Positioning</th><th>Where jsdoc-scribe differs</th></tr>
+    <tr><td>TypeDoc + Docusaurus (hybrid)</td><td>2026 write-ups continue converging on "TypeDoc for automated technical accuracy, Docusaurus for human-curated explanation" as the standard combo — including a fresh walkthrough of wiring TypeDoc output into a Docusaurus site across microservices via GitLab CI, and <code>docusaurus-plugin-typedoc</code>/<code>typedoc-plugin-markdown</code> as the glue packages</td><td>Confirms the pattern jsdoc-scribe collapses into one dependency and one CLI run: a single <code>gen-docs</code> pass produces the navigable site, the Architecture Insight narrative page, and (optionally) the code-health dashboard — no second static-site generator or CI wiring step required</td></tr>
+    <tr><td>Context7 (Upstash)</td><td>New adjacent category worth tracking: a real-time documentation-retrieval layer built specifically to feed AI coding agents version-accurate library docs instead of stale training-data knowledge, reviewed favorably across 2026 AI-tooling roundups</td><td>Different layer of the stack — Context7 fixes AI agents' knowledge of <em>third-party</em> library docs; jsdoc-scribe fixes the accuracy of <em>your own repo's</em> docs, which is the context an agent working in that repo actually reads first. Complementary, not competitive — and the underlying problem (agents work worse on stale docs) is today's chosen angle, Section 3.</td></tr>
+    <tr><td>API Extractor (Microsoft)</td><td>Library-author-focused: public API surface rollup, breaking-change detection — not a documentation-site generator</td><td>Different job entirely; noted for completeness only, unchanged from prior reports</td></tr>
+  </table>
+  <p class="source-list">Sources: <a href="https://blog.chainsafe.io/documenting-typescript-finding-the-right-tools-for-your-project/">Documenting TypeScript: Finding the Right Tools — ChainSafe</a> &middot; <a href="https://dev.to/piotr_pomierski/building-centralized-documentation-across-microservices-with-docusaurus-gitlab-ci-and-typedoc-5a7d">Centralized Documentation Across Microservices with Docusaurus, GitLab CI, and TypeDoc — DEV</a> &middot; <a href="https://www.npmjs.com/package/docusaurus-plugin-typedoc">docusaurus-plugin-typedoc — npm</a> &middot; <a href="https://scored.tools/blog/context7-review-2026/">Context7 Review 2026 — scored.tools</a> &middot; <a href="https://docsio.co/blog/code-documentation-tools">12 Best Code Documentation Tools for Developers in 2026 — Docsio</a></p>
+</section>
+
+<section>
+  <h2>3. Signal worth writing about today</h2>
+  <div class="card">
+    <h3>"Context rot" now has a name, a paper, and a measured performance cost — and it's about internal docs, not just AI trust in general</h3>
+    <p>Two 2026 papers give this angle real teeth. First, <em>Context Rot in AI-Assisted Software Development</em> (arXiv:2606.09090) names and formalizes the failure mode directly: teams increasingly hand AI coding agents persistent context via <code>CLAUDE.md</code>, <code>AGENTS.md</code>, and <code>.cursorrules</code> files describing code structure and conventions — and as the underlying code changes, that context goes stale silently. No error, no warning: the model just starts referencing functions that no longer exist or importing modules that were deleted, and the failure looks like a bad suggestion rather than a documentation bug.</p>
+    <p>Second, <em>On the Impact of AGENTS.md Files on the Efficiency of AI Coding Agents</em> (arXiv:2601.20404) puts a number on the flip side: across 124 pull requests in 10 repositories, the presence of an AGENTS.md file was associated with a <strong>28.64% lower median runtime</strong> and <strong>16.58% fewer output tokens</strong> for the AI agent, with comparable task completion — i.e., accurate context isn't just a correctness nicety, it's measurably cheaper to run agents against.</p>
+    <p>Layered on top: the 2026 Stack Overflow Developer Survey (49,000 respondents, 177 countries) puts AI coding tool adoption at a record <strong>84%</strong> while developer trust in AI output accuracy has fallen to <strong>29%</strong>, down from 40% in 2024 — and separately, <strong>96% of developers say they don't fully trust</strong> that AI-generated code is functionally correct, with 71% never merging AI output without manual review.</p>
+    <p class="source-list">Sources: <a href="https://arxiv.org/abs/2606.09090">Context Rot in AI-Assisted Software Development — arXiv:2606.09090</a> &middot; <a href="https://arxiv.org/abs/2601.20404">On the Impact of AGENTS.md Files on AI Coding Agent Efficiency — arXiv:2601.20404</a> &middot; <a href="https://byteiota.com/stack-overflow-dev-survey-2026-ai-at-84-trust-at-3/">Stack Overflow Dev Survey 2026: AI at 84%, Trust at 3% — byteiota</a> &middot; <a href="https://dev.to/tanishka_karsulkar_ec9e58/the-verification-gap-why-96-of-developers-dont-fully-trust-ai-code-yet-only-half-always-check-4cah">The Verification Gap: 96% Don't Fully Trust AI Code — DEV</a> &middot; <a href="https://scored.tools/blog/context7-review-2026/">Context7 Review 2026 — scored.tools</a></p>
+  </div>
+  <p><strong>Today's strongest angle:</strong> unused backlog angle — "AI coding assistants produce better output when the docs they read as context are accurate and current, not stale." Today's research gives it exactly what it needed: a named failure mode with a citation (context rot), a hard efficiency number for the fix (AGENTS.md study, 28.64%/16.58%), and the trust-gap backdrop that makes the whole argument land (84% adoption vs. 29% trust). Audience: developers and CTOs evaluating agentic coding tools — a technical/practical angle, distinct in structure from the last three posts (metric-and-scorecard, trade-off rebuttal, procurement deep-dive).</p>
+</section>
+
+<section>
+  <h2>4. Content already published (do not repeat)</h2>
+  <table>
+    <tr><th>Date</th><th>Slug</th><th>Core angle</th></tr>
+    <tr><td>2026-07-10</td><td>why-deterministic-jsdoc-matters</td><td>Philosophy: deterministic AST-based docs vs. hand-written/guessed docs</td></tr>
+    <tr><td>2026-07-13</td><td>halving-engineering-overhead-documentation-automation</td><td>Case study: client cut transition overhead 50%, onboarding 70%+</td></tr>
+    <tr><td>2026-07-16</td><td>we-automated-documentation-out-of-existence</td><td>Cost/savings story: free, local, benchmarks, architecture insight, quality dashboard</td></tr>
+    <tr><td>2026-07-23</td><td>the-due-diligence-blind-spot</td><td>Due-diligence/risk story: continuous docs as an investor-facing signal (pre-raise)</td></tr>
+    <tr><td>2026-07-24</td><td>the-eslint-rule-that-disappeared</td><td>Technical deep-dive: ESLint v9 core rule removal, jsdoc-scribe's ESLint plugin</td></tr>
+    <tr><td>2026-07-28</td><td>what-saying-no-to-ai-actually-costs-you</td><td>Honest trade-off/rebuttal: what "no AI" costs vs. saves, argued against the product's own easy narrative</td></tr>
+    <tr><td>2026-07-29</td><td>the-question-that-stalls-your-deal</td><td>Procurement/compliance deep-dive: security questionnaires, EU AI Act deadline, deterministic tooling as a one-sentence answer</td></tr>
+    <tr><td>2026-07-30</td><td>the-bus-factor-nobody-puts-on-a-slide</td><td>Metric-and-scorecard piece: bus factor measurement methodology, onboarding-cost data, documentation as the lever</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>5. Today's pick</h2>
+  <div class="decision">
+    <strong>Title:</strong> "Your AI Agent Is Only As Good As Its Docs: What 'Context Rot' Means for Your Codebase"<br>
+    <strong>Audience:</strong> Developers and CTOs evaluating or standardizing on agentic coding tools (Copilot, Cursor, Claude Code and similar) — a practitioner angle, not a compliance or finance one, rotating away from the last two posts' procurement/metric framing<br>
+    <strong>Angle:</strong> technical/practical piece — what "context rot" is and why it's a silent failure mode (arXiv:2606.09090), the measured cost of stale vs. fresh agent context (AGENTS.md efficiency study, arXiv:2601.20404), the industry-wide trust gap that makes this worse (84% adoption / 29% trust, Stack Overflow 2026), and why documentation generated from the AST on every build — rather than hand-maintained and inevitably stale — is a direct, mechanical fix for the exact failure mode the research describes, not just a nice-to-have for humans.<br>
+    <strong>File:</strong> <code>docs-site/posts/2026-07-31-your-ai-agent-is-only-as-good-as-its-docs.md</code>
+  </div>
+</section>
+
+<section>
+  <h2>6. Backlog — candidate angles for upcoming days (avoid re-selecting once used)</h2>
+  <table>
+    <tr><th>Status</th><th>Angle</th><th>Primary audience</th></tr>
+    <tr><td class="status-covered">Used 2026-07-31</td><td>Why AI coding assistants produce better output when the docs they read as context are accurate and current, not stale (context rot)</td><td>Developers / CTO</td></tr>
+    <tr><td class="status-covered">Used 2026-07-30</td><td>Bus-factor as a quantifiable metric — how to measure and report it to a board</td><td>CTO / EM</td></tr>
+    <tr><td class="status-covered">Used 2026-07-29</td><td>Why "self-hosted, no data leaves your infra" is becoming a procurement requirement, not a nice-to-have</td><td>CTO / Security / Procurement</td></tr>
+    <tr><td class="status-open">Open</td><td>Architecture Insight page walkthrough — using auto-detected patterns for new-hire ramp-up</td><td>Engineers / EM</td></tr>
+    <tr><td class="status-open">Open</td><td>GitHub Actions + Pages deploy recipe — docs site live in under 10 minutes</td><td>Developers / DevOps</td></tr>
+    <tr><td class="status-open">Open</td><td>Code Health dashboard (--quality) as a lightweight alternative to SonarQube for small teams</td><td>Engineers / EM / CTO</td></tr>
+    <tr><td class="status-open">Open</td><td>Monorepo documentation: workspaces, multiple packages, one site</td><td>Engineers / Platform teams</td></tr>
+    <tr><td class="status-covered">Used 2026-07-28</td><td>What "no AI" actually costs you vs saves you — an honest trade-off piece, not a pitch</td><td>Founders / CTO / skeptical engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>Shadow AI in engineering orgs — what a security review of "who's sending code to which model" actually finds, and how deterministic tooling sidesteps the question</td><td>CTO / Security / Engineering leadership</td></tr>
+    <tr><td class="status-open">Open</td><td>SIG/CAIQ/DDQ vendor questionnaires walked through line-by-line for a docs tool — a "how we'd actually answer this" reference post</td><td>Security / Procurement / Vendor-side engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>What August 2, 2026's EU AI Act high-risk enforcement actually changes for teams that don't think they use "AI systems" at all — now two days out, worth prioritizing soon while still timely</td><td>CTO / Legal / Compliance</td></tr>
+    <tr><td class="status-open">Open</td><td>Platform engineering's shift to IDPs/software catalogs for onboarding — where an auto-generated, drift-checked doc site fits as the catalog's data source rather than a replaced layer</td><td>Platform Engineering / DevOps / EM</td></tr>
+    <tr><td class="status-open">Open</td><td>Silo ratio and per-file "authorship concentration" as a companion metric to jsdoc-scribe's Architecture Insight page — could a future version surface this directly from git history</td><td>CTO / EM (also: informs a possible product feature, not just a post)</td></tr>
+    <tr><td class="status-open">Open</td><td>New: Context7-style "docs-as-context-layer" positioning — a technical explainer on wiring gen-docs output directly into an agent's context window (AGENTS.md generation, or an MCP-style local doc server) as a jsdoc-scribe companion workflow</td><td>Developers / DevOps (also: informs a possible product feature)</td></tr>
+  </table>
+  <p>Each future run should cross-check this table plus the published list in Section 4, pick the strongest unused angle for that day's news/search signal, and append newly published posts back into Section 4's equivalent list. Note: the EU AI Act backlog item is now time-sensitive — enforcement lands 2026-08-02, so it should run within the next report or two to stay timely, or be reframed as a retrospective "what changed" piece if missed.</p>
+</section>
+
+<footer>
+  Generated by the scheduled jsdoc-scribe content pipeline (Market Analyst role). Blog output for this date: <code>docs-site/posts/2026-07-31-your-ai-agent-is-only-as-good-as-its-docs.md</code>. Images intentionally omitted — Chintan handles cover-image generation himself, outside the automated pipeline.
+</footer>
+
+</div>
+</body>
+</html>

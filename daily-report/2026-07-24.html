@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jsdoc-scribe — Daily Market &amp; Content Report — 2026-07-24</title>
+<style>
+  :root{--ink:#1a1d23;--muted:#5b6472;--line:#e4e7ec;--accent:#2f6fed;--bg-soft:#f6f8fb;--good:#12805c;--warn:#b6540a;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+  header.rep{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+  header.rep h1{font-size:1.5rem;margin:0 0 6px}
+  header.rep .meta{color:var(--muted);font-size:.92rem}
+  .badge{display:inline-block;background:var(--ink);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:4px;margin-right:8px}
+  .badge.role-a{background:var(--accent)}
+  .badge.role-b{background:var(--good)}
+  section{margin-bottom:36px}
+  h2{font-size:1.15rem;border-left:4px solid var(--accent);padding-left:10px;margin:0 0 14px}
+  h3{font-size:1rem;margin:20px 0 8px}
+  p{margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600}
+  ul{margin:0 0 14px;padding-left:20px}
+  li{margin-bottom:6px}
+  .card{background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+  .tag{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.78rem;color:var(--muted);margin:2px 4px 2px 0}
+  .status-covered{color:var(--muted)}
+  .status-open{color:var(--good);font-weight:600}
+  .source-list{font-size:.85rem;color:var(--muted)}
+  .source-list a{color:var(--accent)}
+  footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem}
+  .decision{border:1px solid var(--accent);border-radius:8px;padding:16px 18px;background:#eef4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="rep">
+  <span class="badge role-a">Market Analyst</span><span class="badge role-b">Content Writer</span>
+  <h1>Daily Report — jsdoc-scribe Content Pipeline</h1>
+  <div class="meta">Date: 2026-07-24 (Friday) &middot; Prepared for: Chintan Goswami &middot; Scope: npm package + docs site (imchintoo.github.io/jsdoc-scribe)</div>
+</header>
+
+<section>
+  <h2>1. Brand &amp; keyword visibility check</h2>
+  <p>Direct web searches for <code>jsdoc-scribe</code> still surface no third-party mentions, reviews, or "alternatives to TypeDoc" roundup listings — search results resolve instead to the unrelated, similarly-named <code>jsdoc</code> core package and the PHP-ecosystem <code>knuckleswtf/scribe</code> project. This is unchanged from yesterday's check.</p>
+  <div class="card">
+    <strong>Implication:</strong> no organic search competition to fight yet, but also no inbound discovery from search — distribution still depends entirely on direct npm/GitHub traffic and the blog's own outbound sharing. Nothing actionable here today beyond continuing to publish content that can eventually rank on the long-tail queries competitors already own.
+  </div>
+</section>
+
+<section>
+  <h2>2. Competitive landscape snapshot</h2>
+  <table>
+    <tr><th>Tool</th><th>Positioning</th><th>Where jsdoc-scribe differs</th></tr>
+    <tr><td>TypeDoc</td><td>~1.86M weekly downloads, 8K+ GitHub stars; generates docs from TS types, the default for typed libraries</td><td>TypeDoc documents types you already wrote; jsdoc-scribe writes the JSDoc comments themselves via AST first</td></tr>
+    <tr><td>JSDoc (classic)</td><td>~2.17M weekly downloads, 15K+ stars; the original comment-driven generator, still the most-downloaded tool in the category</td><td>Requires comments to already exist and be accurate; jsdoc-scribe generates them from the AST instead of trusting prior prose</td></tr>
+    <tr><td>Docusaurus</td><td>59K+ GitHub stars but only ~6.8K weekly npm downloads (most usage is via scaffolded sites, not the npm package directly); Meta-maintained guides/tutorials framework, not an API extractor</td><td>jsdoc-scribe is single-dependency and zero-config for API reference; no MDX/React toolchain required</td></tr>
+    <tr><td>eslint-plugin-jsdoc</td><td>Community-maintained ESLint rule set for JSDoc validity/completeness; ESLint core removed its own <code>require-jsdoc</code>/<code>valid-jsdoc</code> rules in v9, pushing teams toward this plugin as the only place PR-time JSDoc enforcement now lives</td><td>jsdoc-scribe's own ESLint plugin both flags gaps and can generate the fix in the same run, rather than lint-only</td></tr>
+    <tr><td>AI-assisted doc generators (2026 cohort)</td><td>Growing category — LLM reads code, writes prose docs, usually priced per token/seat</td><td>jsdoc-scribe is explicitly deterministic/non-AI: same input → same output, no hallucination risk, nothing leaves the machine</td></tr>
+  </table>
+  <p class="source-list">Sources: <a href="https://npmtrends.com/@microsoft/tsdoc-vs-documentation-vs-docusaurus-vs-docz-vs-jsdoc-vs-jsdocs-vs-tsdoc-vs-typedoc">TSDoc vs TypeDoc vs JSDoc vs Docusaurus — npm trends</a> &middot; <a href="https://eslint.org/docs/latest/rules/require-jsdoc">require-jsdoc (removed in ESLint v9) — ESLint docs</a> &middot; <a href="https://github.com/gajus/eslint-plugin-jsdoc">eslint-plugin-jsdoc — GitHub</a> &middot; <a href="https://docsio.co/blog/code-documentation-tools">12 Best Code Documentation Tools 2026 — Docsio</a></p>
+</section>
+
+<section>
+  <h2>3. Signal worth writing about today</h2>
+  <div class="card">
+    <h3>ESLint quietly removed its own JSDoc rules — the plugin ecosystem is now the only enforcement point</h3>
+    <p><code>require-jsdoc</code> and <code>valid-jsdoc</code> were removed from ESLint core as of v9.0.0. Teams that relied on either rule for PR-time JSDoc enforcement lost it silently on upgrade, and the community's own docs now point exclusively at <code>eslint-plugin-jsdoc</code> to fill the gap — a plugin that's lint-only by design (it can flag a missing block, not write one).</p>
+    <p class="source-list">Sources: <a href="https://eslint.org/docs/latest/rules/require-jsdoc">require-jsdoc — ESLint docs</a> &middot; <a href="https://github.com/gajus/eslint-plugin-jsdoc">eslint-plugin-jsdoc — GitHub</a></p>
+  </div>
+  <div class="card">
+    <h3>The cost of catching a gap multiplies 10–100x the later it's caught</h3>
+    <p>IBM Systems Sciences Institute figures, still the most-cited benchmark in 2026 shift-left coverage: a defect caught at design time costs roughly 1x to fix; at coding time, ~6.5x; at testing, ~15x; in production, ~100x. Separately, teams that shift checks left report 60–90% fewer production defects and 40–60% lower total cost of quality. The same curve applies to missing or stale documentation — caught at the PR stage it's a one-line diff; caught by a new hire three weeks into onboarding, or by a due-diligence reviewer during a raise, it's a much more expensive conversation.</p>
+    <p class="source-list">Sources: <a href="https://www.qodo.ai/blog/shift-left-code-review/">Shift-Left Code Review — Qodo</a> &middot; <a href="https://globalbit.co.il/blog/shift-left-testing-catch-bugs-early">Shift-Left Testing: Catching $100 Bugs Before They Become $10,000 Fires — Globalbit</a></p>
+  </div>
+  <p><strong>Today's strongest angle combines these two:</strong> ESLint's core rule removal creates a real, timely reason for teams to look at their JSDoc enforcement setup right now, and the shift-left cost curve gives a concrete "why PR time, not release time" argument. This is a technical deep-dive aimed squarely at developers and tech leads — a structure and audience combination none of the four existing posts (philosophy, case study, savings story, due-diligence story) has used yet.</p>
+</section>
+
+<section>
+  <h2>4. Content already published (do not repeat)</h2>
+  <table>
+    <tr><th>Date</th><th>Slug</th><th>Core angle</th></tr>
+    <tr><td>2026-07-10</td><td>why-deterministic-jsdoc-matters</td><td>Philosophy: deterministic AST-based docs vs. hand-written/guessed docs</td></tr>
+    <tr><td>2026-07-13</td><td>halving-engineering-overhead-documentation-automation</td><td>Case study: client cut transition overhead 50%, onboarding 70%+</td></tr>
+    <tr><td>2026-07-16</td><td>we-automated-documentation-out-of-existence</td><td>Cost/savings story: free, local, benchmarks, architecture insight, quality dashboard</td></tr>
+    <tr><td>2026-07-23</td><td>the-due-diligence-blind-spot</td><td>Due-diligence/risk story: continuous docs as an investor-facing signal</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>5. Today's pick</h2>
+  <div class="decision">
+    <strong>Title:</strong> "Your ESLint JSDoc Rule Disappeared in v9 — Here's What Actually Replaces It"<br>
+    <strong>Audience:</strong> developers, tech leads (primary technical deep-dive — first post aimed squarely at this audience rather than EM/CTO/founder)<br>
+    <strong>Angle:</strong> technical deep-dive on jsdoc-scribe's ESLint plugin catching missing/stale JSDoc at PR time, framed against ESLint core's v9 rule removal and the shift-left cost-of-defect curve — unused structure (deep-dive) and unused primary audience (developer-only) versus the four prior posts.<br>
+    <strong>File:</strong> <code>docs-site/posts/2026-07-24-the-eslint-rule-that-disappeared.md</code>
+  </div>
+</section>
+
+<section>
+  <h2>6. Backlog — candidate angles for upcoming days (avoid re-selecting once used)</h2>
+  <table>
+    <tr><th>Status</th><th>Angle</th><th>Primary audience</th></tr>
+    <tr><td class="status-open">Open</td><td>Bus-factor as a quantifiable metric — how to measure and report it to a board</td><td>CTO / EM</td></tr>
+    <tr><td class="status-open">Open</td><td>Why "self-hosted, no data leaves your infra" is becoming a procurement requirement, not a nice-to-have</td><td>CTO / Security / Procurement</td></tr>
+    <tr><td class="status-open">Open</td><td>Architecture Insight page walkthrough — using auto-detected patterns for new-hire ramp-up</td><td>Engineers / EM</td></tr>
+    <tr><td class="status-open">Open</td><td>GitHub Actions + Pages deploy recipe — docs site live in under 10 minutes</td><td>Developers / DevOps</td></tr>
+    <tr><td class="status-open">Open</td><td>Code Health dashboard (--quality) as a lightweight alternative to SonarQube for small teams</td><td>Engineers / EM / CTO</td></tr>
+    <tr><td class="status-open">Open</td><td>Monorepo documentation: workspaces, multiple packages, one site</td><td>Engineers / Platform teams</td></tr>
+    <tr><td class="status-open">Open</td><td>What "no AI" actually costs you vs. saves you — an honest trade-off piece, not a pitch</td><td>Founders / CTO / skeptical engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>Why AI coding assistants (Copilot, Cursor, agentic coding tools) produce better output when the docs they read as context are accurate and current, not stale</td><td>Developers / CTO</td></tr>
+  </table>
+  <p>Each future run should cross-check this table plus the published list in Section 4, pick the strongest unused angle for that day's news/search signal, and append newly published posts back into Section 4's equivalent list.</p>
+</section>
+
+<footer>
+  Generated by the scheduled jsdoc-scribe content pipeline (Market Analyst role). Blog output for this date: <code>docs-site/posts/2026-07-24-the-eslint-rule-that-disappeared.md</code>. Images intentionally omitted — Chintan handles cover-image generation himself, outside the automated pipeline.
+</footer>
+
+</div>
+</body>
+</html>

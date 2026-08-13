@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jsdoc-scribe — Daily Market &amp; Content Report — 2026-08-10</title>
+<style>
+  :root{--ink:#1a1d23;--muted:#5b6472;--line:#e4e7ec;--accent:#2f6fed;--bg-soft:#f6f8fb;--good:#12805c;--warn:#b6540a;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+  header.rep{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+  header.rep h1{font-size:1.5rem;margin:0 0 6px}
+  header.rep .meta{color:var(--muted);font-size:.92rem}
+  .badge{display:inline-block;background:var(--ink);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:4px;margin-right:8px}
+  .badge.role-a{background:var(--accent)}
+  .badge.role-b{background:var(--good)}
+  section{margin-bottom:36px}
+  h2{font-size:1.15rem;border-left:4px solid var(--accent);padding-left:10px;margin:0 0 14px}
+  h3{font-size:1rem;margin:20px 0 8px}
+  p{margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600}
+  ul{margin:0 0 14px;padding-left:20px}
+  li{margin-bottom:6px}
+  .card{background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+  .tag{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.78rem;color:var(--muted);margin:2px 4px 2px 0}
+  .status-covered{color:var(--muted)}
+  .status-open{color:var(--good);font-weight:600}
+  .status-missed{color:var(--warn);font-weight:600}
+  .source-list{font-size:.85rem;color:var(--muted)}
+  .source-list a{color:var(--accent)}
+  footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem}
+  .decision{border:1px solid var(--accent);border-radius:8px;padding:16px 18px;background:#eef4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="rep">
+  <span class="badge role-a">Market Analyst</span><span class="badge role-b">Content Writer</span>
+  <h1>Daily Report — jsdoc-scribe Content Pipeline</h1>
+  <div class="meta">Date: 2026-08-10 (Monday) &middot; Prepared for: Chintan Goswami &middot; Scope: npm package + docs site (imchintoo.github.io/jsdoc-scribe)</div>
+</header>
+
+<section>
+  <h2>1. Brand &amp; keyword visibility check</h2>
+  <p>Direct search for <code>jsdoc-scribe</code> again returns zero third-party mentions, reviews, or "alternatives to" roundups — the thirteenth consecutive check with no organic visibility change. Results still resolve to unrelated namesakes: core <code>jsdoc</code>, <code>scribe.js-ocr</code> (OCR), <code>@knuckleswtf/scribe</code> (PHP/Laravel), and the Python-ecosystem "Scribe for Node.js" docs (a different, unrelated project despite the confusing name). No movement on the Syntax Scribe comparison-content front.</p>
+  <div class="card">
+    <strong>Implication:</strong> the zero-organic-discovery finding is now thirteen checks old with no dedicated remediation action taken. Repeating the standing recommendation once more, flagged for Chintan rather than expanded on further today to avoid needlessly padding this section: a one-time discoverability move (npm-adjacent directory listing, Show HN-style launch post, or the open backlog "comparison post" item in Section 6) would compound the daily blog cadence rather than compete with it.
+  </div>
+</section>
+
+<section>
+  <h2>2. Competitive landscape snapshot</h2>
+  <table>
+    <tr><th>Tool / trend</th><th>Positioning</th><th>Where jsdoc-scribe differs</th></tr>
+    <tr><td>TypeScript 7.1 iteration plan (confirmed dates)</td><td>Microsoft's official TS 7.1 iteration plan (<code>microsoft/TypeScript</code> #63703) now has concrete dates: <strong>Beta 2026-09-09</strong>, <strong>RC 2026-10-20</strong>, <strong>Stable 2026-11-10</strong>. This is the release that ships the stable, JS-accessible programmatic Compiler API that 7.0 shipped without. TypeDoc's own maintainers report (as of 2026-07-30) being "down to 70 compiler errors" against a 7.1 nightly and are targeting a beta pinned to that nightly rather than 7.1 stable.</td><td>Confirms the follow-up backlog item from 2026-08-09 is now dated rather than open-ended: the earliest a <code>&lt;7.0.0</code> pin re-evaluation is realistically actionable is the 2026-09-09 beta, with stable not until 2026-11-10.</td></tr>
+    <tr><td>Platform engineering / Internal Developer Platforms (new landscape area, first appearance in this log)</td><td>Gartner: over 80% of software engineering orgs now have dedicated platform teams, and 75% provide a developer self-service portal (Backstage remains the de facto open-source standard; Port and Cortex lead the commercial tier). Every major IDP ships a "software catalog" with a docs/TechDocs tab as a core primitive, not an add-on.</td><td>Directly relevant — see Section 3. jsdoc-scribe generates the content that would fill a catalog's docs tab; it doesn't compete with the catalog layer itself.</td></tr>
+  </table>
+  <p class="source-list">Sources: <a href="https://github.com/microsoft/TypeScript/issues/63703">TypeScript 7.1 Iteration Plan — microsoft/TypeScript #63703</a> &middot; <a href="https://github.com/TypeStrong/typedoc/issues/3098">TypeScript 7 (TS-Go) support — TypeStrong/typedoc #3098</a> &middot; <a href="https://northflank.com/blog/top-internal-developer-portals">Top internal developer portals in 2026 — Northflank</a> &middot; <a href="https://www.cycloid.io/blog/internal-developer-platform-the-complete-guide-for-platform-engineers-in-2026/">Internal Developer Platform: The Complete Guide for 2026 — Cycloid</a></p>
+</section>
+
+<section>
+  <h2>3. Signal worth writing about today</h2>
+  <div class="card">
+    <h3>Backstage TechDocs solved where docs live. It didn't solve whether they're accurate.</h3>
+    <p>This is the strongest unused signal in today's research, and it's a genuine gap rather than a marketing angle: Backstage's own TechDocs documentation states plainly that co-location — docs living in the same repo as code, shipping through the same PRs, inheriting the same code review — is the mechanism meant to solve staleness. But co-location only guarantees docs get <em>reviewed alongside</em> code; it does not guarantee anyone actually updates the Markdown when the code changes, because TechDocs (like most catalog doc tabs) still expects a human to hand-author the content. A widely cited figure from a 2026 internal-tooling survey found that <strong>only 3% of engineers fully trust their documentation repositories</strong> — and that number was measured inside orgs that already have doc infrastructure like TechDocs, Confluence, or a wiki. The Backstage team's own public roadmap acknowledges this gap directly, floating ideas like a "Trust Card" with a Trust Score and automatic staleness-triggered maintenance notifications — tooling to flag the problem, not fix it at the source.</p>
+    <p>This is unused ground on the blog: prior platform-engineering-adjacent posts (2026-08-01 Architecture Insight walkthrough, 2026-08-06 monorepo piece) targeted individual developers and EMs, not the IDP/software-catalog layer specifically. Gartner's 80%-of-orgs-have-platform-teams stat has been sitting in the backlog since 2026-08-09 unused. The angle is now sharper than the original backlog note: instead of a generic "docs as IDP data source" pitch, it's a specific, sourced critique of the staleness gap in the exact catalog tooling (Backstage TechDocs) most platform teams are already standardizing on, with jsdoc-scribe positioned as content that's regenerated from source on every commit rather than hand-maintained Markdown sitting in the same repo.</p>
+    <p class="source-list">Sources: <a href="https://backstage.io/docs/features/techdocs/">TechDocs — Backstage Software Catalog and Developer Platform</a> &middot; <a href="https://www.port.io/blog/backstage-techdocs-vs-port">Backstage TechDocs vs. Port — Port.io</a> &middot; <a href="https://northflank.com/blog/top-internal-developer-portals">Top internal developer portals in 2026 — Northflank</a> &middot; <a href="https://www.cycloid.io/blog/internal-developer-platform-the-complete-guide-for-platform-engineers-in-2026/">Internal Developer Platform: The Complete Guide for 2026 — Cycloid</a></p>
+  </div>
+  <p><strong>Today's strongest angle:</strong> the open backlog item "Platform engineering's shift to IDPs/software catalogs" (2026-08-09 backlog), sharpened with today's TechDocs staleness research. Audience: Platform Engineering / DevOps / EM — a rotation to platform/infra leadership after 2026-08-09's developer-facing technical explainer.</p>
+</section>
+
+<section>
+  <h2>4. Content already published (do not repeat)</h2>
+  <table>
+    <tr><th>Date</th><th>Slug</th><th>Core angle</th></tr>
+    <tr><td>2026-07-10</td><td>why-deterministic-jsdoc-matters</td><td>Philosophy: deterministic AST-based docs vs. hand-written/guessed docs</td></tr>
+    <tr><td>2026-07-13</td><td>halving-engineering-overhead-documentation-automation</td><td>Case study: client cut transition overhead 50%, onboarding 70%+</td></tr>
+    <tr><td>2026-07-16</td><td>we-automated-documentation-out-of-existence</td><td>Cost/savings story: free, local, benchmarks, architecture insight, quality dashboard</td></tr>
+    <tr><td>2026-07-23</td><td>the-due-diligence-blind-spot</td><td>Due-diligence/risk story: continuous docs as an investor-facing signal (pre-raise)</td></tr>
+    <tr><td>2026-07-24</td><td>the-eslint-rule-that-disappeared</td><td>Technical deep-dive: ESLint v9 core rule removal, jsdoc-scribe's ESLint plugin</td></tr>
+    <tr><td>2026-07-28</td><td>what-saying-no-to-ai-actually-costs-you</td><td>Honest trade-off/rebuttal: what "no AI" costs vs. saves, argued against the product's own easy narrative</td></tr>
+    <tr><td>2026-07-29</td><td>the-question-that-stalls-your-deal</td><td>Procurement/compliance deep-dive: security questionnaires (general), EU AI Act deadline, deterministic tooling as a one-sentence answer</td></tr>
+    <tr><td>2026-07-30</td><td>the-bus-factor-nobody-puts-on-a-slide</td><td>Metric-and-scorecard piece: bus factor measurement methodology, onboarding-cost data, documentation as the lever</td></tr>
+    <tr><td>2026-07-31</td><td>your-ai-agent-is-only-as-good-as-its-docs</td><td>Technical/practical: "context rot" in AI coding agents, AGENTS.md efficiency data, drift-checking as the fix</td></tr>
+    <tr><td>2026-08-01</td><td>architecture-insight-page-new-hire-day-one</td><td>Product walkthrough: Architecture Insight page, new-hire onboarding, time-to-productivity data</td></tr>
+    <tr><td>2026-08-02</td><td>code-health-dashboard-small-team-sonarqube-alternative</td><td>Product comparison: <code>--quality</code> dashboard vs. SonarQube's free-tier limits, small-team framing</td></tr>
+    <tr><td>2026-08-03</td><td>eu-ai-act-a-day-later-what-actually-changed</td><td>Compliance retrospective: EU AI Act high-risk obligations, day-after fact-check of what actually went live</td></tr>
+    <tr><td>2026-08-04</td><td>docs-site-live-in-under-10-minutes</td><td>Tutorial: real GitHub Actions + Pages workflow taken from this repo's own CI</td></tr>
+    <tr><td>2026-08-05</td><td>shadow-ai-is-a-source-code-problem-first</td><td>Leadership/security analysis: internal shadow-AI review findings, source code as top-leaked data type</td></tr>
+    <tr><td>2026-08-06</td><td>monorepo-documentation-without-the-config-maze</td><td>Technical comparison + how-to: TypeDoc's <code>entryPointStrategy: "packages"</code> vs. jsdoc-scribe's workspace detection + programmatic API</td></tr>
+    <tr><td>2026-08-07</td><td>answering-the-security-questionnaire-line-by-line</td><td>Reference/answer-key: CAIQ v4 &amp; SIG domain-by-domain mapping to jsdoc-scribe facts, for security/procurement</td></tr>
+    <tr><td>2026-08-07</td><td>fixing-what-our-own-tooling-never-caught</td><td>Self-audit/transparency: repo-audit findings (changelog truncation bug, missing changelog entry, broken plugin install link, npm vuln, no lint setup) and their fixes</td></tr>
+    <tr><td>2026-08-09</td><td>typescript-7-has-no-compiler-api</td><td>Technical deep-dive: TypeScript 7.0's missing Compiler API and jsdoc-scribe's existing <code>&lt;7.0.0</code> pin</td></tr>
+    <tr><td>2026-08-10</td><td>your-catalog-solved-where-docs-live-not-whether-theyre-true</td><td>Platform-engineering critique: Backstage TechDocs co-location vs. actual staleness, IDP/software-catalog docs-tab framing</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>5. Today's pick</h2>
+  <div class="decision">
+    <strong>Title:</strong> "Your Software Catalog Solved Where Docs Live. It Didn't Solve Whether They're True."<br>
+    <strong>Audience:</strong> Platform Engineering / DevOps / EM — a rotation to platform/infra leadership after 2026-08-09's developer-facing technical explainer<br>
+    <strong>Angle:</strong> platform-engineering critique (new/unused ground): 80%+ of orgs now run platform teams and 75% ship a self-service developer portal (Backstage/Port/Cortex), each with a docs tab as a core catalog primitive. Backstage's own TechDocs documentation frames co-location — docs in the same repo, same PR, same review — as its staleness fix, but that only guarantees review, not that anyone updates the Markdown when code changes; a widely cited stat puts real documentation trust at just 3% even inside orgs with this infrastructure. Positions jsdoc-scribe's output as catalog-tab content that regenerates from source on every commit instead of hand-maintained Markdown that happens to sit in the right repo.<br>
+    <strong>File:</strong> <code>docs-site/posts/2026-08-10-your-catalog-solved-where-docs-live-not-whether-theyre-true.md</code>
+  </div>
+</section>
+
+<section>
+  <h2>6. Backlog — candidate angles for upcoming days (avoid re-selecting once used)</h2>
+  <table>
+    <tr><th>Status</th><th>Angle</th><th>Primary audience</th></tr>
+    <tr><td class="status-covered">Used 2026-08-10</td><td>Platform engineering's shift to IDPs/software catalogs — Backstage TechDocs staleness gap specifically</td><td>Platform Engineering / DevOps / EM</td></tr>
+    <tr><td class="status-covered">Used 2026-08-09</td><td>TypeScript 7.0's missing Compiler API and jsdoc-scribe's existing <code>&lt;7.0.0</code> pin</td><td>Developers / Engineers</td></tr>
+    <tr><td class="status-covered">Used 2026-08-07 (×2)</td><td>SIG/CAIQ line-by-line reference; self-audit/changelog-bug transparency post</td><td>Security/Procurement; Developers/OSS maintainers</td></tr>
+    <tr><td class="status-covered">Used 2026-08-06</td><td>Monorepo documentation: workspaces, multiple packages, one site</td><td>Developers / Platform teams</td></tr>
+    <tr><td class="status-open">Open</td><td>Silo ratio and per-file "authorship concentration" as a companion metric to the Architecture Insight page — could a future version surface this directly from git history</td><td>CTO / EM (also: informs a possible product feature, not just a post)</td></tr>
+    <tr><td class="status-open">Open</td><td>Context7-style "docs-as-context-layer" positioning — wiring <code>gen-docs</code> output directly into an agent's context window (AGENTS.md generation, or an MCP-style local doc server)</td><td>Developers / DevOps (also: informs a possible product feature)</td></tr>
+    <tr><td class="status-open">Open, now dated</td><td>Follow-up once TypeScript 7.1's programmatic API lands. Confirmed schedule found today: Beta 2026-09-09, RC 2026-10-20, Stable 2026-11-10 — earliest realistic action point is the September beta, not before.</td><td>Developers / Engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>Syntax Scribe and other name-adjacent competitors publishing SEO comparison content — should jsdoc-scribe write its own honest comparison/positioning post, given zero indexed presence to compete on</td><td>Developers evaluating doc tools (also: an off-blog discoverability action, not just a post)</td></tr>
+    <tr><td class="status-open">Open</td><td>A worked, copy-pasteable Node script running jsdoc-scribe's programmatic API across every workspace package into one merged site — the code-heavy follow-up to the 2026-08-06 comparison piece</td><td>Developers / Platform teams</td></tr>
+    <tr><td class="status-open">Open</td><td>CAIQ v4's expanded AI-specific questions (2026 revision) deserve a dedicated deeper follow-up beyond the 2026-08-07 general questionnaire mapping</td><td>Security / Procurement / AI governance leads</td></tr>
+    <tr><td class="status-open">Open, new today</td><td>A direct "wire jsdoc-scribe output into Backstage TechDocs" how-to — the practical, code-heavy follow-up to today's critique piece, once the critique has had a few days to stand on its own</td><td>Platform Engineering / DevOps</td></tr>
+  </table>
+  <p>Each future run should cross-check this table plus the published list in Section 4, pick the strongest unused angle for that day's news/search signal, and append newly published posts back into Section 4's equivalent list. Note: the standing zero-organic-visibility finding in Section 1 is now thirteen checks old without a dedicated action — repeating the recommendation that Chintan consider a non-blog discoverability action (tool directory submission, Show HN-style post) alongside the daily content cadence.</p>
+</section>
+
+<footer>
+  Generated by the scheduled jsdoc-scribe content pipeline (Market Analyst role). Blog output for this date: <code>docs-site/posts/2026-08-10-your-catalog-solved-where-docs-live-not-whether-theyre-true.md</code>. Images intentionally omitted — Chintan handles cover-image generation himself, outside the automated pipeline.
+</footer>
+
+</div>
+</body>
+</html>
