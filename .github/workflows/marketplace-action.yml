@@ -1,4 +1,4 @@
-name: Marketplace Action Check
+name: Code Multivitals Check
 
 # Dogfoods the published code-multivitals GitHub Marketplace Action
 # (https://github.com/marketplace/actions/code-multivitals, imchintoo/code-multivitals@v1)
@@ -25,7 +25,7 @@ permissions:
   contents: read
 
 jobs:
-  dogfood-marketplace-action:
+  code-multivitals-action:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
