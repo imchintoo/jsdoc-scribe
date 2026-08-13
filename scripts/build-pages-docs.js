@@ -457,76 +457,77 @@ function pageShell({ title, description, body, depth = 0, activeSlug = "", curre
 <body>
     ${navHtml(depth, activeSlug, currentPath)}
     ${body}
+    ${siteFooter()}
 </body>
 </html>
 `;
 }
 
+/**
+ * Shared dark footer rendered on every page, per Figma (logo + one-line
+ * copyright, centered, dark surface). Depth-agnostic: always links to the
+ * root-level pages using absolute-from-root paths is unnecessary here since
+ * the footer has no links, only the brand mark + copyright text.
+ * @returns {string} footer markup
+ */
+function siteFooter() {
+    return `<footer class="site-footer">
+        <span class="site-footer-brand">📘 JSDoc Scribe</span>
+        <span class="site-footer-copy">© ${new Date().getFullYear()} JSDoc Scribe · Built with a bright and readable docs theme</span>
+    </footer>`;
+}
+
 function renderLanding() {
-    const featureCards = site.features.map((feature, index) => `<article class="feature-card reveal" style="--delay:${index * 80}ms">
-        <span class="feature-number">0${index + 1}</span>
+    const accentVars = ["var(--brand-indigo)", "var(--brand-teal)", "var(--brand-coral)", "var(--brand-yellow)"];
+    const featureIcons = ["⚡", "🧭", "📰", "🔌"];
+    const featureCards = site.features.map((feature, index) => `<article class="home-feature-card reveal" style="--delay:${index * 80}ms">
+        <span class="home-feature-icon" style="background:${accentVars[index % accentVars.length]}">${featureIcons[index % featureIcons.length]}</span>
         <h3>${esc(feature.title)}</h3>
         <p>${esc(feature.body)}</p>
     </article>`).join("");
 
-    const tabs = demoPanels.map((panel, index) => `<button class="demo-tab${index === 0 ? " active" : ""}" type="button" data-demo-tab="${panel.id}">
-        ${esc(panel.label)}
-    </button>`).join("");
-
-    const panels = demoPanels.map((panel, index) => `<div class="demo-panel${index === 0 ? " active" : ""}" data-demo-panel="${panel.id}">
-        <p class="demo-title">${esc(panel.title)}</p>
-        <pre class="demo-command"><code>${esc(panel.command)}</code></pre>
-        <div class="demo-output">
-            ${panel.lines.map((line) => `<span>${esc(line)}</span>`).join("")}
-        </div>
-    </div>`).join("");
+    const previewPosts = site.posts.slice(0, 3);
+    const previewCards = previewPosts.map((post, index) => {
+        const color = accentVars[index % accentVars.length];
+        const tag = (post.tags && post.tags[0]) || "Update";
+        const rootImage = (post.image || "").replace(/^\.\.\//, "");
+        const media = rootImage ? `<img src="${esc(rootImage)}" alt="" loading="lazy">` : "";
+        return `<a class="home-post-card reveal" href="blog/${esc(post.slug)}.html" style="--delay:${index * 80}ms">
+            <span class="home-post-media" style="background:${color}">${media}</span>
+            <span class="home-post-body">
+                <span class="home-post-tag" style="color:${color}">${esc(tag.toUpperCase())}</span>
+                <strong>${esc(post.title)}</strong>
+                <span class="home-post-desc">${esc(post.description)}</span>
+            </span>
+        </a>`;
+    }).join("");
 
     const body = `<main>
         <div class="landing-breadcrumb">${breadcrumbHtml([{ label: "Home" }])}</div>
-        <section class="hero">
-            <div class="hero-copy reveal">
-                <p class="eyebrow">No AI. No LLM. No surprises.</p>
-                <h1>What is jsdoc-scribe?</h1>
-                <p class="hero-text">${esc(site.description)}</p>
-                <div class="hero-actions">
-                    <a class="btn primary" href="docs/quick-start.html">Read documentation</a>
-                    <a class="btn secondary" href="api/index.html">API reference</a>
-                </div>
-                <div class="proof-row" aria-label="Product highlights">
-                    <span><strong>2</strong> CLIs</span>
-                    <span><strong>0</strong> AI calls</span>
-                    <span><strong>234</strong> tests</span>
-                </div>
+        <section class="home-hero">
+            <span class="home-badge">✨ New: Architecture Insight</span>
+            <h1>Beautiful docs &amp; blog,<br>shipped every day.</h1>
+            <p class="home-hero-text">${esc(site.description)}</p>
+            <div class="home-hero-actions">
+                <a class="btn primary" href="docs/quick-start.html">Read the Docs →</a>
+                <a class="btn secondary" href="blog/index.html">Browse the Blog</a>
             </div>
-            <div class="hero-console reveal" style="--delay:120ms">
-                <div class="console-header">
-                    <span class="traffic-dot"></span>
-                    <span class="traffic-dot"></span>
-                    <span class="traffic-dot"></span>
-                    <strong>Integration preview</strong>
-                </div>
-                <div class="demo-tabs" role="tablist" aria-label="Integration previews">${tabs}</div>
-                ${panels}
+            <div class="proof-row" aria-label="Product highlights">
+                <span><strong>2</strong> CLIs</span>
+                <span><strong>0</strong> AI calls</span>
+                <span><strong>234</strong> tests</span>
             </div>
         </section>
-        <section class="feature-band">
-            <div class="section-heading reveal">
-                <p class="eyebrow">Built for teams</p>
-                <h2>Document code without changing how your project ships.</h2>
-            </div>
-            <div class="feature-grid">${featureCards}</div>
+        <section class="home-features">
+            <h2 class="reveal">Everything your docs need</h2>
+            <div class="home-feature-grid">${featureCards}</div>
         </section>
-        <section class="workflow-band">
-            <div class="workflow-copy reveal">
-                <p class="eyebrow">Ship path</p>
-                <h2>One dependency, two CLIs, many integration paths.</h2>
+        <section class="home-blog-preview">
+            <div class="home-blog-preview-head reveal">
+                <h2>From the blog</h2>
+                <a href="blog/index.html">View all posts →</a>
             </div>
-            <div class="workflow-grid">
-                <a href="docs/cli.html"><strong>CLI usage</strong><span>Generate, check, lint, fix, and build docs.</span></a>
-                <a href="docs/github-actions.html"><strong>GitHub Actions</strong><span>Use exit codes as PR gates.</span></a>
-                <a href="docs/github-pages.html"><strong>GitHub Pages</strong><span>Publish generated HTML from CI.</span></a>
-                <a href="docs/eslint-plugin.html"><strong>ESLint plugin</strong><span>Bring JSDoc checks into flat config.</span></a>
-            </div>
+            <div class="home-post-grid">${previewCards}</div>
         </section>
     </main>`;
     writeFile(path.join(outDir, "index.html"), pageShell({
@@ -577,43 +578,44 @@ function renderDocPage(page) {
 }
 
 function renderBlogIndex() {
-    const cards = site.posts.map((post) => `<article class="medium-row reveal">
-        <div class="medium-row-main">
-            <div class="medium-author-line">
-                <span class="author-avatar">${esc(authorInitials(site.author))}</span>
-                <span>${esc(site.author)}</span>
-                <span>${esc(formatDate(post.date))}</span>
+    const accentVars = ["var(--brand-indigo)", "var(--brand-teal)", "var(--brand-coral)", "var(--brand-yellow)", "var(--brand-pink)"];
+    const tagCounts = new Map();
+    site.posts.forEach((post) => (post.tags || []).forEach((tag) => tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)));
+    const topTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([tag]) => tag);
+    const pills = [`<span class="blog-pill active">All Posts</span>`]
+        .concat(topTags.map((tag, index) => `<span class="blog-pill" style="border-color:${accentVars[(index + 1) % accentVars.length]};color:${accentVars[(index + 1) % accentVars.length]}">${esc(tag)}</span>`))
+        .join("");
+
+    const cards = site.posts.map((post, index) => {
+        const color = accentVars[index % accentVars.length];
+        const tag = (post.tags && post.tags[0]) || "Update";
+        const media = post.image ? `<img src="${esc(post.image)}" alt="" loading="lazy">` : "";
+        return `<article class="blog-card reveal" style="--delay:${(index % 6) * 60}ms">
+            <a class="blog-card-media" style="background:${color}" href="${esc(post.slug)}.html" aria-label="${esc(post.title)}">${media}</a>
+            <div class="blog-card-body">
+                <span class="blog-card-tag" style="color:${color}">${esc(tag.toUpperCase())}</span>
+                <h2><a href="${esc(post.slug)}.html">${esc(post.title)}</a></h2>
+                <p>${esc(post.description)}</p>
+                <div class="blog-card-meta">
+                    <span>${esc(post.readingTime)}</span>
+                    <span>·</span>
+                    <span>${esc(formatDate(post.date))}</span>
+                </div>
             </div>
-            <h2><a href="${esc(post.slug)}.html">${esc(post.title)}</a></h2>
-            <p>${esc(post.description)}</p>
-            <div class="medium-row-footer">
-                <span>${esc(post.readingTime)}</span>
-                ${post.tags.slice(0, 2).map((tag) => `<span class="topic-pill">${esc(tag)}</span>`).join("")}
-            </div>
-        </div>
-        <a class="medium-row-media" href="${esc(post.slug)}.html" aria-label="${esc(post.title)}">
-            <img src="${esc(post.image)}" alt="${esc(post.title)}" loading="lazy">
-        </a>
-    </article>`).join("");
-    const body = `<main class="medium-shell">
+        </article>`;
+    }).join("");
+    const body = `<main class="blog-shell">
         ${breadcrumbHtml([
             { label: "Home", href: "../index.html" },
             { label: "Blog" }
         ])}
-        <section class="medium-list-header reveal">
-            <div>
-                <p class="medium-kicker">jsdoc-scribe blog</p>
-                <h1>Stories</h1>
-                <p>Guides, product notes, and practical writing about documentation automation.</p>
-            </div>
-            <a class="medium-outline-btn" href="../docs/quick-start.html">Read docs</a>
+        <section class="blog-list-header reveal">
+            <p class="blog-kicker">jsdoc-scribe blog</p>
+            <h1>The Blog</h1>
+            <p>Guides, product notes, and practical writing about documentation automation.</p>
+            <div class="blog-pill-row" aria-label="Post topics">${pills}</div>
         </section>
-        <nav class="medium-tabs" aria-label="Blog sections">
-            <a class="active" href="index.html">Published</a>
-            <a href="../docs/quick-start.html">Documentation</a>
-            <a href="../api/index.html">API Reference</a>
-        </nav>
-        <section class="medium-list">${cards}</section>
+        <section class="blog-card-grid">${cards}</section>
     </main>`;
     writeFile(path.join(blogDir, "index.html"), pageShell({
         title: "Blog",
@@ -1314,6 +1316,61 @@ a{color:inherit;text-decoration:none}
 .topic-pill{background:#f2f2f2;color:#6b6b6b;border-radius:999px;padding:5px 10px}
 .medium-row-media{display:block;width:168px;height:112px;background:#f2f2f2;align-self:start}
 .medium-row-media img{width:100%;height:100%;object-fit:cover;display:block}
+/* ---- Figma redesign: homepage hero/features/blog-preview + blog card grid + footer ---- */
+.home-hero{background:linear-gradient(135deg,var(--brand-indigo),var(--brand-coral));padding:88px 7vw 96px;text-align:center;display:flex;flex-direction:column;align-items:center;color:var(--text-inverse)}
+.home-badge{display:inline-flex;background:var(--brand-yellow);color:var(--text-heading);font:700 12px/1 "Inter",sans-serif;padding:7px 16px;border-radius:999px;margin-bottom:24px}
+.home-hero h1{font-size:clamp(32px,5vw,52px);line-height:1.15;font-weight:800;margin:0 0 20px;max-width:820px}
+.home-hero-text{font-size:18px;line-height:1.55;color:rgba(255,255,255,.92);max-width:620px;margin:0 auto}
+.home-hero-actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px}
+.home-hero .btn.primary{background:var(--text-inverse);color:var(--brand-indigo);border-color:transparent}
+.home-hero .btn.primary:hover{background:#f2f2ff}
+.home-hero .btn.secondary{background:transparent;color:var(--text-inverse);border-color:rgba(255,255,255,.7)}
+.home-hero .btn.secondary:hover{background:rgba(255,255,255,.12)}
+.home-hero .proof-row{justify-content:center}
+.home-hero .proof-row span{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:rgba(255,255,255,.92)}
+.home-hero .proof-row strong{color:var(--text-inverse)}
+.home-features{padding:80px 7vw;text-align:center;background:var(--surface-white)}
+.home-features h2{font-size:clamp(26px,3.4vw,34px);font-weight:800;color:var(--text-heading);margin:0 0 40px}
+.home-feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;text-align:left}
+.home-feature-card{background:var(--surface-bg);border-radius:16px;padding:28px}
+.home-feature-icon{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;font-size:18px;margin-bottom:16px}
+.home-feature-card h3{margin:0 0 8px;font-size:17px;color:var(--text-heading)}
+.home-feature-card p{margin:0;color:var(--text-body);font-size:14px;line-height:1.55}
+.home-blog-preview{padding:64px 7vw 80px;background:var(--surface-bg)}
+.home-blog-preview-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px}
+.home-blog-preview-head h2{margin:0;font-size:clamp(22px,3vw,28px);font-weight:800;color:var(--text-heading)}
+.home-blog-preview-head a{color:var(--brand-indigo);font-weight:600;font-size:14px}
+.home-post-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.home-post-card{display:block;background:var(--surface-white);border-radius:16px;overflow:hidden;border:1px solid var(--surface-border)}
+.home-post-media{display:flex;align-items:center;justify-content:center;height:140px;overflow:hidden}
+.home-post-media img{width:100%;height:100%;object-fit:cover;display:block}
+.home-post-body{display:block;padding:20px 22px}
+.home-post-tag{display:block;font:700 11px/1 "Inter",sans-serif;letter-spacing:.03em;margin-bottom:8px}
+.home-post-card strong{display:block;font-size:16px;color:var(--text-heading);margin-bottom:6px}
+.home-post-desc{display:block;color:var(--text-body);font-size:13px;line-height:1.5}
+.blog-shell{max-width:1200px;margin:0 auto;padding:0 24px 90px}
+.blog-list-header{padding:56px 0 32px;background:var(--surface-bg);margin:0 -24px 32px;padding-left:24px;padding-right:24px}
+.blog-kicker{margin:0 0 8px;color:var(--text-muted);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.blog-list-header h1{margin:0 0 10px;font-size:clamp(30px,4vw,40px);font-weight:800;color:var(--text-heading)}
+.blog-list-header>p{margin:0 0 20px;color:var(--text-body);max-width:640px}
+.blog-pill-row{display:flex;flex-wrap:wrap;gap:10px}
+.blog-pill{display:inline-flex;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid var(--surface-border);color:var(--text-body);background:var(--surface-white)}
+.blog-pill.active{background:var(--brand-indigo);border-color:var(--brand-indigo);color:var(--text-inverse)}
+.blog-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+.blog-card{background:var(--surface-white);border:1px solid var(--surface-border);border-radius:16px;overflow:hidden}
+.blog-card-media{display:flex;align-items:center;justify-content:center;height:150px;overflow:hidden}
+.blog-card-media img{width:100%;height:100%;object-fit:cover;display:block}
+.blog-card-body{padding:20px 22px}
+.blog-card-tag{display:block;font:700 11px/1 "Inter",sans-serif;letter-spacing:.03em;margin-bottom:8px}
+.blog-card h2{margin:0 0 8px;font-size:17px;line-height:1.35}
+.blog-card h2 a{color:var(--text-heading)}
+.blog-card p{margin:0 0 12px;color:var(--text-body);font-size:13.5px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.blog-card-meta{display:flex;gap:8px;color:var(--text-muted);font-size:12px}
+.site-footer{display:flex;flex-direction:column;align-items:center;gap:8px;padding:40px 24px;background:var(--text-heading);color:var(--text-inverse);text-align:center}
+.site-footer-brand{font-weight:700;font-size:15px}
+.site-footer-copy{font-size:12px;color:var(--text-muted)}
+@media (max-width:1024px){.home-feature-grid,.home-post-grid,.blog-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.home-hero{padding:56px 20px 64px}.home-features,.home-blog-preview{padding:48px 20px}.home-feature-grid,.home-post-grid,.blog-card-grid{grid-template-columns:1fr}.blog-list-header{margin:0 -20px 24px;padding-left:20px;padding-right:20px}.home-hero-actions{flex-direction:column;align-items:stretch}.home-hero-actions .btn{width:100%}}
 .medium-article-shell{background:#fff;min-height:calc(100vh - 68px);padding:34px 24px 96px}
 .medium-article{max-width:760px;margin:0 auto;position:relative}
 .medium-article-header{margin-bottom:28px}
