@@ -6,6 +6,10 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 const site = require("../docs-site/site.js");
 const pkg = require("../package.json");
+// TASK-F14-03B: consumes TASK-F14-03A's generator in-process via require() —
+// never reads the optional docs-site/data/examples.json debug artifact, per
+// the ADR's "never stale, regenerated every build" requirement.
+const { generateExamplesData } = require("./generate-examples-data.js");
 
 const root = path.resolve(__dirname, "..");
 const outDir = path.join(root, "_site");
@@ -149,12 +153,25 @@ function loadMarkdownContent() {
     })).sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
+/**
+ * Minimal, opt-in markdown convention for the two Guide callout boxes:
+ * `> [!TIP] ...`/`> [!INFO] ...`, optionally continued on following `>`
+ * lines. Deliberately narrow -- a plain blockquote (`> ` without the
+ * `[!TIP]`/`[!INFO]` marker) is left as an ordinary paragraph line exactly
+ * as before, so this is additive parser scope, not a change to how any of
+ * the 9 existing `.md` files already render (none of them use this syntax
+ * today). Flagged as new parser scope per the UX handoff note, kept to the
+ * smallest regex-based hook that satisfies the AC rather than a general
+ * blockquote/markdown-extension system.
+ */
 function parseDocSections(markdown) {
     const sections = [];
     let current = null;
     let paragraph = [];
     let code = [];
     let inCode = false;
+    let calloutType = null;
+    let calloutLines = [];
 
     function ensureSection() {
         if (!current) current = { title: "Overview", body: [] };
@@ -170,6 +187,13 @@ function parseDocSections(markdown) {
         ensureSection().body.push({ code: code.join("\n") });
         code = [];
     }
+    function flushCallout() {
+        if (calloutType) {
+            ensureSection().body.push({ callout: calloutType, text: calloutLines.join(" ").trim() });
+            calloutType = null;
+            calloutLines = [];
+        }
+    }
     markdown.split(/\r?\n/).forEach((line) => {
         if (line.startsWith("```")) {
             if (inCode) {
@@ -177,6 +201,7 @@ function parseDocSections(markdown) {
                 inCode = false;
             } else {
                 flushParagraph();
+                flushCallout();
                 inCode = true;
             }
             return;
@@ -185,8 +210,25 @@ function parseDocSections(markdown) {
             code.push(line);
             return;
         }
+        const calloutStart = line.match(/^>\s*\[!(TIP|INFO)\]\s*(.*)$/i);
+        if (calloutStart) {
+            flushParagraph();
+            flushCallout();
+            calloutType = calloutStart[1].toLowerCase();
+            if (calloutStart[2].trim()) calloutLines.push(calloutStart[2].trim());
+            return;
+        }
+        if (calloutType && line.startsWith(">")) {
+            calloutLines.push(line.replace(/^>\s?/, "").trim());
+            return;
+        }
+        if (calloutType && !line.trim()) {
+            flushCallout();
+            return;
+        }
         if (line.startsWith("## ")) {
             flushParagraph();
+            flushCallout();
             if (current) sections.push(current);
             current = { title: line.replace(/^##\s+/, "").trim(), body: [] };
         } else if (line.trim()) {
@@ -197,6 +239,7 @@ function parseDocSections(markdown) {
     });
     if (inCode) flushCode();
     flushParagraph();
+    flushCallout();
     if (current) sections.push(current);
     return sections;
 }
@@ -296,29 +339,60 @@ function estimateReadingTime(markdown) {
     return `${Math.max(1, Math.ceil(words / 220))} min read`;
 }
 
-function navHtml(depth, activeSlug) {
+function navSectionFor(currentPath) {
+    const value = currentPath || "";
+    if (/^docs\//.test(value) || /^api\//.test(value)) return "guide";
+    if (/^blog\//.test(value)) return "blog";
+    if (value === "examples.html") return "examples";
+    return "";
+}
+
+/**
+ * Builds the 10-topic Guide sidebar link list (the 9 markdown-sourced
+ * topics from `site.pages` plus "API Reference") as a single set of
+ * `.nav-link` anchors sharing one active-state rule. API Reference used to
+ * be a hardcoded `<a>` appended outside this loop with no active-state
+ * logic at all -- folded in here per UX/ADR's finding so every sidebar item
+ * (including API Reference) participates in the same highlighting. Reused
+ * by both the desktop `.docs-sidebar` and the mobile `.guide-switcher`
+ * dropdown so the two never drift out of sync.
+ * @param {string} activeSlug - the current Guide topic's slug, or "" outside the Guide section
+ * @param {string} [currentPath] - current page's site-relative path, used to detect `api/**` pages
+ * @returns {string}
+ */
+function guideSidebarLinks(activeSlug, currentPath) {
+    const items = [
+        ...site.pages.map((page) => ({ slug: page.slug, title: page.title, href: `${page.slug}.html` })),
+        { slug: "api-reference", title: "API Reference", href: "../api/index.html" }
+    ];
+    return items.map((item) => {
+        const active = item.slug === "api-reference" ? /^api\//.test(currentPath || "") : item.slug === activeSlug;
+        return `<a class="nav-link${active ? " active" : ""}" href="${item.href}">${esc(item.title)}</a>`;
+    }).join("");
+}
+
+function navHtml(depth, activeSlug, currentPath) {
     const prefix = depth ? "../" : "";
     const docHref = depth ? "../docs/quick-start.html" : "docs/quick-start.html";
     const blogHref = depth ? "../blog/index.html" : "blog/index.html";
-    const docs = site.pages.map((page) => {
-        const active = page.slug === activeSlug ? " active" : "";
-        return `<a class="nav-link${active}" href="${page.slug}.html">${esc(page.title)}</a>`;
-    }).join("");
+    const examplesHref = depth ? "../examples.html" : "examples.html";
+    const section = navSectionFor(currentPath);
+    const navLink = (href, label, key) => `<a href="${href}"${section === key ? ' class="active"' : ""}>${label}</a>`;
+    const topLinks = `${navLink(docHref, "Guide", "guide")}${navLink(blogHref, "Blog", "blog")}${navLink(examplesHref, "Examples", "examples")}`;
+    const iconRow = `<a class="icon-link" href="https://github.com/imchintoo/jsdoc-scribe" target="_blank" rel="noopener" aria-label="jsdoc-scribe on GitHub">${iconGitHub()}</a><a class="npm-badge" href="https://www.npmjs.com/package/jsdoc-scribe" target="_blank" rel="noopener" aria-label="jsdoc-scribe on npm">npm</a>`;
     return `<header class="site-header">
-        <a class="brand" href="${prefix}index.html" aria-label="jsdoc-scribe home">
-            <span class="brand-mark">JS</span>
-            <span>jsdoc-scribe</span>
-            <span class="version-badge">v${esc(pkg.version)}</span>
-        </a>
-        <nav class="top-links" aria-label="Primary">
-            <a href="${docHref}">Docs</a>
-            <a href="${blogHref}">Blog</a>
-            <a href="${prefix}api/index.html">API</a>
-            <a class="icon-link npm-link" href="https://www.npmjs.com/package/jsdoc-scribe" aria-label="Open jsdoc-scribe on npm" title="npm">${iconNpm()}</a>
-            <a class="icon-link" href="https://github.com/imchintoo/jsdoc-scribe" aria-label="Open jsdoc-scribe on GitHub" title="GitHub">${iconGitHub()}</a>
-        </nav>
+        <a class="brand" href="${prefix}index.html" aria-label="jsdoc-scribe home">📘 JSDoc Scribe</a>
+        <nav class="top-links" aria-label="Primary">${topLinks}</nav>
+        <div class="nav-right">${iconRow}</div>
+        <button id="nav-toggle" class="hamburger" type="button" aria-expanded="false" aria-controls="mobile-drawer" aria-label="Open menu"><span></span><span></span><span></span></button>
     </header>
-    ${activeSlug ? `<aside class="docs-sidebar" aria-label="Documentation">${docs}<a class="nav-link" href="../api/index.html">API Reference</a></aside>` : ""}`;
+    <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+    <nav id="mobile-drawer" class="mobile-drawer" aria-label="Mobile" hidden>
+        ${topLinks}
+        <hr>
+        <div class="drawer-icons">${iconRow}</div>
+    </nav>
+    ${activeSlug ? `<aside class="docs-sidebar" aria-label="Documentation">${guideSidebarLinks(activeSlug, currentPath)}</aside>` : ""}`;
 }
 
 function breadcrumbHtml(items) {
@@ -373,12 +447,15 @@ function pageShell({ title, description, body, depth = 0, activeSlug = "", curre
     <meta name="twitter:description" content="${esc(metaDescription)}">
     <meta name="twitter:image" content="${esc(socialImage)}">
     <link rel="alternate" type="application/rss+xml" title="jsdoc-scribe blog" href="${esc(absoluteUrl("blog/rss.xml"))}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="${cssHref}">
     <script src="${jsHref}" defer></script>
     ${jsonLd(schema)}
 </head>
 <body>
-    ${navHtml(depth, activeSlug)}
+    ${navHtml(depth, activeSlug, currentPath)}
     ${body}
 </body>
 </html>
@@ -470,12 +547,8 @@ function renderLanding() {
     }));
 }
 
-function renderDocPage(page, index) {
+function renderDocPage(page) {
     const sections = page.changelog ? renderChangelog() : page.sections.map(renderSection).join("");
-    const nextPage = site.pages[(index + 1) % site.pages.length];
-    const sectionLinks = page.changelog
-        ? ["Latest entries", "Release notes"].map((label, i) => ({ id: i === 0 ? "latest-entries" : "release-notes", title: label }))
-        : page.sections.map((section) => ({ id: slugify(section.title), title: section.title }));
     const body = `<main class="docs-layout">
         <article class="docs-content">
             ${breadcrumbHtml([
@@ -483,32 +556,15 @@ function renderDocPage(page, index) {
                 { label: "Documentation", href: "quick-start.html" },
                 { label: page.title }
             ])}
+            <details class="guide-switcher">
+                <summary>📚 On this page: <strong>${esc(page.title)}</strong> ▾</summary>
+                <nav>${guideSidebarLinks(page.slug, `docs/${page.slug}.html`)}</nav>
+            </details>
             <p class="eyebrow">Documentation</p>
             <h1>${esc(page.title)}</h1>
             <p class="lead">${esc(page.description)}</p>
             ${sections}
         </article>
-        <aside class="docs-aside" aria-label="Page tools">
-            <div class="aside-card progress-card">
-                <span class="aside-label">Page progress</span>
-                <div class="progress-ring" data-progress-ring><span data-progress-value>0%</span></div>
-            </div>
-            <div class="aside-card">
-                <span class="aside-label">On this page</span>
-                <nav class="toc-list">
-                    ${sectionLinks.map((item) => `<a href="#${esc(item.id)}">${esc(item.title)}</a>`).join("")}
-                </nav>
-            </div>
-            <div class="aside-card command-card">
-                <span class="aside-label">Try next</span>
-                <code>${esc(getPageCommand(page))}</code>
-                <button class="copy-btn" type="button" data-copy="${attr(getPageCommand(page))}">Copy</button>
-            </div>
-            <a class="next-card" href="${esc(nextPage.slug)}.html">
-                <span>Next guide</span>
-                <strong>${esc(nextPage.title)}</strong>
-            </a>
-        </aside>
     </main>`;
     writeFile(path.join(docsDir, `${page.slug}.html`), pageShell({
         title: page.title,
@@ -727,24 +783,19 @@ function iconGitHub() {
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c-5.3 0-9.5 4.3-9.5 9.6 0 4.2 2.7 7.8 6.5 9 .5.1.7-.2.7-.5v-1.8c-2.7.6-3.2-1.1-3.2-1.1-.4-1.1-1-1.4-1-1.4-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .8 1.5 2.2 1.1 2.7.8.1-.6.3-1.1.6-1.3-2.1-.2-4.4-1.1-4.4-4.7 0-1 .4-1.9 1-2.6-.1-.2-.4-1.2.1-2.5 0 0 .8-.3 2.6 1 .8-.2 1.6-.3 2.4-.3.8 0 1.6.1 2.4.3 1.8-1.2 2.6-1 2.6-1 .5 1.3.2 2.3.1 2.5.6.7 1 1.5 1 2.6 0 3.6-2.2 4.4-4.4 4.7.4.3.7.9.7 1.8v2.6c0 .3.2.6.7.5 3.8-1.3 6.5-4.8 6.5-9 .1-5.3-4.2-9.6-9.4-9.6z"></path></svg>';
 }
 
-function iconNpm() {
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7h20v10H12v-2H9v2H2V7zm2 2v6h3V9H4zm5 0v4h3V9H9zm5 0v6h2V9h3v6h1V9h-6z"></path></svg>';
-}
-
-function getPageCommand(page) {
-    if (page.command) return page.command;
-    const slug = page.slug || page;
-    const commands = {
-        "quick-start": "npx gen-comments src --write",
-        cli: "gen-docs src --out docs",
-        "github-actions": "npx gen-comments src --check",
-        "github-pages": "npm run docs:pages",
-        "programmatic-api": "require('jsdoc-scribe/docs')",
-        "eslint-plugin": "require('eslint-plugin-jsdoc-scribe')",
-        features: "gen-comments src --lint --fix",
-        changelog: "npm view jsdoc-scribe version"
-    };
-    return commands[slug] || "npm run docs:pages";
+/**
+ * Wraps `//`/`#`-prefixed comment lines of an already-HTML-escaped code
+ * block in a `.tok-cmt` span so Guide code blocks render them in the teal
+ * comment-color token. Deliberately a lightweight regex line-wrap, not a
+ * real tokenizer -- per UX spec, that's sufficient here.
+ * @param {string} escapedCode - HTML-escaped code text (post `esc()`)
+ * @returns {string}
+ */
+function wrapCommentLines(escapedCode) {
+    return escapedCode.split("\n").map((line) => {
+        const match = line.match(/^(\s*)(\/\/.*|#.*)$/);
+        return match ? `${match[1]}<span class="tok-cmt">${match[2]}</span>` : line;
+    }).join("\n");
 }
 
 function renderSection(section) {
@@ -754,8 +805,11 @@ function renderSection(section) {
         if (item.code) {
             return `<div class="code-wrap">
                 <button class="copy-btn" type="button" data-copy="${attr(item.code)}">Copy</button>
-                <pre class="code-block"><code>${esc(item.code)}</code></pre>
+                <pre class="code-block"><code>${wrapCommentLines(esc(item.code))}</code></pre>
             </div>`;
+        }
+        if (item.callout) {
+            return `<div class="callout ${esc(item.callout)}">${inlineMarkdown(item.text)}</div>`;
         }
         return "";
     }).join("");
@@ -826,7 +880,7 @@ function markdownToHtml(markdown, options) {
             }
             html.push(`<div class="code-wrap">
                 <button class="copy-btn" type="button" data-copy="${attr(code.join("\n"))}">Copy</button>
-                <pre class="code-block"><code>${esc(code.join("\n"))}</code></pre>
+                <pre class="code-block"><code>${wrapCommentLines(esc(code.join("\n")))}</code></pre>
             </div>`);
             continue;
         }
@@ -897,23 +951,239 @@ function renderChangelog() {
     <section class="doc-section changelog reveal" id="release-notes">${html}</section>`;
 }
 
+// ---------------------------------------------------------------------
+// TASK-F14-03B — Examples page (examples.html, new template).
+// Consumes TASK-F14-03A's generateExamplesData() (8 entries: 7 real + 1 Vue
+// stub, fixed Figma order) in-process. Scope: this block + the matching
+// writeCss() rulesets appended at the end of that function's stylesheet +
+// the two call-list additions in main()/writeSeoFiles(). Does not touch
+// navHtml()/header code (TASK-F14-01) or the Guide sidebar code (TASK-F14-02).
+// ---------------------------------------------------------------------
+
+// Icon badge colors, per ux-figma-site-redesign-implementation.md §2.5 table
+// exactly (includes the Express text-heading-on-yellow contrast fix).
+const EXAMPLE_ICON_COLORS = {
+    "React": "var(--brand-coral)",
+    "Next.js": "var(--brand-indigo)",
+    "Angular": "var(--brand-pink)",
+    "Vue": "var(--brand-teal)",
+    "Express": "var(--brand-yellow)",
+    "NestJS": "var(--brand-indigo-700)",
+    "Plain JS": "var(--text-muted)",
+    "Plain TS": "var(--brand-coral)"
+};
+
+// Short decorative glyph shown in the icon badge — aria-hidden, the real
+// accessible name is the adjacent <h2> framework name.
+const EXAMPLE_ICON_ABBR = {
+    "React": "Re",
+    "Next.js": "Nx",
+    "Angular": "Ng",
+    "Vue": "Vue",
+    "Express": "Ex",
+    "NestJS": "Ns",
+    "Plain JS": "JS",
+    "Plain TS": "TS"
+};
+
+// Anchor IDs per seo-figma-site-redesign-implementation.md §4/§5.2 — exact
+// slugs required for the framework-keyword internal-anchor opportunity.
+const EXAMPLE_SLUGS = {
+    "React": "react",
+    "Next.js": "nextjs",
+    "Angular": "angular",
+    "Vue": "vue",
+    "Express": "express",
+    "NestJS": "nestjs",
+    "Plain JS": "plain-js",
+    "Plain TS": "plain-ts"
+};
+
+/**
+ * Wraps every JSDoc comment line (a block-open, block-close, or star
+ * continuation line) in a `.added-line` span so only the genuinely-
+ * generated documentation lines get the teal highlight in the "after"
+ * compare panel — never the whole panel. Every other line is still
+ * HTML-escaped, just unwrapped.
+ * @param {string} text
+ * @returns {string}
+ */
+function highlightJsDocLines(text) {
+    return text.split("\n").map((line) => {
+        const trimmed = line.trim();
+        const isDocLine = trimmed.startsWith("/**") || trimmed.startsWith("*/") || trimmed.startsWith("*");
+        const escaped = esc(line);
+        return isDocLine ? `<span class="added-line">${escaped}</span>` : escaped;
+    }).join("\n");
+}
+
+/**
+ * Renders one framework/target grid card. Real entries show detection
+ * method + sample path; the Vue stub (generated:false) renders as a clean
+ * detection-only card — no before/after panel, no chrome-mock preview —
+ * per the resolved scope call in task-f14-tickets.md's frontmatter.
+ * @param {object} entry - one record from generateExamplesData().entries
+ * @returns {string}
+ */
+function renderExampleCard(entry) {
+    const slug = EXAMPLE_SLUGS[entry.name] || slugify(entry.name);
+    const color = EXAMPLE_ICON_COLORS[entry.name] || "var(--brand-indigo)";
+    const abbr = EXAMPLE_ICON_ABBR[entry.name] || entry.name.slice(0, 2);
+    const contrastClass = entry.name === "Express" ? " icon-contrast" : "";
+    const detected = entry.detectionMethod ? `<p class="example-detected">${esc(entry.detectionMethod)}</p>` : "";
+    const pathLine = entry.generated
+        ? `<p class="example-path">${esc(entry.demoFile)}</p>`
+        : `<p class="example-stub-note">Full generated sample coming soon</p>`;
+    return `<section class="example-card" id="${esc(slug)}" aria-labelledby="${esc(slug)}-heading">
+        <span class="example-icon${contrastClass}" style="background:${color}" aria-hidden="true">${esc(abbr)}</span>
+        <h2 id="${esc(slug)}-heading">${esc(entry.name)}</h2>
+        ${detected}
+        ${pathLine}
+    </section>`;
+}
+
+/**
+ * Renders the single before/after code-comparison section, using ONE
+ * representative real entry from `entries` (NestJS, falling back to the
+ * first real entry if the data shape ever changes) — not all 7, per this
+ * ticket's explicit scope. Pill copy is the literal Figma text
+ * ("AFTER — gen-comments --write"), and only the genuinely-generated JSDoc
+ * lines get the `.added-line` teal highlight.
+ * @param {object[]} entries
+ * @returns {string}
+ */
+function renderComparisonSection(entries) {
+    const rep = entries.find((e) => e.name === "NestJS" && e.generated) || entries.find((e) => e.generated);
+    if (!rep) return "";
+    const beforeHtml = esc(rep.before);
+    const afterHtml = highlightJsDocLines(rep.after);
+    return `<section class="examples-section" aria-labelledby="before-after-heading">
+        <h2 id="before-after-heading">Before &amp; After: Real Generated JSDoc</h2>
+        <p class="compare-intro">Captured from a real run of the CLI against jsdoc-scribe's own checked-in <code>${esc(rep.demoFile)}</code> fixture (${esc(rep.name)}) &mdash; genuine output, not hand-authored to look plausible. See the full <a href="docs/cli.html">CLI Usage guide</a> for every flag shown here.</p>
+        <div class="compare">
+            <div class="compare-panel">
+                <span class="compare-pill before">Before</span>
+                <pre><code>${beforeHtml}</code></pre>
+            </div>
+            <div class="compare-panel">
+                <span class="compare-pill after">AFTER &mdash; gen-comments --write</span>
+                <pre><code>${afterHtml}</code></pre>
+            </div>
+        </div>
+    </section>`;
+}
+
+/**
+ * Renders the generated-docs-site browser-chrome preview mockup. Static,
+ * representative markup (not data-driven, per this ticket's explicit
+ * scope) — reuses the `.traffic-dot` 3-dot pattern as a second, newly
+ * scoped CSS instance (`.chrome-dots .traffic-dot`), leaving the homepage
+ * hero's own `.traffic-dot` rule/colors untouched.
+ * @returns {string}
+ */
+function renderChromeMockSection() {
+    return `<section class="examples-section" aria-labelledby="preview-heading">
+        <h2 id="preview-heading">What the Generated Docs Site Looks Like</h2>
+        <p class="compare-intro">A representative preview of the static reference site <code>gen-docs</code> builds from JSDoc like the above &mdash; illustrative markup, not a live embed.</p>
+        <div class="chrome-mock" role="img" aria-label="Preview mockup of a generated API reference page: a mini sidebar of module links, a function signature, and a parameter table">
+            <div class="chrome-bar">
+                <div class="chrome-dots"><span class="traffic-dot"></span><span class="traffic-dot"></span><span class="traffic-dot"></span></div>
+                <span class="chrome-url-pill">yourproject.github.io/docs/api/roles-guard.html</span>
+            </div>
+            <div class="chrome-body">
+                <nav class="chrome-mini-sidebar" aria-hidden="true">
+                    <div>Overview</div>
+                    <div class="chrome-active">RolesGuard</div>
+                    <div>AuthModule</div>
+                    <div>UsersService</div>
+                </nav>
+                <div class="chrome-content" aria-hidden="true">
+                    <code class="chrome-signature">canActivate(context: ExecutionContext): boolean</code>
+                    <table class="chrome-param-table">
+                        <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td>context</td><td>ExecutionContext</td><td>Nest execution context for the current request.</td></tr>
+                            <tr><td>roles</td><td>string[]</td><td>Roles allowed to access the route.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>`;
+}
+
+/**
+ * Renders and writes `_site/examples.html`. Framework grid (8 cards, all in
+ * Figma order) + one representative before/after comparison + one
+ * browser-chrome preview mockup. Title/description hit seo-specialist's
+ * 50-60/150-160 char targets with real framework names, single H1
+ * ("Real-World Examples"), one H2 per framework with the required anchor
+ * IDs for the framework-keyword internal-anchor opportunity.
+ * @param {object[]} entries - generateExamplesData().entries (8 records)
+ */
+function renderExamplesPage(entries) {
+    const cards = entries.map(renderExampleCard).join("");
+    const body = `<main class="examples-page">
+        ${breadcrumbHtml([{ label: "Home", href: "index.html" }, { label: "Examples" }])}
+        <section class="examples-hero">
+            <p class="eyebrow">React, Vue, Angular, Express &amp; more</p>
+            <h1>Real-World Examples</h1>
+            <p class="lead">See jsdoc-scribe detect your framework and generate real JSDoc &mdash; genuine CLI output captured from this repo's own sample fixtures, not hand-authored copy. New here? Start with the <a href="docs/quick-start.html">Quick Start guide</a>.</p>
+        </section>
+        <section class="examples-section" aria-label="Supported frameworks and targets">
+            <div class="examples-grid">${cards}</div>
+        </section>
+        ${renderComparisonSection(entries)}
+        ${renderChromeMockSection()}
+    </main>`;
+    writeFile(path.join(outDir, "examples.html"), pageShell({
+        title: "Framework Examples: React, Angular & NestJS",
+        description: "See jsdoc-scribe detect and document React, Next.js, Angular, Vue, Express, NestJS, and plain JS/TS projects, with real before/after JSDoc output for each.",
+        body,
+        currentPath: "examples.html",
+        structuredData: {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: "Real-World Examples",
+            description: "See jsdoc-scribe detect and document React, Next.js, Angular, Vue, Express, NestJS, and plain JS/TS projects, with real before/after JSDoc output for each.",
+            url: absoluteUrl("examples.html"),
+            author: { "@type": "Person", name: site.author },
+            publisher: { "@type": "Organization", name: site.title }
+        }
+    }));
+}
+
 function writeCss() {
     const css = `
-:root{--bg:#f5f4f0;--surface:#fff;--ink:#111;--muted:#5f5d57;--soft:#ebe8de;--line:rgba(17,17,17,.12);--accent:#5b4fe8;--accent-dark:#473bd0;--lime:#c6ff3d;--coral:#ff4b2e;--code:#111113;--code-text:#d7d2c8;--sidebar:#111113;--sidebar-text:#d7d2c8;--shadow:0 18px 50px rgba(17,17,17,.10);font-family:"Space Grotesk","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+:root{--bg:#f5f4f0;--surface:#fff;--ink:#111;--muted:#5f5d57;--soft:#ebe8de;--line:rgba(17,17,17,.12);--accent:#5b4fe8;--accent-dark:#473bd0;--lime:#c6ff3d;--coral:#ff4b2e;--code:#111113;--code-text:#d7d2c8;--sidebar:#111113;--sidebar-text:#d7d2c8;--shadow:0 18px 50px rgba(17,17,17,.10);--brand-indigo:#4F46E5;--brand-indigo-700:#3730A3;--brand-coral:#FF6B4A;--brand-yellow:#FFC93C;--brand-teal:#14B8A6;--brand-pink:#F472B6;--npm-red:#CB3837;--surface-bg:#F8F9FC;--surface-white:#FFFFFF;--surface-border:#E5E7F0;--surface-code-bg:#1A1A2E;--text-heading:#14142B;--text-body:#4E4B66;--text-muted:#A0A3BD;--text-inverse:#FFFFFF;--guide-active-bg:#ECEAFB;--callout-tip-bg:#FFF6E0;--callout-tip-border:var(--brand-yellow);--callout-info-bg:#EEF2FF;--callout-info-border:var(--brand-indigo);--focus-ring:#4F46E5;font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--font-family,inherit)}
 a{color:inherit;text-decoration:none}
-.site-header{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:#101012;border-bottom:1px solid rgba(255,255,255,.12);position:sticky;top:0;z-index:20;box-shadow:0 10px 28px rgba(0,0,0,.16)}
-.brand{display:flex;align-items:center;gap:10px;font-weight:800;color:white;min-width:0}
-.brand-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;background:var(--lime);color:#111113;font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
-.version-badge{display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border:1px solid rgba(198,255,61,.42);border-radius:999px;color:var(--lime);background:rgba(198,255,61,.08);font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
-.top-links{display:flex;align-items:center;gap:18px;color:#d7d2c8;font-size:14px}
-.top-links a:hover{color:white}
-.top-links .icon-link{display:grid;place-items:center;width:34px;height:34px;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#d7d2c8;background:rgba(255,255,255,.04);transition:background .18s,border-color .18s,color .18s,transform .18s}
-.top-links .icon-link:hover,.top-links .icon-link:focus-visible{color:white;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);transform:translateY(-1px);outline:none}
-.top-links .icon-link svg{width:19px;height:19px;fill:currentColor}
-.top-links .npm-link svg{width:25px}
+.site-header{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 64px;background:var(--surface-white);border-bottom:1px solid var(--surface-border);position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:8px;font:800 20px/1 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text-heading);min-width:0}
+.top-links{display:flex;align-items:center;gap:24px}
+.top-links a{font:500 14px/1 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text-body)}
+.top-links a:hover{color:var(--text-heading)}
+.top-links a.active{color:var(--brand-indigo)}
+.nav-right{display:flex;align-items:center;gap:16px}
+.icon-link{display:grid;place-items:center;color:var(--text-heading)}
+.icon-link svg{width:22px;height:22px;fill:currentColor}
+.npm-badge{display:inline-flex;align-items:center;justify-content:center;height:24px;padding:0 10px;border-radius:999px;background:var(--npm-red);color:var(--text-inverse);font:800 12px/1 "Inter",sans-serif}
+.hamburger{display:none;position:relative;z-index:41;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:36px;height:36px;background:transparent;border:none;padding:6px;cursor:pointer;border-radius:6px}
+.hamburger span{width:20px;height:2px;background:var(--text-heading);border-radius:2px;display:block;transition:transform .2s,opacity .2s}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.drawer-backdrop{position:fixed;inset:0;background:rgba(20,20,43,.4);z-index:39}
+.drawer-backdrop[hidden]{display:none}
+.mobile-drawer{position:fixed;top:0;right:0;bottom:0;width:280px;background:var(--surface-white);box-shadow:-8px 0 24px rgba(20,20,43,.12);z-index:40;display:flex;flex-direction:column;padding:88px 24px 24px;transform:translateX(100%);transition:transform .25s ease}
+.mobile-drawer[hidden]{display:none}
+.mobile-drawer.open{transform:translateX(0)}
+.mobile-drawer a{display:block;padding:14px 0;font:400 15px/1.2 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text-heading)}
+.mobile-drawer hr{border:none;border-top:1px solid var(--surface-border);margin:12px 0}
+.drawer-icons{display:flex;align-items:center;gap:16px;margin-top:8px}
+.top-links a:focus-visible,.icon-link:focus-visible,.npm-badge:focus-visible,.hamburger:focus-visible,.mobile-drawer a:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
 .site-breadcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:8px;color:#75716a;font-size:13px;margin:0 0 22px}
 .site-breadcrumb a{color:#75716a}
 .site-breadcrumb a:hover{color:var(--accent)}
@@ -962,13 +1232,18 @@ a{color:inherit;text-decoration:none}
 .workflow-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .workflow-grid a{display:block}
 .workflow-grid strong{display:block;margin-bottom:6px}
-.docs-sidebar{position:fixed;top:68px;bottom:0;left:0;width:260px;padding:22px 12px;background:var(--sidebar);overflow:auto}
-.nav-link{display:block;padding:9px 12px;border-radius:7px;color:var(--sidebar-text);font-size:14px}
-.nav-link:hover,.nav-link.active{background:rgba(255,255,255,.08);color:white}
-.docs-layout{margin-left:260px;display:grid;grid-template-columns:minmax(0,880px) 320px;gap:38px;align-items:start;justify-content:space-between;padding:46px 48px 96px}
+.docs-sidebar{position:fixed;top:64px;bottom:0;left:0;width:300px;padding:40px 24px;background:var(--surface-bg);overflow:auto}
+.nav-link{display:block;padding:8px 16px;border-radius:999px;color:var(--text-body);font-size:13.5px;font-weight:400}
+.nav-link:hover{color:var(--text-heading)}
+.nav-link.active{background:var(--guide-active-bg);color:var(--brand-indigo);font-weight:600}
+.docs-layout{margin-left:300px;max-width:900px;padding:64px 64px 96px}
 .docs-content{min-width:0}
 .docs-content h1{font-size:clamp(38px,6vw,68px);line-height:1;margin:0 0 16px}
 .lead{font-size:20px;line-height:1.5;color:var(--muted);margin:0 0 34px}
+.guide-switcher{display:none;margin:0 0 24px}
+.guide-switcher>summary{list-style:none;cursor:pointer;padding:12px 16px;border-radius:999px;background:var(--surface-bg);border:1px solid var(--surface-border);font-size:14px;color:var(--text-heading);min-height:44px;display:flex;align-items:center}
+.guide-switcher>summary::-webkit-details-marker{display:none}
+.guide-switcher nav{padding:8px 4px;display:grid;gap:4px}
 .doc-section{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:28px;margin:16px 0;scroll-margin-top:92px;box-shadow:0 10px 28px rgba(17,17,17,.04)}
 .doc-section h2{font-size:24px;margin:0 0 12px}
 .doc-section h3{font-size:18px;margin:24px 0 10px}
@@ -979,22 +1254,14 @@ a{color:inherit;text-decoration:none}
 .code-wrap{position:relative}
 .code-block{background:var(--code);color:var(--code-text);border-radius:8px;padding:18px;overflow:auto;margin:14px 0 0;font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace}
 .code-block code{background:transparent;color:inherit;padding:0}
+.doc-section .code-block{background:var(--surface-code-bg);border-radius:10px;font:12px/1.6 "Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+.doc-section .code-block .tok-cmt{color:var(--brand-teal)}
+.callout{border-radius:12px;padding:16px 20px;margin:16px 0;font-size:15px;line-height:1.6;color:var(--text-body)}
+.callout.tip{background:var(--callout-tip-bg);border-left:4px solid var(--callout-tip-border)}
+.callout.info{background:var(--callout-info-bg);border-left:4px solid var(--callout-info-border)}
 .copy-btn{border:1px solid var(--line);border-radius:7px;background:white;color:var(--ink);font-weight:700;font-size:12px;padding:7px 10px;cursor:pointer}
 .code-wrap .copy-btn{position:absolute;right:10px;top:10px;background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.14);color:var(--code-text)}
 .copy-btn.copied{background:var(--lime);color:var(--ink)}
-.docs-aside{position:sticky;top:92px;display:grid;gap:14px;align-self:start;justify-self:end;width:320px;max-height:calc(100vh - 110px);overflow:auto;padding-bottom:4px}
-.aside-card,.next-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;box-shadow:0 8px 26px rgba(17,17,17,.05)}
-.aside-label{display:block;color:var(--accent);font:700 11px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
-.progress-card{display:flex;align-items:center;justify-content:space-between;gap:16px}
-.progress-ring{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--accent) var(--progress-angle,0deg),var(--soft) 0);font-weight:800}
-.progress-ring span{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:var(--surface);font-size:14px}
-.toc-list{display:grid;gap:8px}
-.toc-list a{color:var(--muted);font-size:14px}
-.toc-list a:hover{color:var(--accent)}
-.command-card code{display:block;background:var(--soft);border-radius:8px;padding:12px;margin-bottom:12px;word-break:break-word}
-.next-card{display:block;background:var(--ink);color:white}
-.next-card span{display:block;color:var(--lime);font:700 11px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
-.next-card strong{font-size:20px;line-height:1.2}
 .blog-home{padding:62px 7vw 90px}
 .blog-hero{max-width:860px;margin-bottom:34px}
 .blog-hero h1{font-size:clamp(42px,6vw,78px);line-height:.98;margin:0 0 18px}
@@ -1088,10 +1355,57 @@ a{color:inherit;text-decoration:none}
 .changelog-note{background:#fffbe7}
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease;transition-delay:var(--delay,0ms)}
 .reveal.visible{opacity:1;transform:none}
-@media (max-width:1180px){.docs-layout,.article-layout{grid-template-columns:minmax(0,1fr);padding-right:28px}.docs-aside,.article-aside{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.post-grid{grid-template-columns:1fr}.medium-hero-image,.medium-article .article-figure{margin-left:0;margin-right:0}}
-@media (max-width:980px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:54px}.feature-grid,.workflow-grid,.related-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workflow-band{grid-template-columns:1fr}.workflow-copy{position:static}.docs-sidebar{position:static;width:auto;display:flex;gap:6px;overflow:auto;padding:10px 12px}.docs-layout{margin-left:0;padding:38px 20px 70px}.article-layout,.blog-home{padding:38px 20px 70px}.medium-shell,.medium-article-shell{padding:38px 20px 70px}.nav-link{white-space:nowrap}.top-links{gap:12px}}
-@media (max-width:640px){.site-header{padding:0 16px}.brand span:not(.brand-mark):not(.version-badge){display:none}.top-links{gap:8px}.top-links .icon-link{width:32px;height:32px}.hero{padding:42px 20px}.feature-band,.workflow-band{padding:46px 20px}.feature-grid,.workflow-grid,.docs-aside,.article-aside,.related-grid{grid-template-columns:1fr}.hero h1{font-size:46px}.hero-console{font-size:13px}.demo-tabs{grid-template-columns:1fr}.post-card,.medium-row{grid-template-columns:1fr}.post-media{min-height:180px}.medium-row-media{width:100%;height:180px;order:-1}.medium-list-header{display:block}.medium-outline-btn{margin-top:18px}.medium-article-header h1,.blog-hero h1,.medium-list-header h1{font-size:42px}.medium-article>p{font-size:19px}.medium-article blockquote{font-size:23px}.medium-action-rail{right:16px;bottom:16px}.medium-action-rail a,.medium-action-rail button{width:44px;height:44px}}
+@media (max-width:1180px){.article-layout{grid-template-columns:minmax(0,1fr);padding-right:28px}.article-aside{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.post-grid{grid-template-columns:1fr}.medium-hero-image,.medium-article .article-figure{margin-left:0;margin-right:0}}
+@media (max-width:1024px){.site-header{padding:0 20px}.top-links,.nav-right{display:none}.hamburger{display:flex}.docs-sidebar{display:none}.docs-layout{margin-left:0;max-width:none;padding:38px 20px 70px}.guide-switcher{display:block}}
+@media (max-width:980px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:54px}.feature-grid,.workflow-grid,.related-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workflow-band{grid-template-columns:1fr}.workflow-copy{position:static}.article-layout,.blog-home{padding:38px 20px 70px}.medium-shell,.medium-article-shell{padding:38px 20px 70px}}
+@media (max-width:640px){.hero{padding:42px 20px}.feature-band,.workflow-band{padding:46px 20px}.feature-grid,.workflow-grid,.article-aside,.related-grid{grid-template-columns:1fr}.hero h1{font-size:46px}.hero-console{font-size:13px}.demo-tabs{grid-template-columns:1fr}.post-card,.medium-row{grid-template-columns:1fr}.post-media{min-height:180px}.medium-row-media{width:100%;height:180px;order:-1}.medium-list-header{display:block}.medium-outline-btn{margin-top:18px}.medium-article-header h1,.blog-hero h1,.medium-list-header h1{font-size:42px}.medium-article>p{font-size:19px}.medium-article blockquote{font-size:23px}.medium-action-rail{right:16px;bottom:16px}.medium-action-rail a,.medium-action-rail button{width:44px;height:44px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}.reveal{opacity:1;transform:none}}
+/* TASK-F14-03B — Examples page (examples.html) */
+.examples-hero{padding:64px 7vw 32px}
+.examples-hero .eyebrow{margin:0 0 12px;color:var(--brand-indigo);font:700 12px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.08em}
+.examples-hero h1{font:800 56px/64px "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0 0 16px;color:var(--text-heading)}
+.examples-hero .lead{font:400 18px/28px "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text-body);max-width:760px;margin:0}
+.examples-hero .lead a{color:var(--brand-indigo);text-decoration:underline}
+.examples-section{padding:0 7vw 64px}
+.examples-section h2{font:700 36px/44px "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text-heading);margin:0 0 20px;scroll-margin-top:92px}
+.examples-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media(max-width:1024px){.examples-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:768px){.examples-grid{grid-template-columns:1fr}}
+.example-card{background:var(--surface-white);border:1px solid var(--surface-border);border-radius:12px;padding:20px}
+.example-icon{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--text-inverse);font:700 13px/1 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin-bottom:14px}
+.example-icon.icon-contrast{color:var(--text-heading)}
+.example-card h2{font:700 16px/24px "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0 0 4px;color:var(--text-heading);scroll-margin-top:92px}
+.example-detected{font:400 13px/18px "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text-muted);margin:0 0 10px}
+.example-path{font:400 13px/20px "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text-body);word-break:break-all;margin:0}
+.example-stub-note{font:400 13px/20px "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text-muted);font-style:italic;margin:0}
+.compare-intro{max-width:780px;margin:0 0 20px;color:var(--text-body);font-size:15px;line-height:1.6}
+.compare-intro a{color:var(--brand-indigo);text-decoration:underline}
+.compare-intro code{background:var(--surface-bg);padding:2px 5px;border-radius:4px;font-family:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text-heading)}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+@media(max-width:768px){.compare{grid-template-columns:1fr}}
+.compare-panel{background:var(--surface-code-bg);border-radius:10px;padding:18px;overflow:auto}
+.compare-pill{display:inline-flex;padding:4px 10px;border-radius:999px;font:600 12px/16px "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.4px;text-transform:uppercase;margin-bottom:12px}
+.compare-pill.before{background:var(--brand-coral);color:var(--text-heading)}
+.compare-pill.after{background:var(--brand-teal);color:var(--text-heading)}
+.compare-panel pre{margin:0;font:12px/1.6 "Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;color:#d7d2c8;white-space:pre}
+.compare-panel .added-line{background:rgba(20,184,166,.18);display:block;margin:0 -18px;padding:0 18px}
+.chrome-mock{border:1px solid var(--surface-border);border-radius:12px;overflow:hidden;background:var(--surface-white);max-width:780px}
+.chrome-bar{display:flex;align-items:center;gap:16px;padding:12px 16px;background:var(--surface-bg);border-bottom:1px solid var(--surface-border)}
+.chrome-dots{display:flex;gap:6px}
+.chrome-dots .traffic-dot{width:10px;height:10px;border-radius:50%;background:var(--brand-coral)}
+.chrome-dots .traffic-dot:nth-child(2){background:var(--brand-yellow)}
+.chrome-dots .traffic-dot:nth-child(3){background:var(--brand-teal)}
+.chrome-url-pill{flex:1;background:var(--surface-white);border:1px solid var(--surface-border);border-radius:999px;padding:6px 14px;font:400 12px/16px "Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text-muted)}
+.chrome-body{display:grid;grid-template-columns:180px 1fr;min-height:220px}
+.chrome-mini-sidebar{background:var(--surface-bg);padding:16px;border-right:1px solid var(--surface-border);font:400 12px "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text-body)}
+.chrome-mini-sidebar div{padding:6px 0}
+.chrome-mini-sidebar .chrome-active{color:var(--brand-indigo);font-weight:600}
+.chrome-content{padding:20px}
+.chrome-signature{display:inline-block;background:var(--surface-code-bg);color:var(--text-inverse);border-radius:8px;padding:8px 14px;font:12px "Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;margin-bottom:14px}
+.chrome-param-table{width:100%;border-collapse:collapse;font-size:13px}
+.chrome-param-table th,.chrome-param-table td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--surface-border);color:var(--text-body)}
+@media(max-width:768px){.examples-hero h1{font-size:36px;line-height:1.1}.examples-section h2{font-size:26px;line-height:1.2}.chrome-body{grid-template-columns:1fr}.chrome-mini-sidebar{border-right:none;border-bottom:1px solid var(--surface-border)}}
+@media(max-width:375px){.examples-hero{padding:40px 20px 24px}.examples-section{padding:0 20px 48px}}
 `;
     writeFile(path.join(outDir, "assets", "site.css"), css.trimStart());
 }
@@ -1152,6 +1466,46 @@ function writeClientJs() {
     }
     updateProgress();
     window.addEventListener("scroll", updateProgress, { passive: true });
+    var navToggle = document.getElementById("nav-toggle");
+    var navDrawer = document.getElementById("mobile-drawer");
+    var navBackdrop = document.getElementById("drawer-backdrop");
+    if (navToggle && navDrawer && navBackdrop) {
+        var drawerLinks = navDrawer.querySelectorAll("a");
+        function openDrawer(){
+            navDrawer.hidden = false;
+            navBackdrop.hidden = false;
+            requestAnimationFrame(function(){
+                navDrawer.classList.add("open");
+                navToggle.classList.add("open");
+            });
+            navToggle.setAttribute("aria-expanded", "true");
+            document.body.style.overflow = "hidden";
+            if (drawerLinks.length) drawerLinks[0].focus();
+        }
+        function closeDrawer(){
+            var wasOpen = navToggle.getAttribute("aria-expanded") === "true";
+            navDrawer.classList.remove("open");
+            navToggle.classList.remove("open");
+            navToggle.setAttribute("aria-expanded", "false");
+            document.body.style.overflow = "";
+            setTimeout(function(){
+                navDrawer.hidden = true;
+                navBackdrop.hidden = true;
+            }, 250);
+            if (wasOpen) navToggle.focus();
+        }
+        navToggle.addEventListener("click", function(){
+            var open = navToggle.getAttribute("aria-expanded") === "true";
+            if (open) closeDrawer(); else openDrawer();
+        });
+        navBackdrop.addEventListener("click", closeDrawer);
+        document.addEventListener("keydown", function(e){
+            if (e.key === "Escape" && navToggle.getAttribute("aria-expanded") === "true") closeDrawer();
+        });
+        drawerLinks.forEach(function(link){
+            link.addEventListener("click", closeDrawer);
+        });
+    }
 })();
 `;
     writeFile(path.join(outDir, "assets", "site.js"), js.trimStart());
@@ -1281,6 +1635,9 @@ function writeSeoFiles() {
     const urls = [
         { loc: "index.html", priority: "1.0" },
         { loc: "blog/index.html", priority: "0.8" },
+        // TASK-F14-03B — new Examples page, no legacy URL to preserve (ADR
+        // Decision §2: this question doesn't apply to a net-new page).
+        { loc: "examples.html", priority: "0.8" },
         ...site.pages.map((page) => ({ loc: `docs/${page.slug}.html`, priority: "0.8" })),
         ...site.posts.map((post) => ({ loc: `blog/${post.slug}.html`, priority: "0.7", lastmod: post.date })),
         // api/index.html gets the higher priority explicitly; every other API
@@ -1338,6 +1695,11 @@ function main() {
     site.pages.forEach(renderDocPage);
     renderBlogIndex();
     site.posts.forEach(renderBlogPost);
+    // TASK-F14-03B — Examples page: generateExamplesData() shells the real
+    // CLI out per framework (in-process require(), never reads the optional
+    // docs-site/data/examples.json debug artifact), so this is never stale.
+    const examplesData = generateExamplesData();
+    renderExamplesPage(examplesData.entries);
     writeSeoFiles();
     writeFile(path.join(outDir, "docs", "index.html"), '<meta http-equiv="refresh" content="0; url=quick-start.html">');
     console.log(`Built ${site.title} documentation site for v${pkg.version} in ${path.relative(root, outDir)}`);

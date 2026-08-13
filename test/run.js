@@ -27,6 +27,10 @@
  *      checkDrift/lint/fix, check/dry-run, and write loops.
  *  17. docs-api (lib/docs.js) — added 2026-07-31, the public
  *      require("jsdoc-scribe/docs") entry point's first direct coverage.
+ *  18. generate-examples-data (scripts/generate-examples-data.js) — added
+ *      2026-08-13, wiring TASK-F14-03A's standalone suite into `npm test`
+ *      (it existed and passed 11/11 on its own but was never require()'d
+ *      here — see test/generate-examples-data.test.js's header note).
  */
 
 const fs   = require("fs");
@@ -294,6 +298,14 @@ require("./cli-failure-accounting.test.js")(check);
 // ---------------------------------------------------------------------------
 console.log("\n-- docs-api --");
 require("./docs.test.js")(check);
+
+// ---------------------------------------------------------------------------
+// Suite 18 — generate-examples-data (scripts/generate-examples-data.js) —
+// TASK-F14-03A, wired in 2026-08-13 (see header note above and the file's
+// own header for why it wasn't wired in when it was first added).
+// ---------------------------------------------------------------------------
+console.log("\n-- generate-examples-data --");
+require("./generate-examples-data.test.js")(check);
 
 // ---------------------------------------------------------------------------
 // Summary
