@@ -480,7 +480,7 @@ function siteFooter() {
 function renderLanding() {
     const accentVars = ["var(--brand-indigo)", "var(--brand-teal)", "var(--brand-coral)", "var(--brand-yellow)"];
     const featureIcons = ["⚡", "🧭", "📰", "🔌"];
-    const featureCards = site.features.map((feature, index) => `<article class="home-feature-card reveal" style="--delay:${index * 80}ms">
+    const featureCards = site.features.map((feature, index) => `<article class="home-feature-card" style="--delay:${index * 80}ms">
         <span class="home-feature-icon" style="background:${accentVars[index % accentVars.length]}">${featureIcons[index % featureIcons.length]}</span>
         <h3>${esc(feature.title)}</h3>
         <p>${esc(feature.body)}</p>
@@ -492,7 +492,7 @@ function renderLanding() {
         const tag = (post.tags && post.tags[0]) || "Update";
         const rootImage = (post.image || "").replace(/^\.\.\//, "");
         const media = rootImage ? `<img src="${esc(rootImage)}" alt="" loading="lazy">` : "";
-        return `<a class="home-post-card reveal" href="blog/${esc(post.slug)}.html" style="--delay:${index * 80}ms">
+        return `<a class="home-post-card" href="blog/${esc(post.slug)}.html" style="--delay:${index * 80}ms">
             <span class="home-post-media" style="background:${color}">${media}</span>
             <span class="home-post-body">
                 <span class="home-post-tag" style="color:${color}">${esc(tag.toUpperCase())}</span>
@@ -519,11 +519,11 @@ function renderLanding() {
             </div>
         </section>
         <section class="home-features">
-            <h2 class="reveal">Everything your docs need</h2>
+            <h2 ">Everything your docs need</h2>
             <div class="home-feature-grid">${featureCards}</div>
         </section>
         <section class="home-blog-preview">
-            <div class="home-blog-preview-head reveal">
+            <div class="home-blog-preview-head">
                 <h2>From the blog</h2>
                 <a href="blog/index.html">View all posts →</a>
             </div>
@@ -590,7 +590,7 @@ function renderBlogIndex() {
         const color = accentVars[index % accentVars.length];
         const tag = (post.tags && post.tags[0]) || "Update";
         const media = post.image ? `<img src="${esc(post.image)}" alt="" loading="lazy">` : "";
-        return `<article class="blog-card reveal" style="--delay:${(index % 6) * 60}ms">
+        return `<article class="blog-card" style="--delay:${(index % 6) * 60}ms">
             <a class="blog-card-media" style="background:${color}" href="${esc(post.slug)}.html" aria-label="${esc(post.title)}">${media}</a>
             <div class="blog-card-body">
                 <span class="blog-card-tag" style="color:${color}">${esc(tag.toUpperCase())}</span>
@@ -609,7 +609,7 @@ function renderBlogIndex() {
             { label: "Home", href: "../index.html" },
             { label: "Blog" }
         ])}
-        <section class="blog-list-header reveal">
+        <section class="blog-list-header">
             <p class="blog-kicker">jsdoc-scribe blog</p>
             <h1>The Blog</h1>
             <p>Guides, product notes, and practical writing about documentation automation.</p>
@@ -663,33 +663,50 @@ function relatedPostsHtml(post) {
 }
 
 function renderBlogPost(post) {
+    const accentVars = ["var(--brand-indigo)", "var(--brand-teal)", "var(--brand-coral)", "var(--brand-yellow)", "var(--brand-pink)"];
+    const primaryTag = post.tags && post.tags[0];
+    const restTags = post.tags ? post.tags.slice(1) : [];
+    const tocItems = post.content
+        .filter((block) => block.type === "heading")
+        .map((block) => `<a href="#${esc(slugify(block.text))}">${esc(block.text)}</a>`)
+        .join("");
+    const toc = tocItems ? `<aside class="article-toc">
+        <p class="article-toc-label">ON THIS PAGE</p>
+        <nav>${tocItems}</nav>
+    </aside>` : "";
     const body = `<main class="medium-article-shell">
         ${breadcrumbHtml([
             { label: "Home", href: "../index.html" },
             { label: "Blog", href: "index.html" },
             { label: post.title }
         ])}
-        <article class="medium-article">
-            <header class="medium-article-header">
-                <div class="tag-row">${post.tags.map((tag) => `<span>${esc(tag)}</span>`).join("")}</div>
-                <h1>${esc(post.title)}</h1>
-                <p class="lead">${esc(post.description)}</p>
-                <div class="medium-byline">
-                    <span class="author-avatar large">${esc(authorInitials(site.author))}</span>
-                    <span><strong>${esc(site.author)}</strong><small>${esc(post.readingTime)} · ${esc(formatDate(post.date))}</small></span>
+        <div class="article-shell">
+            <article class="medium-article">
+                <header class="medium-article-header">
+                    <div class="tag-row">
+                        ${primaryTag ? `<span class="article-primary-tag" style="background:${accentVars[0]}">${esc(primaryTag.toUpperCase())}</span>` : ""}
+                        ${restTags.map((tag) => `<span>${esc(tag)}</span>`).join("")}
+                    </div>
+                    <h1>${esc(post.title)}</h1>
+                    <p class="lead">${esc(post.description)}</p>
+                    <div class="medium-byline">
+                        <span class="author-avatar large">${esc(authorInitials(site.author))}</span>
+                        <span><strong>${esc(site.author)}</strong><small>${esc(post.readingTime)} · ${esc(formatDate(post.date))}</small></span>
+                    </div>
+                </header>
+                <figure class="medium-hero-image">
+                    <img src="${esc(post.image)}" alt="${esc(post.title)}" loading="eager">
+                </figure>
+                <div class="medium-action-rail" aria-label="Article actions">
+                    <button type="button" data-copy="${attr(absoluteUrl(`blog/${post.slug}.html`))}" data-copy-mode="icon" title="Copy article link" aria-label="Copy article link">${iconCopy()}</button>
+                    <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(absoluteUrl(`blog/${post.slug}.html`))}&text=${encodeURIComponent(post.title)}" title="Share on X" aria-label="Share on X">${iconX()}</a>
+                    <a href="https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(absoluteUrl(`blog/${post.slug}.html`))}" title="Share on LinkedIn" aria-label="Share on LinkedIn">${iconLinkedIn()}</a>
                 </div>
-            </header>
-            <figure class="medium-hero-image">
-                <img src="${esc(post.image)}" alt="${esc(post.title)}" loading="eager">
-            </figure>
-            <div class="medium-action-rail" aria-label="Article actions">
-                <button type="button" data-copy="${attr(absoluteUrl(`blog/${post.slug}.html`))}" data-copy-mode="icon" title="Copy article link" aria-label="Copy article link">${iconCopy()}</button>
-                <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(absoluteUrl(`blog/${post.slug}.html`))}&text=${encodeURIComponent(post.title)}" title="Share on X" aria-label="Share on X">${iconX()}</a>
-                <a href="https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(absoluteUrl(`blog/${post.slug}.html`))}" title="Share on LinkedIn" aria-label="Share on LinkedIn">${iconLinkedIn()}</a>
-            </div>
-            ${renderPostBlocks(post.content)}
-            ${relatedPostsHtml(post)}
-        </article>
+                ${renderPostBlocks(post.content)}
+                ${relatedPostsHtml(post)}
+            </article>
+            ${toc}
+        </div>
         <a class="medium-back-link" href="index.html">Back to stories</a>
     </main>`;
     writeFile(path.join(blogDir, `${post.slug}.html`), pageShell({
@@ -815,7 +832,7 @@ function renderSection(section) {
         }
         return "";
     }).join("");
-    return `<section class="doc-section reveal" id="${esc(id)}">
+    return `<section class="doc-section" id="${esc(id)}">
         <h2>${esc(section.title)}</h2>
         ${body}
     </section>`;
@@ -946,11 +963,11 @@ function renderChangelog() {
     // version in CHANGELOG.md renders, matching "the complete release
     // history" the page's own copy already claimed to show.
     const html = markdownToHtml(source, { headingOffset: 1, maxHeadingLevel: 3 });
-    return `<section class="doc-section changelog-note reveal" id="latest-entries">
+    return `<section class="doc-section changelog-note" id="latest-entries">
         <h2>Release history</h2>
         <p>Every release, rendered directly from CHANGELOG.md -- nothing excerpted or hidden.</p>
     </section>
-    <section class="doc-section changelog reveal" id="release-notes">${html}</section>`;
+    <section class="doc-section changelog" id="release-notes">${html}</section>`;
 }
 
 // ---------------------------------------------------------------------
@@ -1373,26 +1390,34 @@ a{color:inherit;text-decoration:none}
 @media (max-width:640px){.home-hero{padding:56px 20px 64px}.home-features,.home-blog-preview{padding:48px 20px}.home-feature-grid,.home-post-grid,.blog-card-grid{grid-template-columns:1fr}.blog-list-header{margin:0 -20px 24px;padding-left:20px;padding-right:20px}.home-hero-actions{flex-direction:column;align-items:stretch}.home-hero-actions .btn{width:100%}}
 .medium-article-shell{background:#fff;min-height:calc(100vh - 68px);padding:34px 24px 96px}
 .medium-article{max-width:760px;margin:0 auto;position:relative}
+.article-shell{display:flex;align-items:flex-start;gap:48px;max-width:980px;margin:0 auto}
+.article-shell .medium-article{flex:1;min-width:0}
+.article-toc{width:220px;flex-shrink:0;position:sticky;top:98px;background:var(--surface-bg);border-radius:14px;padding:18px 20px}
+.article-toc-label{margin:0 0 12px;font:700 11px/1 "Inter",sans-serif;letter-spacing:.04em;color:var(--text-muted)}
+.article-toc nav{display:flex;flex-direction:column;gap:10px}
+.article-toc nav a{font-size:13.5px;color:var(--text-body)}
+.article-toc nav a:hover{color:var(--brand-indigo)}
 .medium-article-header{margin-bottom:28px}
-.medium-article-header .tag-row{margin:0 0 20px}
+.medium-article-header .tag-row{margin:0 0 20px;align-items:center}
 .medium-article-header .tag-row span{background:#f2f2f2;border-color:#f2f2f2;color:#6b6b6b}
-.medium-article-header h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(40px,6vw,64px);line-height:1.05;font-weight:700;letter-spacing:0;margin:0 0 18px;color:#191919}
-.medium-article-header .lead{font-size:22px;line-height:1.35;color:#6b6b6b;margin:0 0 24px}
-.medium-byline{display:flex;align-items:center;gap:12px;color:#191919;border-top:1px solid #e6e6e6;border-bottom:1px solid #e6e6e6;padding:16px 0}
+.article-primary-tag{display:inline-flex;padding:6px 12px;border-radius:999px;font:700 11px/1 "Inter",sans-serif;letter-spacing:.03em;color:var(--text-inverse);border:none!important}
+.medium-article-header h1{font-family:"Inter",sans-serif;font-size:clamp(34px,5vw,48px);line-height:1.15;font-weight:800;letter-spacing:0;margin:0 0 18px;color:var(--text-heading)}
+.medium-article-header .lead{font-family:"Inter",sans-serif;font-size:18px;line-height:1.5;color:var(--text-body);margin:0 0 24px}
+.medium-byline{display:flex;align-items:center;gap:12px;color:var(--text-heading);border-top:1px solid var(--surface-border);border-bottom:1px solid var(--surface-border);padding:16px 0}
 .medium-byline strong{display:block;font-size:14px;font-weight:600}
-.medium-byline small{display:block;color:#6b6b6b;font-size:13px;margin-top:3px}
-.medium-hero-image{margin:36px calc(50% - min(50vw - 24px, 980px) / 2);background:#f2f2f2}
-.medium-hero-image img{width:100%;max-height:520px;object-fit:cover;display:block}
+.medium-byline small{display:block;color:var(--text-muted);font-size:13px;margin-top:3px}
+.medium-hero-image{margin:36px 0;background:var(--surface-bg);border-radius:14px;overflow:hidden}
+.medium-hero-image img{width:100%;max-height:420px;object-fit:cover;display:block}
 .medium-action-rail{position:fixed;right:28px;bottom:28px;display:grid;gap:10px;z-index:30}
 .medium-action-rail a,.medium-action-rail button{display:grid;place-items:center;width:48px;height:48px;border:1px solid #e6e6e6;border-radius:999px;background:#fff;color:#6b6b6b;font:700 12px/1 var(--font-family,inherit);cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.08);transition:transform .16s,border-color .16s,color .16s,background .16s}
 .medium-action-rail svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .medium-action-rail a:hover,.medium-action-rail button:hover{border-color:#191919;color:#191919;transform:translateY(-2px)}
 .medium-action-rail button.copied{background:#191919;color:#fff;border-color:#191919}
-.medium-article>p{font-family:Georgia,"Times New Roman",serif;font-size:21px;line-height:1.72;color:#242424;margin:28px 0}
-.medium-article ul,.medium-article ol{font-family:Georgia,"Times New Roman",serif;font-size:21px;line-height:1.72;color:#242424;margin:20px 0;padding-left:30px}
+.medium-article>p{font-family:"Inter",sans-serif;font-size:17px;line-height:1.7;color:var(--text-body);margin:22px 0}
+.medium-article ul,.medium-article ol{font-family:"Inter",sans-serif;font-size:17px;line-height:1.7;color:var(--text-body);margin:20px 0;padding-left:30px}
 .medium-article li{margin:8px 0}
-.medium-article h2{font-size:30px;line-height:1.2;margin:52px 0 14px;color:#191919;letter-spacing:0}
-.medium-article blockquote{font-family:Georgia,"Times New Roman",serif;margin:34px 0;padding:0 0 0 22px;border-left:3px solid #191919;color:#242424;font-size:26px;line-height:1.45;background:transparent;border-radius:0}
+.medium-article h2{font-family:"Inter",sans-serif;font-weight:800;font-size:26px;line-height:1.25;margin:44px 0 14px;color:var(--text-heading);letter-spacing:0}
+.medium-article blockquote{font-family:"Inter",sans-serif;font-weight:600;margin:30px 0;padding:0 0 0 22px;border-left:3px solid var(--brand-indigo);color:var(--text-heading);font-size:22px;line-height:1.5;background:transparent;border-radius:0}
 .medium-article .article-figure{margin:38px calc(50% - min(50vw - 24px, 900px) / 2);background:#fff;border:0;border-radius:0}
 .medium-article .article-figure img,.medium-article .article-figure video{width:100%;display:block}
 .medium-article .article-figure figcaption{text-align:center;color:#6b6b6b;font-size:13px;padding:10px 0 0}
@@ -1412,7 +1437,7 @@ a{color:inherit;text-decoration:none}
 .changelog-note{background:#fffbe7}
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease;transition-delay:var(--delay,0ms)}
 .reveal.visible{opacity:1;transform:none}
-@media (max-width:1180px){.article-layout{grid-template-columns:minmax(0,1fr);padding-right:28px}.article-aside{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.post-grid{grid-template-columns:1fr}.medium-hero-image,.medium-article .article-figure{margin-left:0;margin-right:0}}
+@media (max-width:1180px){.article-layout{grid-template-columns:minmax(0,1fr);padding-right:28px}.article-aside{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.post-grid{grid-template-columns:1fr}.medium-hero-image,.medium-article .article-figure{margin-left:0;margin-right:0}.article-shell{flex-direction:column}.article-toc{display:none}}
 @media (max-width:1024px){.site-header{padding:0 20px}.top-links,.nav-right{display:none}.hamburger{display:flex}.docs-sidebar{display:none}.docs-layout{margin-left:0;max-width:none;padding:38px 20px 70px}.guide-switcher{display:block}}
 @media (max-width:980px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:54px}.feature-grid,.workflow-grid,.related-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workflow-band{grid-template-columns:1fr}.workflow-copy{position:static}.article-layout,.blog-home{padding:38px 20px 70px}.medium-shell,.medium-article-shell{padding:38px 20px 70px}}
 @media (max-width:640px){.hero{padding:42px 20px}.feature-band,.workflow-band{padding:46px 20px}.feature-grid,.workflow-grid,.article-aside,.related-grid{grid-template-columns:1fr}.hero h1{font-size:46px}.hero-console{font-size:13px}.demo-tabs{grid-template-columns:1fr}.post-card,.medium-row{grid-template-columns:1fr}.post-media{min-height:180px}.medium-row-media{width:100%;height:180px;order:-1}.medium-list-header{display:block}.medium-outline-btn{margin-top:18px}.medium-article-header h1,.blog-hero h1,.medium-list-header h1{font-size:42px}.medium-article>p{font-size:19px}.medium-article blockquote{font-size:23px}.medium-action-rail{right:16px;bottom:16px}.medium-action-rail a,.medium-action-rail button{width:44px;height:44px}}
