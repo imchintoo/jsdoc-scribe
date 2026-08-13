@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jsdoc-scribe — Daily Market &amp; Content Report — 2026-08-11</title>
+<style>
+  :root{--ink:#1a1d23;--muted:#5b6472;--line:#e4e7ec;--accent:#2f6fed;--bg-soft:#f6f8fb;--good:#12805c;--warn:#b6540a;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+  header.rep{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+  header.rep h1{font-size:1.5rem;margin:0 0 6px}
+  header.rep .meta{color:var(--muted);font-size:.92rem}
+  .badge{display:inline-block;background:var(--ink);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:4px;margin-right:8px}
+  .badge.role-a{background:var(--accent)}
+  .badge.role-b{background:var(--good)}
+  section{margin-bottom:36px}
+  h2{font-size:1.15rem;border-left:4px solid var(--accent);padding-left:10px;margin:0 0 14px}
+  h3{font-size:1rem;margin:20px 0 8px}
+  p{margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600}
+  ul{margin:0 0 14px;padding-left:20px}
+  li{margin-bottom:6px}
+  .card{background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+  .tag{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.78rem;color:var(--muted);margin:2px 4px 2px 0}
+  .status-covered{color:var(--muted)}
+  .status-open{color:var(--good);font-weight:600}
+  .status-missed{color:var(--warn);font-weight:600}
+  .source-list{font-size:.85rem;color:var(--muted)}
+  .source-list a{color:var(--accent)}
+  footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem}
+  .decision{border:1px solid var(--accent);border-radius:8px;padding:16px 18px;background:#eef4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="rep">
+  <span class="badge role-a">Market Analyst</span><span class="badge role-b">Content Writer</span>
+  <h1>Daily Report — jsdoc-scribe Content Pipeline</h1>
+  <div class="meta">Date: 2026-08-11 (Tuesday) &middot; Prepared for: Chintan Goswami &middot; Scope: npm package + docs site (imchintoo.github.io/jsdoc-scribe)</div>
+</header>
+
+<section>
+  <h2>1. Brand &amp; keyword visibility check</h2>
+  <p>Direct search for <code>jsdoc-scribe</code> again returns zero third-party mentions, reviews, or "alternatives to" roundups — the fourteenth consecutive check with no organic visibility change. Results still resolve to unrelated namesakes: core <code>jsdoc</code>, <code>scribe.js-ocr</code> (OCR), <code>@knuckleswtf/scribe</code> (PHP/Laravel), and the Python-ecosystem "Scribe for Node.js" docs. No movement on the Syntax Scribe comparison-content front. Package version re-confirmed at <strong>2.5.1</strong> per <code>package.json</code>; the <code>typescript: "&gt;=5.0.0 &lt;7.0.0"</code> and optional <code>code-multivitals: "&gt;=1.6.0"</code> peer dependency are both unchanged since the last check.</p>
+  <div class="card">
+    <strong>Implication:</strong> the zero-organic-discovery finding is now fourteen checks old with no dedicated remediation action taken. Carrying forward the standing recommendation once more, flagged for Chintan rather than expanded on further today: a one-time discoverability move (npm-adjacent directory listing, Show HN-style launch post, or the open backlog "comparison post" item in Section 6) would compound the daily blog cadence rather than compete with it.
+  </div>
+</section>
+
+<section>
+  <h2>2. Competitive landscape snapshot</h2>
+  <table>
+    <tr><th>Tool / trend</th><th>Positioning</th><th>Where jsdoc-scribe differs</th></tr>
+    <tr><td>CSA AI Controls Matrix v1.1 &amp; AI-CAIQ v1.1 (shipped 2026-06-23)</td><td>The Cloud Security Alliance's AICM v1.1 landed with <strong>247 controls across 18 domains</strong>, up from AICM v1.0, plus a new Model &amp; Data Security (MDS) domain. The companion AI-CAIQ v1.1 self-assessment questionnaire grew to <strong>320 questions</strong> mapped 1:1 to those controls, with mandatory YES/NO/NA fields, SSRM (Shared Security Responsibility Model) ownership tagging per question, and recommended free-text evidence for both vendor-side implementation and customer-side responsibilities.</td><td>Directly relevant — see Section 3. Several AI-CAIQ domains ask vendors to describe how AI-adjacent tooling handles data locality, model/training provenance, and change-tracking evidence; jsdoc-scribe's "no AI, no LLM calls, 100% local" architecture answers a cluster of these in one sentence rather than requiring a bespoke narrative per question.</td></tr>
+    <tr><td>CSA CCM v4.1 / CAIQ v4.1 (general, non-AI track)</td><td>Separately from the AI-specific track, the base Cloud Controls Matrix moved to v4.1 (207 controls across 17 domains, 11 added / 1 removed) with CAIQ v4.1 growing to 283 questions. A transition window keeps CAIQ v4.0.x submissions valid for STAR until it's formally withdrawn in <strong>January 2028</strong>.</td><td>Extends rather than replaces the 2026-08-07 post's CAIQ v4 mapping — that mapping remains valid through the transition window, but the underlying question count has grown and now needs an AI-specific companion (see Section 3/5).</td></tr>
+    <tr><td>TypeDoc / Docusaurus (no material release this week)</td><td>No new TypeDoc or Docusaurus releases found in the past week; TypeDoc's public TS7-compatibility tracking issues (#3098, #3053) are unchanged since the 2026-08-09/08-10 checks. Docusaurus's public changelog has no entries past April 2026.</td><td>No competitive delta to report today — noting the quiet week rather than padding this row with repeated prior findings.</td></tr>
+  </table>
+  <p class="source-list">Sources: <a href="https://cloudsecurityalliance.org/blog/2026/07/14/ai-controls-matrix-v1-1-strengthening-the-foundation-for-trustworthy-ai">AI Controls Matrix v1.1: Trustworthy AI — CSA</a> &middot; <a href="https://cloudsecurityalliance.org/artifacts/aicm-and-ai-caiq-faq">AICM &amp; AI-CAIQ FAQ — CSA</a> &middot; <a href="https://getaigovernance.net/blog/aicm-v11-csa-ai-matrix">AICM v1.1 Review: 247 Controls, New MDS Domain — GetAIGovernance</a> &middot; <a href="https://vorplabs.com/security-framework-changes/csa-caiq">CSA CCM v4.1 &amp; CAIQ v4.1 Changes: Counts, Dates, AI-CAIQ — Vorp Labs</a> &middot; <a href="https://cloudsecurityalliance.org/artifacts/star-level-1-security-questionnaire-caiq-v4">STAR Level 1: Security Questionnaire (CAIQ v4) — CSA</a></p>
+</section>
+
+<section>
+  <h2>3. Signal worth writing about today</h2>
+  <div class="card">
+    <h3>Security questionnaires just grew an AI-specific branch — 320 new questions, and jsdoc-scribe's "no AI" architecture is a shortcut through a big chunk of them</h3>
+    <p>This is the strongest unused signal in today's research, and it directly extends ground the blog already owns rather than starting cold: the 2026-08-07 post ("Answering the Security Questionnaire, Line by Line") mapped the general CAIQ v4 domains to jsdoc-scribe's facts. Since then, CSA shipped AICM v1.1 (2026-06-23) — 247 controls, 18 domains, a new Model &amp; Data Security domain — with a dedicated AI-CAIQ v1.1 self-assessment layer of 320 questions specifically for vendors whose products touch AI in any way. This is now a distinct, larger assessment surface that a growing share of procurement teams will start attaching to vendor reviews alongside the base CCM/CAIQ, per CSA's own FAQ and independent trackers (Vorp Labs, GetAIGovernance). The base CCM/CAIQ track also moved independently to v4.1 (283 questions, 207 controls), with CAIQ v4.0.x staying valid only until January 2028 — a dated fact worth stating plainly rather than left implicit.</p>
+    <p>The angle that hasn't been used yet: most vendors evaluating whether they need to fill out AI-CAIQ get tripped up because their product touches AI somewhere in the stack (an AI-assisted feature, an LLM-based helper, a vendor dependency that calls a model API) and now has to answer 320 detailed questions about data handling, model provenance, and training-data lineage. jsdoc-scribe's answer to the applicability question itself is short: it doesn't call an AI model at any point in its pipeline (TypeScript compiler API used purely as a parser), so most of AI-CAIQ's MDS-domain and AI-specific-risk questions are answered by "not applicable — no AI, no LLM calls, no training pipeline, no model" rather than requiring a paragraph of qualification per question. That's a sharper, more current version of the 2026-08-07 piece's argument, now grounded in a framework that's six weeks old rather than the general 2025-era CAIQ baseline.</p>
+    <p class="source-list">Sources: <a href="https://cloudsecurityalliance.org/blog/2026/07/14/ai-controls-matrix-v1-1-strengthening-the-foundation-for-trustworthy-ai">AI Controls Matrix v1.1 — CSA</a> &middot; <a href="https://cloudsecurityalliance.org/artifacts/aicm-and-ai-caiq-faq">AICM &amp; AI-CAIQ FAQ — CSA</a> &middot; <a href="https://getaigovernance.net/blog/aicm-v11-csa-ai-matrix">AICM v1.1 Review — GetAIGovernance</a> &middot; <a href="https://vorplabs.com/security-framework-changes/csa-caiq">CSA CCM v4.1 &amp; CAIQ v4.1 Changes — Vorp Labs</a> &middot; <a href="https://checkaiclaims.com/guides/ai-vendor-questionnaire-claims">AI Vendor Questionnaire Claims: DDQ and Security Review Questions</a></p>
+  </div>
+  <p><strong>Today's strongest angle:</strong> the open backlog item "CAIQ v4's expanded AI-specific questions (2026 revision) deserve a dedicated deeper follow-up beyond the 2026-08-07 general questionnaire mapping" — now sharpened with today's confirmed AICM v1.1 / AI-CAIQ v1.1 figures. Audience: Security / Procurement / AI governance leads — a rotation back to security/compliance leadership after two consecutive posts aimed at developers (2026-08-09) and platform engineering (2026-08-10).</p>
+</section>
+
+<section>
+  <h2>4. Content already published (do not repeat)</h2>
+  <table>
+    <tr><th>Date</th><th>Slug</th><th>Core angle</th></tr>
+    <tr><td>2026-07-10</td><td>why-deterministic-jsdoc-matters</td><td>Philosophy: deterministic AST-based docs vs. hand-written/guessed docs</td></tr>
+    <tr><td>2026-07-13</td><td>halving-engineering-overhead-documentation-automation</td><td>Case study: client cut transition overhead 50%, onboarding 70%+</td></tr>
+    <tr><td>2026-07-16</td><td>we-automated-documentation-out-of-existence</td><td>Cost/savings story: free, local, benchmarks, architecture insight, quality dashboard</td></tr>
+    <tr><td>2026-07-23</td><td>the-due-diligence-blind-spot</td><td>Due-diligence/risk story: continuous docs as an investor-facing signal (pre-raise)</td></tr>
+    <tr><td>2026-07-24</td><td>the-eslint-rule-that-disappeared</td><td>Technical deep-dive: ESLint v9 core rule removal, jsdoc-scribe's ESLint plugin</td></tr>
+    <tr><td>2026-07-28</td><td>what-saying-no-to-ai-actually-costs-you</td><td>Honest trade-off/rebuttal: what "no AI" costs vs. saves, argued against the product's own easy narrative</td></tr>
+    <tr><td>2026-07-29</td><td>the-question-that-stalls-your-deal</td><td>Procurement/compliance deep-dive: security questionnaires (general), EU AI Act deadline, deterministic tooling as a one-sentence answer</td></tr>
+    <tr><td>2026-07-30</td><td>the-bus-factor-nobody-puts-on-a-slide</td><td>Metric-and-scorecard piece: bus factor measurement methodology, onboarding-cost data, documentation as the lever</td></tr>
+    <tr><td>2026-07-31</td><td>your-ai-agent-is-only-as-good-as-its-docs</td><td>Technical/practical: "context rot" in AI coding agents, AGENTS.md efficiency data, drift-checking as the fix</td></tr>
+    <tr><td>2026-08-01</td><td>architecture-insight-page-new-hire-day-one</td><td>Product walkthrough: Architecture Insight page, new-hire onboarding, time-to-productivity data</td></tr>
+    <tr><td>2026-08-02</td><td>code-health-dashboard-small-team-sonarqube-alternative</td><td>Product comparison: <code>--quality</code> dashboard vs. SonarQube's free-tier limits, small-team framing</td></tr>
+    <tr><td>2026-08-03</td><td>eu-ai-act-a-day-later-what-actually-changed</td><td>Compliance retrospective: EU AI Act high-risk obligations, day-after fact-check of what actually went live</td></tr>
+    <tr><td>2026-08-04</td><td>docs-site-live-in-under-10-minutes</td><td>Tutorial: real GitHub Actions + Pages workflow taken from this repo's own CI</td></tr>
+    <tr><td>2026-08-05</td><td>shadow-ai-is-a-source-code-problem-first</td><td>Leadership/security analysis: internal shadow-AI review findings, source code as top-leaked data type</td></tr>
+    <tr><td>2026-08-06</td><td>monorepo-documentation-without-the-config-maze</td><td>Technical comparison + how-to: TypeDoc's <code>entryPointStrategy: "packages"</code> vs. jsdoc-scribe's workspace detection + programmatic API</td></tr>
+    <tr><td>2026-08-07</td><td>answering-the-security-questionnaire-line-by-line</td><td>Reference/answer-key: CAIQ v4 &amp; SIG domain-by-domain mapping to jsdoc-scribe facts, for security/procurement</td></tr>
+    <tr><td>2026-08-07</td><td>fixing-what-our-own-tooling-never-caught</td><td>Self-audit/transparency: repo-audit findings (changelog truncation bug, missing changelog entry, broken plugin install link, npm vuln, no lint setup) and their fixes</td></tr>
+    <tr><td>2026-08-09</td><td>typescript-7-has-no-compiler-api</td><td>Technical deep-dive: TypeScript 7.0's missing Compiler API and jsdoc-scribe's existing <code>&lt;7.0.0</code> pin</td></tr>
+    <tr><td>2026-08-10</td><td>your-catalog-solved-where-docs-live-not-whether-theyre-true</td><td>Platform-engineering critique: Backstage TechDocs co-location vs. actual staleness, IDP/software-catalog docs-tab framing</td></tr>
+    <tr><td>2026-08-11</td><td>the-320-question-ai-questionnaire-you-might-skip-most-of</td><td>Compliance follow-up: AICM v1.1 / AI-CAIQ v1.1 (320 AI-specific questions), "no AI" architecture as a fast-path through the applicability questions</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>5. Today's pick</h2>
+  <div class="decision">
+    <strong>Title:</strong> "The 320-Question AI Questionnaire You Might Skip Most Of"<br>
+    <strong>Audience:</strong> Security / Procurement / AI governance leads — a rotation back to compliance leadership after 2026-08-09 (developers) and 2026-08-10 (platform engineering)<br>
+    <strong>Angle:</strong> compliance follow-up (new/unused ground): CSA's AICM v1.1 and its AI-CAIQ v1.1 self-assessment (320 questions across 247 controls, shipped 2026-06-23) is a new, AI-specific layer on top of the base CCM/CAIQ track the 2026-08-07 post already covered. Walks through why a "no AI, no LLM calls, 100% local" tool answers a meaningful cluster of AI-CAIQ's applicability and Model &amp; Data Security domain questions with one factual sentence instead of a bespoke narrative — extending, not repeating, the 2026-08-07 mapping.<br>
+    <strong>File:</strong> <code>docs-site/posts/2026-08-11-the-320-question-ai-questionnaire-you-might-skip-most-of.md</code>
+  </div>
+</section>
+
+<section>
+  <h2>6. Backlog — candidate angles for upcoming days (avoid re-selecting once used)</h2>
+  <table>
+    <tr><th>Status</th><th>Angle</th><th>Primary audience</th></tr>
+    <tr><td class="status-covered">Used 2026-08-11</td><td>CAIQ v4's expanded AI-specific questions (AICM v1.1 / AI-CAIQ v1.1, 320 questions)</td><td>Security / Procurement / AI governance leads</td></tr>
+    <tr><td class="status-covered">Used 2026-08-10</td><td>Platform engineering's shift to IDPs/software catalogs — Backstage TechDocs staleness gap specifically</td><td>Platform Engineering / DevOps / EM</td></tr>
+    <tr><td class="status-covered">Used 2026-08-09</td><td>TypeScript 7.0's missing Compiler API and jsdoc-scribe's existing <code>&lt;7.0.0</code> pin</td><td>Developers / Engineers</td></tr>
+    <tr><td class="status-covered">Used 2026-08-07 (×2)</td><td>SIG/CAIQ line-by-line reference; self-audit/changelog-bug transparency post</td><td>Security/Procurement; Developers/OSS maintainers</td></tr>
+    <tr><td class="status-covered">Used 2026-08-06</td><td>Monorepo documentation: workspaces, multiple packages, one site</td><td>Developers / Platform teams</td></tr>
+    <tr><td class="status-open">Open</td><td>Silo ratio and per-file "authorship concentration" as a companion metric to the Architecture Insight page — could a future version surface this directly from git history</td><td>CTO / EM (also: informs a possible product feature, not just a post)</td></tr>
+    <tr><td class="status-open">Open</td><td>Context7-style "docs-as-context-layer" positioning — wiring <code>gen-docs</code> output directly into an agent's context window (AGENTS.md generation, or an MCP-style local doc server). New context today: llms.txt and MCP-based doc servers (Context7 et al.) are now the standard pattern for keeping AI coding assistants from hallucinating APIs — jsdoc-scribe's regenerated-from-source output is a natural fit for this exact pattern.</td><td>Developers / DevOps (also: informs a possible product feature)</td></tr>
+    <tr><td class="status-open">Open, now dated</td><td>Follow-up once TypeScript 7.1's programmatic API lands. Confirmed schedule: Beta 2026-09-09, RC 2026-10-20, Stable 2026-11-10 — earliest realistic action point is the September beta.</td><td>Developers / Engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>Syntax Scribe and other name-adjacent competitors publishing SEO comparison content — should jsdoc-scribe write its own honest comparison/positioning post, given zero indexed presence to compete on</td><td>Developers evaluating doc tools (also: an off-blog discoverability action, not just a post)</td></tr>
+    <tr><td class="status-open">Open</td><td>A worked, copy-pasteable Node script running jsdoc-scribe's programmatic API across every workspace package into one merged site — the code-heavy follow-up to the 2026-08-06 comparison piece</td><td>Developers / Platform teams</td></tr>
+    <tr><td class="status-open">Open</td><td>A direct "wire jsdoc-scribe output into Backstage TechDocs" how-to — the practical, code-heavy follow-up to the 2026-08-10 critique piece, once it's had a few days to stand on its own</td><td>Platform Engineering / DevOps</td></tr>
+    <tr><td class="status-open">Open, new today</td><td>Base CCM v4.1 / CAIQ v4.1 (non-AI track) grew to 283 questions with a hard CAIQ v4.0.x withdrawal date of January 2028 — a short, dated update note distinct from the AI-CAIQ angle used today, could anchor a future "what changed in the base questionnaire" post</td><td>Security / Procurement</td></tr>
+  </table>
+  <p>Each future run should cross-check this table plus the published list in Section 4, pick the strongest unused angle for that day's news/search signal, and append newly published posts back into Section 4's equivalent list. Note: the standing zero-organic-visibility finding in Section 1 is now fourteen checks old without a dedicated action — repeating the recommendation that Chintan consider a non-blog discoverability action (tool directory submission, Show HN-style post) alongside the daily content cadence.</p>
+</section>
+
+<footer>
+  Generated by the scheduled jsdoc-scribe content pipeline (Market Analyst role). Blog output for this date: <code>docs-site/posts/2026-08-11-the-320-question-ai-questionnaire-you-might-skip-most-of.md</code>. Images intentionally omitted — Chintan handles cover-image generation himself, outside the automated pipeline.
+</footer>
+
+</div>
+</body>
+</html>

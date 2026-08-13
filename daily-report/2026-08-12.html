@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jsdoc-scribe — Daily Market &amp; Content Report — 2026-08-12</title>
+<style>
+  :root{--ink:#1a1d23;--muted:#5b6472;--line:#e4e7ec;--accent:#2f6fed;--bg-soft:#f6f8fb;--good:#12805c;--warn:#b6540a;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+  header.rep{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+  header.rep h1{font-size:1.5rem;margin:0 0 6px}
+  header.rep .meta{color:var(--muted);font-size:.92rem}
+  .badge{display:inline-block;background:var(--ink);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:4px;margin-right:8px}
+  .badge.role-a{background:var(--accent)}
+  .badge.role-b{background:var(--good)}
+  section{margin-bottom:36px}
+  h2{font-size:1.15rem;border-left:4px solid var(--accent);padding-left:10px;margin:0 0 14px}
+  h3{font-size:1rem;margin:20px 0 8px}
+  p{margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600}
+  ul{margin:0 0 14px;padding-left:20px}
+  li{margin-bottom:6px}
+  .card{background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+  .tag{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.78rem;color:var(--muted);margin:2px 4px 2px 0}
+  .status-covered{color:var(--muted)}
+  .status-open{color:var(--good);font-weight:600}
+  .status-missed{color:var(--warn);font-weight:600}
+  .source-list{font-size:.85rem;color:var(--muted)}
+  .source-list a{color:var(--accent)}
+  footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem}
+  .decision{border:1px solid var(--accent);border-radius:8px;padding:16px 18px;background:#eef4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="rep">
+  <span class="badge role-a">Market Analyst</span><span class="badge role-b">Content Writer</span>
+  <h1>Daily Report — jsdoc-scribe Content Pipeline</h1>
+  <div class="meta">Date: 2026-08-12 (Wednesday) &middot; Prepared for: Chintan Goswami &middot; Scope: npm package + docs site (imchintoo.github.io/jsdoc-scribe)</div>
+</header>
+
+<section>
+  <h2>1. Brand &amp; keyword visibility check</h2>
+  <p>Direct search for <code>jsdoc-scribe</code> again returns zero third-party mentions, reviews, or "alternatives to" roundups — the fifteenth consecutive check with no organic visibility change. Results still resolve to unrelated namesakes: core <code>jsdoc</code>, <code>scribe.js-ocr</code> (OCR), <code>@knuckleswtf/scribe</code> (PHP/Laravel), and the Python-ecosystem "Scribe for Node.js" docs. Package version re-confirmed at <strong>2.5.1</strong> per <code>package.json</code>; <code>typescript: "&gt;=5.0.0 &lt;7.0.0"</code> as sole dependency and optional <code>code-multivitals: "&gt;=1.6.0"</code> peer dependency both unchanged.</p>
+  <div class="card">
+    <strong>Implication:</strong> fifteen checks, zero discovery — carrying the standing recommendation forward without expanding on it again today (see Section 6 for the open comparison-post/directory-listing items).
+  </div>
+</section>
+
+<section>
+  <h2>2. Competitive landscape snapshot</h2>
+  <table>
+    <tr><th>Tool / trend</th><th>Positioning</th><th>Where jsdoc-scribe differs</th></tr>
+    <tr><td>llms.txt + MCP documentation servers going mainstream (Mintlify, GitBook, Context7)</td><td>Mintlify's 2026 midyear report puts AI-agent traffic to Mintlify-hosted docs at <strong>66% of measured web requests in July</strong>, up from 15.2% in January — a 52-point swing in seven months, with Claude Code and Cursor driving ~95% of that share. GitBook separately measured AI agents at <strong>51.8% of intentional documentation reads</strong> as of May 2026. Mintlify now auto-generates <code>llms.txt</code>/<code>llms-full.txt</code> and auto-hosts an MCP server per docs site; Context7 (Upstash) does the equivalent for library docs specifically, serving version-pinned snippets to any MCP client to head off hallucinated APIs.</td><td>Directly relevant — see Section 3. jsdoc-scribe doesn't ship an llms.txt generator or MCP server today, but its programmatic API and regenerated-from-source Markdown/HTML output are a clean substrate for wiring into either pattern without hand-maintaining a separate agent-facing doc set. Framed carefully in Section 3 as a positioning angle, not a claimed feature.</td></tr>
+    <tr><td>TypeDoc / Docusaurus (no material release this week)</td><td>No new TypeDoc or Docusaurus releases found since the 2026-08-09/08-10/08-11 checks; Docusaurus's public changelog has no entries past July 10, 2026. TypeDoc's TS7-compatibility tracking issues (#3098, #3053) remain open and unchanged.</td><td>No competitive delta to report today.</td></tr>
+    <tr><td>CSA AICM v1.1 / AI-CAIQ v1.1 (covered 2026-08-11)</td><td>No update since yesterday's check — still 247 controls / 320 AI-specific questions, no new CSA publication found today.</td><td>N/A — fully covered in the 2026-08-11 post, not repeated today.</td></tr>
+  </table>
+  <p class="source-list">Sources: <a href="https://www.mintlify.com/blog/state-of-docs-traffic">The state of docs traffic: a 2026 midyear report — Mintlify</a> &middot; <a href="https://www.mintlify.com/blog/ai-traffic">Almost half your docs traffic is AI — Mintlify</a> &middot; <a href="https://www.gitbook.com/blog/ai-docs-data-april-2026">AI agents are now the majority reader of your docs — GitBook</a> &middot; <a href="https://www.pulsemcp.com/servers/upstash-context7">Official Context7 (Documentation Database) MCP Server — PulseMCP</a> &middot; <a href="https://www.trevorlasn.com/blog/context7-mcp">Context7 MCP: Stop LLM Hallucinations with Live Docs</a></p>
+</section>
+
+<section>
+  <h2>3. Signal worth writing about today</h2>
+  <div class="card">
+    <h3>Documentation's primary reader has already flipped from human to machine — and most doc-generation pipelines aren't built for that reader</h3>
+    <p>This is a genuinely new data point, not a restatement of the 2026-07-31 "context rot" post. That earlier piece was about <em>accuracy over time</em> — stale docs silently degrading an AI coding agent's suggestions. Today's signal is about <em>audience composition</em>: Mintlify's midyear report shows AI-agent requests overtaking human page loads on its hosted docs (66% in July, up from 15.2% in January), and GitBook independently measured agents at 51.8% of intentional doc reads by May. Claude Code and Cursor account for roughly 95% of that agent share. Separately, Context7 (Upstash) has become a default MCP server specifically to stop agents from hallucinating library APIs by serving version-pinned docs straight into the context window on request.</p>
+    <p>The angle that hasn't been used yet: most teams' documentation pipelines were built assuming a human clicking through a rendered site, not an agent consuming a Markdown/plaintext context blob mid-task. That's a packaging and delivery problem, distinct from staleness. jsdoc-scribe's relevant fact here isn't a new feature — it doesn't generate an <code>llms.txt</code> file or run an MCP server today — but its output is regenerated fresh from the AST on every run via the programmatic API, which is exactly the shape of source needed to feed either pattern without a second, hand-maintained "AI docs" copy that drifts independently of the human-facing site. Worth writing as a positioning/practical piece for engineering leadership deciding where to spend on doc tooling next, not a feature announcement.</p>
+    <p class="source-list">Sources: <a href="https://www.mintlify.com/blog/state-of-docs-traffic">The state of docs traffic: a 2026 midyear report — Mintlify</a> &middot; <a href="https://www.gitbook.com/blog/ai-docs-data-april-2026">AI agents are now the majority reader of your docs — GitBook</a> &middot; <a href="https://www.pulsemcp.com/servers/upstash-context7">Context7 MCP Server — PulseMCP</a> &middot; <a href="https://www.trevorlasn.com/blog/context7-mcp">Context7 MCP: Stop LLM Hallucinations with Live Docs</a></p>
+  </div>
+  <p><strong>Today's strongest angle:</strong> the open backlog item "Context7-style 'docs-as-context-layer' positioning" (Section 6, carried since 2026-08-11), now grounded in the fresh Mintlify/GitBook traffic-composition data rather than the general framing it had before. Audience: CTO / Engineering Manager / founder — a rotation back to leadership after three consecutive posts aimed at developers (08-09), platform engineering (08-10), and security/procurement (08-11).</p>
+</section>
+
+<section>
+  <h2>4. Content already published (do not repeat)</h2>
+  <table>
+    <tr><th>Date</th><th>Slug</th><th>Core angle</th></tr>
+    <tr><td>2026-07-10</td><td>why-deterministic-jsdoc-matters</td><td>Philosophy: deterministic AST-based docs vs. hand-written/guessed docs</td></tr>
+    <tr><td>2026-07-13</td><td>halving-engineering-overhead-documentation-automation</td><td>Case study: client cut transition overhead 50%, onboarding 70%+</td></tr>
+    <tr><td>2026-07-16</td><td>we-automated-documentation-out-of-existence</td><td>Cost/savings story: free, local, benchmarks, architecture insight, quality dashboard</td></tr>
+    <tr><td>2026-07-23</td><td>the-due-diligence-blind-spot</td><td>Due-diligence/risk story: continuous docs as an investor-facing signal (pre-raise)</td></tr>
+    <tr><td>2026-07-24</td><td>the-eslint-rule-that-disappeared</td><td>Technical deep-dive: ESLint v9 core rule removal, jsdoc-scribe's ESLint plugin</td></tr>
+    <tr><td>2026-07-28</td><td>what-saying-no-to-ai-actually-costs-you</td><td>Honest trade-off/rebuttal: what "no AI" costs vs. saves</td></tr>
+    <tr><td>2026-07-29</td><td>the-question-that-stalls-your-deal</td><td>Procurement/compliance deep-dive: security questionnaires (general), EU AI Act deadline</td></tr>
+    <tr><td>2026-07-30</td><td>the-bus-factor-nobody-puts-on-a-slide</td><td>Metric-and-scorecard piece: bus factor measurement, onboarding-cost data</td></tr>
+    <tr><td>2026-07-31</td><td>your-ai-agent-is-only-as-good-as-its-docs</td><td>Technical/practical: "context rot" in AI coding agents, drift-checking as the fix</td></tr>
+    <tr><td>2026-08-01</td><td>architecture-insight-page-new-hire-day-one</td><td>Product walkthrough: Architecture Insight page, new-hire onboarding</td></tr>
+    <tr><td>2026-08-02</td><td>code-health-dashboard-small-team-sonarqube-alternative</td><td>Product comparison: <code>--quality</code> dashboard vs. SonarQube free tier</td></tr>
+    <tr><td>2026-08-03</td><td>eu-ai-act-a-day-later-what-actually-changed</td><td>Compliance retrospective: EU AI Act high-risk obligations, day-after fact-check</td></tr>
+    <tr><td>2026-08-04</td><td>docs-site-live-in-under-10-minutes</td><td>Tutorial: real GitHub Actions + Pages workflow from this repo's own CI</td></tr>
+    <tr><td>2026-08-05</td><td>shadow-ai-is-a-source-code-problem-first</td><td>Leadership/security analysis: internal shadow-AI review findings</td></tr>
+    <tr><td>2026-08-06</td><td>monorepo-documentation-without-the-config-maze</td><td>Technical comparison + how-to: TypeDoc monorepo mode vs. workspace detection</td></tr>
+    <tr><td>2026-08-07</td><td>answering-the-security-questionnaire-line-by-line</td><td>Reference/answer-key: CAIQ v4 &amp; SIG domain-by-domain mapping</td></tr>
+    <tr><td>2026-08-07</td><td>fixing-what-our-own-tooling-never-caught</td><td>Self-audit/transparency: repo-audit findings and fixes</td></tr>
+    <tr><td>2026-08-09</td><td>typescript-7-has-no-compiler-api</td><td>Technical deep-dive: TS 7.0's missing Compiler API, existing <code>&lt;7.0.0</code> pin</td></tr>
+    <tr><td>2026-08-10</td><td>your-catalog-solved-where-docs-live-not-whether-theyre-true</td><td>Platform-engineering critique: Backstage TechDocs co-location vs. staleness</td></tr>
+    <tr><td>2026-08-11</td><td>the-320-question-ai-questionnaire-you-might-skip-most-of</td><td>Compliance follow-up: AICM v1.1 / AI-CAIQ v1.1, "no AI" fast-path</td></tr>
+    <tr><td>2026-08-12</td><td>docs-biggest-reader-isnt-human-anymore</td><td>Leadership/infrastructure piece: AI-agent share of doc traffic (Mintlify/GitBook data), llms.txt/MCP-style delivery as a distinct problem from staleness</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>5. Today's pick</h2>
+  <div class="decision">
+    <strong>Title:</strong> "Your Docs' Biggest Reader Isn't Human Anymore"<br>
+    <strong>Audience:</strong> CTO / Engineering Manager / founder — rotating back to leadership after 08-09 (developers), 08-10 (platform engineering), 08-11 (security/procurement)<br>
+    <strong>Angle:</strong> infrastructure/positioning piece (new, unused ground): grounds the open backlog "docs-as-context-layer" item in fresh 2026 traffic data (Mintlify: agents at 66% of July requests, up from 15.2% in January; GitBook: 51.8% of intentional reads by May). Argues this is a distinct problem from the 2026-07-31 "context rot" post — that one was about accuracy over time, this one is about whether your docs are packaged for a machine reader at all — and frames jsdoc-scribe's regenerated-from-source output as the right substrate for an llms.txt/MCP-style layer without claiming that as a shipped feature.<br>
+    <strong>File:</strong> <code>docs-site/posts/2026-08-12-docs-biggest-reader-isnt-human-anymore.md</code>
+  </div>
+</section>
+
+<section>
+  <h2>6. Backlog — candidate angles for upcoming days (avoid re-selecting once used)</h2>
+  <table>
+    <tr><th>Status</th><th>Angle</th><th>Primary audience</th></tr>
+    <tr><td class="status-covered">Used 2026-08-12</td><td>Context7-style "docs-as-context-layer" positioning — AI-agent share of doc traffic, llms.txt/MCP-style delivery</td><td>CTO / EM / founder</td></tr>
+    <tr><td class="status-covered">Used 2026-08-11</td><td>CAIQ v4's expanded AI-specific questions (AICM v1.1 / AI-CAIQ v1.1, 320 questions)</td><td>Security / Procurement / AI governance leads</td></tr>
+    <tr><td class="status-covered">Used 2026-08-10</td><td>Platform engineering's shift to IDPs/software catalogs — Backstage TechDocs staleness gap</td><td>Platform Engineering / DevOps / EM</td></tr>
+    <tr><td class="status-covered">Used 2026-08-09</td><td>TypeScript 7.0's missing Compiler API and jsdoc-scribe's existing <code>&lt;7.0.0</code> pin</td><td>Developers / Engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>Silo ratio and per-file "authorship concentration" as a companion metric to the Architecture Insight page — could a future version surface this directly from git history</td><td>CTO / EM (also: informs a possible product feature, not just a post)</td></tr>
+    <tr><td class="status-open">Open</td><td>A worked, copy-pasteable Node script running jsdoc-scribe's programmatic API across every workspace package into one merged site — code-heavy follow-up to the 08-06 comparison piece</td><td>Developers / Platform teams</td></tr>
+    <tr><td class="status-open">Open</td><td>A direct "wire jsdoc-scribe output into Backstage TechDocs" how-to — practical, code-heavy follow-up to the 08-10 critique piece</td><td>Platform Engineering / DevOps</td></tr>
+    <tr><td class="status-open">Open</td><td>Syntax Scribe and other name-adjacent competitors publishing SEO comparison content — should jsdoc-scribe write its own honest comparison/positioning post, given zero indexed presence to compete on</td><td>Developers evaluating doc tools (also: an off-blog discoverability action)</td></tr>
+    <tr><td class="status-open">Open, now dated</td><td>Follow-up once TypeScript 7.1's programmatic API lands. Confirmed schedule: Beta 2026-09-09, RC 2026-10-20, Stable 2026-11-10</td><td>Developers / Engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>Base CCM v4.1 / CAIQ v4.1 (non-AI track) grew to 283 questions with a hard CAIQ v4.0.x withdrawal date of January 2028 — a short, dated update note distinct from the AI-CAIQ angle used 08-11</td><td>Security / Procurement</td></tr>
+    <tr><td class="status-open">Open, new today</td><td>A concrete worked example showing jsdoc-scribe's programmatic-API output piped into a hand-rolled <code>llms.txt</code> or a minimal local MCP doc server — the code-heavy follow-up to today's positioning piece, once it's had a few days to stand on its own</td><td>Developers / DevOps</td></tr>
+  </table>
+  <p>Each future run should cross-check this table plus the published list in Section 4, pick the strongest unused angle for that day's news/search signal, and append newly published posts back into Section 4's equivalent list. The standing zero-organic-visibility finding in Section 1 is now fifteen checks old without a dedicated action — repeating the recommendation that Chintan consider a non-blog discoverability action alongside the daily content cadence.</p>
+</section>
+
+<footer>
+  Generated by the scheduled jsdoc-scribe content pipeline (Market Analyst role). Blog output for this date: <code>docs-site/posts/2026-08-12-docs-biggest-reader-isnt-human-anymore.md</code>. Images intentionally omitted — Chintan handles cover-image generation himself, outside the automated pipeline.
+</footer>
+
+</div>
+</body>
+</html>

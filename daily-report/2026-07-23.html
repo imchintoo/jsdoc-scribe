@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jsdoc-scribe — Daily Market &amp; Content Report — 2026-07-23</title>
+<style>
+  :root{--ink:#1a1d23;--muted:#5b6472;--line:#e4e7ec;--accent:#2f6fed;--bg-soft:#f6f8fb;--good:#12805c;--warn:#b6540a;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+  header.rep{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+  header.rep h1{font-size:1.5rem;margin:0 0 6px}
+  header.rep .meta{color:var(--muted);font-size:.92rem}
+  .badge{display:inline-block;background:var(--ink);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:4px;margin-right:8px}
+  .badge.role-a{background:var(--accent)}
+  .badge.role-b{background:var(--good)}
+  section{margin-bottom:36px}
+  h2{font-size:1.15rem;border-left:4px solid var(--accent);padding-left:10px;margin:0 0 14px}
+  h3{font-size:1rem;margin:20px 0 8px}
+  p{margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600}
+  ul{margin:0 0 14px;padding-left:20px}
+  li{margin-bottom:6px}
+  .card{background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+  .tag{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.78rem;color:var(--muted);margin:2px 4px 2px 0}
+  .status-covered{color:var(--muted)}
+  .status-open{color:var(--good);font-weight:600}
+  .source-list{font-size:.85rem;color:var(--muted)}
+  .source-list a{color:var(--accent)}
+  footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem}
+  .decision{border:1px solid var(--accent);border-radius:8px;padding:16px 18px;background:#eef4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="rep">
+  <span class="badge role-a">Market Analyst</span><span class="badge role-b">Content Writer</span>
+  <h1>Daily Report — jsdoc-scribe Content Pipeline</h1>
+  <div class="meta">Date: 2026-07-23 (Thursday) &middot; Prepared for: Chintan Goswami &middot; Scope: npm package + docs site (imchintoo.github.io/jsdoc-scribe)</div>
+</header>
+
+<section>
+  <h2>1. Brand &amp; keyword visibility check</h2>
+  <p>Searched the open web for direct mentions of <code>jsdoc-scribe</code> and related terms. No third-party mentions, reviews, or comparison-site listings currently exist — the package does not yet appear in "TypeDoc alternatives," "JSDoc generator comparison," or similar roundup content that competitors (TypeDoc, Docsio, PkgPulse guides) already rank for.</p>
+  <div class="card">
+    <strong>Implication:</strong> zero inbound SEO competition today means first-mover content on specific long-tail angles (below) can rank without fighting incumbent domain authority — but it also means all current traffic has to come from direct npm/GitHub discovery and outbound sharing (Reddit, Hacker News, dev.to, LinkedIn) rather than search.
+  </div>
+</section>
+
+<section>
+  <h2>2. Competitive landscape snapshot</h2>
+  <table>
+    <tr><th>Tool</th><th>Positioning</th><th>Where jsdoc-scribe differs</th></tr>
+    <tr><td>TypeDoc</td><td>~3M weekly downloads; generates HTML/Markdown API docs from TS types + JSDoc; the de facto standard for TS libraries</td><td>TypeDoc documents types you already wrote; jsdoc-scribe <em>writes</em> the JSDoc comments themselves via AST, then builds the site — a step earlier in the pipeline</td></tr>
+    <tr><td>Docusaurus</td><td>~3M weekly downloads; Meta-maintained docs framework for guides/tutorials, not API extraction — usually paired with TypeDoc or API Extractor</td><td>jsdoc-scribe is single-dependency and zero-config for the API-reference use case; no MDX/React toolchain required</td></tr>
+    <tr><td>JSDoc (classic)</td><td>Original comment-driven generator; requires comments to already exist and be accurate</td><td>jsdoc-scribe generates the comments from the AST — it doesn't trust or require pre-written prose</td></tr>
+    <tr><td>TSDoc / API Extractor</td><td>Microsoft-maintained, spec-focused, oriented at large monorepos (e.g. Office, Fluent UI)</td><td>Heavier setup cost; jsdoc-scribe targets small-to-mid teams wanting a `npx` one-shot</td></tr>
+    <tr><td>AI-assisted doc generators (2026 cohort)</td><td>Growing category — LLM reads code, writes prose docs</td><td>jsdoc-scribe is explicitly deterministic/non-AI: same input → same output, no hallucination risk, no source code leaves the machine</td></tr>
+  </table>
+  <p class="source-list">Sources: <a href="https://www.pkgpulse.com/guides/typedoc-vs-jsdoc-vs-api-extractor-2026">TypeDoc vs JSDoc vs API Extractor 2026 — PkgPulse</a> &middot; <a href="https://www.pkgpulse.com/guides/best-documentation-frameworks-2026">Best Documentation Frameworks 2026 — PkgPulse</a> &middot; <a href="https://docsio.co/blog/code-documentation-tools">12 Best Code Documentation Tools 2026 — Docsio</a> &middot; <a href="https://www.repowise.dev/blog/comparisons/best-codebase-documentation-tools-2026">Best Codebase Documentation Tools 2026 — Repowise</a></p>
+</section>
+
+<section>
+  <h2>3. Signal worth writing about today</h2>
+  <div class="card">
+    <h3>AI-generated code carries real, measured risk in 2026</h3>
+    <p>Veracode's GenAI Code Security Report found AI-introduced vulnerabilities in <strong>45% of generated code samples</strong>; a 2026 Aikido Security survey found <strong>1 in 5 organizations</strong> reported a serious security incident tied to AI-generated code. Enterprise guidance is converging on self-hosted/local tooling and prompt-output screening for proprietary code exposure.</p>
+    <p class="source-list">Sources: <a href="https://checkmarx.com/learn/ai-security/top-12-ai-developer-tools-in-2026-for-security-coding-and-quality/">Top 12 AI Developer Tools 2026 — Checkmarx</a> &middot; <a href="https://secureprivacy.ai/blog/privacy-risks-llms-enterprise-ai-governance">Privacy Risks in LLMs — Secure Privacy</a></p>
+  </div>
+  <div class="card">
+    <h3>Nearly half of startup deals collapse during technical due diligence</h3>
+    <p>Due diligence typically costs 0.2–4% of deal value ($25K–$75K at seed, $50K–$200K+ at Series A/acquisition). Reviewers report they can tell when documentation was assembled in a rush specifically for the diligence process — it reads as inconsistent, polished in some areas and thin in others — versus documentation built continuously as part of normal engineering practice, which reads as a signal of engineering discipline.</p>
+    <p class="source-list">Sources: <a href="https://www.cleveroad.com/blog/technical-due-diligence/">Technical Due Diligence Checklist 2026 — Cleveroad</a> &middot; <a href="https://www.metamindz.co.uk/post/how-to-prepare-startup-technical-due-diligence-2026">Prepare Your Startup for Technical Due Diligence — Metamindz</a> &middot; <a href="https://emizhi.digital/blog/architecture-recovery/technical-due-diligence-startup-investors">Technical Due Diligence: Investor Scrutiny — Emizhi</a></p>
+  </div>
+  <p><strong>This second item is the strongest, most differentiated angle available today</strong> — it hasn't been covered by any of the three existing posts (deterministic-docs philosophy, engineering-overhead case study, "automated docs out of existence" savings story), and it speaks directly to the CEO/CTO/founder/investor audience rather than only engineers.</p>
+</section>
+
+<section>
+  <h2>4. Content already published (do not repeat)</h2>
+  <table>
+    <tr><th>Date</th><th>Slug</th><th>Core angle</th></tr>
+    <tr><td>2026-07-10</td><td>why-deterministic-jsdoc-matters</td><td>Philosophy: deterministic AST-based docs vs. hand-written/guessed docs</td></tr>
+    <tr><td>2026-07-13</td><td>halving-engineering-overhead-documentation-automation</td><td>Case study: client cut transition overhead 50%, onboarding 70%+</td></tr>
+    <tr><td>2026-07-16</td><td>we-automated-documentation-out-of-existence</td><td>Cost/savings story: free, local, benchmarks, architecture insight, quality dashboard</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>5. Today's pick</h2>
+  <div class="decision">
+    <strong>Title:</strong> "The Due Diligence Blind Spot: Why Investors Read Your Docs Before They Read Your Code"<br>
+    <strong>Audience:</strong> founders, CEOs, CTOs, investors/acquirers (secondary: engineering leads who own the diligence prep)<br>
+    <strong>Angle:</strong> continuous, automated, local-only documentation as a due-diligence risk reducer — untested by the three prior posts.<br>
+    <strong>File:</strong> <code>docs-site/posts/2026-07-23-the-due-diligence-blind-spot.md</code>
+  </div>
+</section>
+
+<section>
+  <h2>6. Backlog — candidate angles for upcoming days (avoid re-selecting once used)</h2>
+  <table>
+    <tr><th>Status</th><th>Angle</th><th>Primary audience</th></tr>
+    <tr><td class="status-open">Open</td><td>Bus-factor as a quantifiable metric — how to measure and report it to a board</td><td>CTO / EM</td></tr>
+    <tr><td class="status-open">Open</td><td>Why "self-hosted, no data leaves your infra" is becoming a procurement requirement, not a nice-to-have</td><td>CTO / Security / Procurement</td></tr>
+    <tr><td class="status-open">Open</td><td>ESLint plugin deep-dive: catching missing/stale JSDoc at PR time, not release time</td><td>Engineers / Tech leads</td></tr>
+    <tr><td class="status-open">Open</td><td>Architecture Insight page walkthrough — using auto-detected patterns for new-hire ramp-up</td><td>Engineers / EM</td></tr>
+    <tr><td class="status-open">Open</td><td>GitHub Actions + Pages deploy recipe — docs site live in under 10 minutes</td><td>Developers / DevOps</td></tr>
+    <tr><td class="status-open">Open</td><td>Code Health dashboard (--quality) as a lightweight alternative to SonarQube for small teams</td><td>Engineers / EM / CTO</td></tr>
+    <tr><td class="status-open">Open</td><td>Monorepo documentation: workspaces, multiple packages, one site</td><td>Engineers / Platform teams</td></tr>
+    <tr><td class="status-open">Open</td><td>What "no AI" actually costs you vs. saves you — an honest trade-off piece, not a pitch</td><td>Founders / CTO / skeptical engineers</td></tr>
+  </table>
+  <p>Each future run should cross-check this table plus the published list in Section 4, pick the strongest unused angle for that day's news/search signal, and append newly published posts back into Section 4's equivalent list.</p>
+</section>
+
+<footer>
+  Generated by the scheduled jsdoc-scribe content pipeline (Market Analyst role). Blog output for this date: <code>docs-site/posts/2026-07-23-the-due-diligence-blind-spot.md</code>. Images intentionally omitted — Chintan handles cover-image generation himself, outside the automated pipeline.
+</footer>
+
+</div>
+</body>
+</html>

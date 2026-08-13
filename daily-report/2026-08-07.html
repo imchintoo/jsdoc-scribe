@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jsdoc-scribe — Daily Market &amp; Content Report — 2026-08-07</title>
+<style>
+  :root{--ink:#1a1d23;--muted:#5b6472;--line:#e4e7ec;--accent:#2f6fed;--bg-soft:#f6f8fb;--good:#12805c;--warn:#b6540a;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+  header.rep{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+  header.rep h1{font-size:1.5rem;margin:0 0 6px}
+  header.rep .meta{color:var(--muted);font-size:.92rem}
+  .badge{display:inline-block;background:var(--ink);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:4px;margin-right:8px}
+  .badge.role-a{background:var(--accent)}
+  .badge.role-b{background:var(--good)}
+  section{margin-bottom:36px}
+  h2{font-size:1.15rem;border-left:4px solid var(--accent);padding-left:10px;margin:0 0 14px}
+  h3{font-size:1rem;margin:20px 0 8px}
+  p{margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600}
+  ul{margin:0 0 14px;padding-left:20px}
+  li{margin-bottom:6px}
+  .card{background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+  .tag{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.78rem;color:var(--muted);margin:2px 4px 2px 0}
+  .status-covered{color:var(--muted)}
+  .status-open{color:var(--good);font-weight:600}
+  .status-missed{color:var(--warn);font-weight:600}
+  .source-list{font-size:.85rem;color:var(--muted)}
+  .source-list a{color:var(--accent)}
+  footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem}
+  .decision{border:1px solid var(--accent);border-radius:8px;padding:16px 18px;background:#eef4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="rep">
+  <span class="badge role-a">Market Analyst</span><span class="badge role-b">Content Writer</span>
+  <h1>Daily Report — jsdoc-scribe Content Pipeline</h1>
+  <div class="meta">Date: 2026-08-07 (Friday) &middot; Prepared for: Chintan Goswami &middot; Scope: npm package + docs site (imchintoo.github.io/jsdoc-scribe)</div>
+</header>
+
+<section>
+  <h2>1. Brand &amp; keyword visibility check</h2>
+  <p>Direct search for <code>jsdoc-scribe</code> still returns zero third-party mentions, reviews, or "alternatives to" roundups — eleventh consecutive check (2026-07-23 through today) with no organic visibility change. Results continue to resolve to unrelated namesakes: core <code>jsdoc</code>, <code>scribe.js-ocr</code> (an OCR library, not docs tooling), <code>@knuckleswtf/scribe</code> (PHP/Laravel API docs, a different ecosystem entirely), and the Node.js "Scribe" project at scribe-js.readthedocs.io. No new movement on the Syntax Scribe front since 2026-08-06 — that comparison content remains indexed and unchanged.</p>
+  <div class="card">
+    <strong>Implication:</strong> package version re-confirmed at <strong>2.4.8</strong> per <code>package.json</code>, unchanged from prior checks. Zero-organic-discovery finding is now eleven checks old with no dedicated remediation action taken — carrying the standing recommendation forward again (see Section 6 note): the content itself has nowhere to surface via search in the meantime, so a one-time discoverability action (npm-adjacent tool directory listing, Show HN-style post) would compound the daily blog cadence rather than compete with it.
+  </div>
+</section>
+
+<section>
+  <h2>2. Competitive landscape snapshot</h2>
+  <table>
+    <tr><th>Tool / trend</th><th>Positioning</th><th>Where jsdoc-scribe differs</th></tr>
+    <tr><td>Vendor security questionnaires (SIG/SIG Lite, CAIQ/CAIQ Lite) — 2026 refresh</td><td>The two dominant vendor-risk frameworks: CSA's CAIQ (259 questions, full; 73 for CAIQ Lite) mapped to the 17-domain Cloud Controls Matrix, and Shared Assessments' SIG (up to ~1,200 questions, full; ~150 for SIG Lite) across 18 risk domains. 2026 revisions expand AI-specific, privacy, and ESG content on top of the existing security/data domains. Neither framework has a documentation-tooling-specific lane — a doc generator gets routed through the same generic "does data leave your environment" and "what's your data retention policy" questions as any other vendor.</td><td>Directly relevant to today's angle: because jsdoc-scribe is AST-based (TypeScript compiler API used purely as a parser), has zero network calls, and ships as a single MIT-licensed dependency, most of the higher-friction CAIQ/SIG data-handling and subprocessor questions collapse to short, factual, verifiable answers rather than requiring a security review or a DPA.</td></tr>
+    <tr><td>TypeDoc / JSDoc / API Extractor (unchanged from 2026-08-06)</td><td>Still the dominant TypeScript/JavaScript inline-reference generators (TypeDoc ~1.47M weekly downloads, JSDoc ~1.16M); TSDoc (Microsoft-maintained) is the standardization layer several of these tools read from.</td><td>Unchanged: jsdoc-scribe still collapses comment generation + reference extraction + doc-site build into one dependency and two CLIs, rather than requiring a tool per stage.</td></tr>
+  </table>
+  <p class="source-list">Sources: <a href="https://www.hypercomply.com/blog/caiq-vs-sig">CAIQ vs SIG Assessment: How to Choose a Security Questionnaire — HyperComply</a> &middot; <a href="https://www.bitsight.com/blog/caiq-vs-sig-top-questionnaires-vendor-risk-assessment">CAIQ vs. SIG Questionnaires: What's the Difference? — Bitsight</a> &middot; <a href="https://saasfort.com/blog/saas-vendor-security-questionnaire-template-2026">Security Questionnaire Template 2026: CAIQ, SIG &amp; DDQ — SaaSFort</a> &middot; <a href="https://controllo.ai/cloud-controls-matrix-and-caiq-v4/">Cloud Controls Matrix and CAIQ v4: Everything You Need to Know — Controllo</a> &middot; <a href="https://sharedassessments.org/sig/">SIG Questionnaire — Shared Assessments</a></p>
+</section>
+
+<section>
+  <h2>3. Signal worth writing about today</h2>
+  <div class="card">
+    <h3>Security questionnaires now carry AI/data-handling questions no tool docs page answers directly</h3>
+    <p>The 2026 refresh of both major vendor-risk frameworks (CAIQ v4, SIG/SIG Lite) adds expanded AI and data-handling content on top of the existing 17–18 security domains. For a small vendor or an internal tool being evaluated by a procurement or security team, these questionnaires are usually answered from scratch each time — there's rarely a pre-written, tool-specific answer key sitting anywhere, even though the underlying facts (does data leave the environment, is there a third-party API call, what's the license, who are the subprocessors) don't change questionnaire to questionnaire. This is the open backlog item from the 2026-08-06 report: rather than another explainer about <em>why</em> due diligence matters (already covered 2026-07-23, 2026-07-29), this is the first post that functions as a literal reference — mapping specific, real CAIQ/SIG question categories to specific, factual jsdoc-scribe answers, in a format Chintan or a teammate could paste straight into an actual questionnaire response.</p>
+    <p>This is a new structural type for this blog: a reference/"answer key" post rather than narrative or comparison, targeting security/procurement/vendor-side engineers specifically (not developers or leadership broadly), and it's the first post to work directly from the two named frameworks' actual domain structure rather than talking about compliance in the abstract.</p>
+    <p class="source-list">Sources: <a href="https://www.hypercomply.com/blog/caiq-vs-sig">CAIQ vs SIG Assessment — HyperComply</a> &middot; <a href="https://controllo.ai/cloud-controls-matrix-and-caiq-v4/">Cloud Controls Matrix and CAIQ v4 — Controllo</a> &middot; <a href="https://saasfort.com/blog/saas-vendor-security-questionnaire-template-2026">Security Questionnaire Template 2026 — SaaSFort</a></p>
+  </div>
+  <p><strong>Today's strongest angle:</strong> the open backlog item "SIG/CAIQ/DDQ vendor questionnaires walked through line-by-line for a docs tool." Audience: Security / Procurement / Vendor-side engineers — a rotation away from the developer/platform framing of 2026-08-06 and the CTO/security-leadership framing of 2026-08-05, into a narrower practitioner-reference lane not yet used on this blog. Structured as a reference/answer-key piece (new structure), grounded in the real CAIQ v4 17-domain and SIG 18-domain structure and jsdoc-scribe's actual, already-documented technical facts — no invented certifications or compliance claims.</p>
+</section>
+
+<section>
+  <h2>4. Content already published (do not repeat)</h2>
+  <table>
+    <tr><th>Date</th><th>Slug</th><th>Core angle</th></tr>
+    <tr><td>2026-07-10</td><td>why-deterministic-jsdoc-matters</td><td>Philosophy: deterministic AST-based docs vs. hand-written/guessed docs</td></tr>
+    <tr><td>2026-07-13</td><td>halving-engineering-overhead-documentation-automation</td><td>Case study: client cut transition overhead 50%, onboarding 70%+</td></tr>
+    <tr><td>2026-07-16</td><td>we-automated-documentation-out-of-existence</td><td>Cost/savings story: free, local, benchmarks, architecture insight, quality dashboard</td></tr>
+    <tr><td>2026-07-23</td><td>the-due-diligence-blind-spot</td><td>Due-diligence/risk story: continuous docs as an investor-facing signal (pre-raise)</td></tr>
+    <tr><td>2026-07-24</td><td>the-eslint-rule-that-disappeared</td><td>Technical deep-dive: ESLint v9 core rule removal, jsdoc-scribe's ESLint plugin</td></tr>
+    <tr><td>2026-07-28</td><td>what-saying-no-to-ai-actually-costs-you</td><td>Honest trade-off/rebuttal: what "no AI" costs vs. saves, argued against the product's own easy narrative</td></tr>
+    <tr><td>2026-07-29</td><td>the-question-that-stalls-your-deal</td><td>Procurement/compliance deep-dive: security questionnaires (general), EU AI Act deadline, deterministic tooling as a one-sentence answer</td></tr>
+    <tr><td>2026-07-30</td><td>the-bus-factor-nobody-puts-on-a-slide</td><td>Metric-and-scorecard piece: bus factor measurement methodology, onboarding-cost data, documentation as the lever</td></tr>
+    <tr><td>2026-07-31</td><td>your-ai-agent-is-only-as-good-as-its-docs</td><td>Technical/practical: "context rot" in AI coding agents, AGENTS.md efficiency data, drift-checking as the fix</td></tr>
+    <tr><td>2026-08-01</td><td>architecture-insight-page-new-hire-day-one</td><td>Product walkthrough: Architecture Insight page, new-hire onboarding, time-to-productivity data</td></tr>
+    <tr><td>2026-08-02</td><td>code-health-dashboard-small-team-sonarqube-alternative</td><td>Product comparison: <code>--quality</code> dashboard vs. SonarQube's free-tier limits, small-team framing</td></tr>
+    <tr><td>2026-08-03</td><td>eu-ai-act-a-day-later-what-actually-changed</td><td>Compliance retrospective: EU AI Act high-risk obligations, day-after fact-check of what actually went live</td></tr>
+    <tr><td>2026-08-04</td><td>docs-site-live-in-under-10-minutes</td><td>Tutorial: real GitHub Actions + Pages workflow taken from this repo's own CI</td></tr>
+    <tr><td>2026-08-05</td><td>shadow-ai-is-a-source-code-problem-first</td><td>Leadership/security analysis: internal shadow-AI review findings, source code as top-leaked data type</td></tr>
+    <tr><td>2026-08-06</td><td>monorepo-documentation-without-the-config-maze</td><td>Technical comparison + how-to: TypeDoc's <code>entryPointStrategy: "packages"</code> vs. jsdoc-scribe's workspace detection + programmatic API</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>5. Today's pick</h2>
+  <div class="decision">
+    <strong>Title:</strong> "Answering the Security Questionnaire: A Line-by-Line Guide for Docs Tooling"<br>
+    <strong>Audience:</strong> Security / Procurement / Vendor-side engineers — a new practitioner-reference lane, rotating away from the developer-platform framing of 2026-08-06 and the leadership/security-analysis framing of 2026-08-05<br>
+    <strong>Angle:</strong> a reference/answer-key post (new structure for this blog): maps real CAIQ v4 and SIG/SIG Lite question categories (data security, application &amp; interface security, third-party/supply-chain, AI-specific additions in the 2026 revision) to specific, factual jsdoc-scribe answers — AST-based/TypeScript-compiler-as-parser only, zero network calls, single dependency, MIT license, no subprocessors — written so it can be pasted directly into an actual questionnaire response rather than read as narrative.<br>
+    <strong>File:</strong> <code>docs-site/posts/2026-08-07-answering-the-security-questionnaire-line-by-line.md</code>
+  </div>
+</section>
+
+<section>
+  <h2>6. Backlog — candidate angles for upcoming days (avoid re-selecting once used)</h2>
+  <table>
+    <tr><th>Status</th><th>Angle</th><th>Primary audience</th></tr>
+    <tr><td class="status-covered">Used 2026-08-07</td><td>SIG/CAIQ/DDQ vendor questionnaires walked through line-by-line for a docs tool — a "how we'd actually answer this" reference post</td><td>Security / Procurement / Vendor-side engineers</td></tr>
+    <tr><td class="status-covered">Used 2026-08-06</td><td>Monorepo documentation: workspaces, multiple packages, one site</td><td>Developers / Platform teams</td></tr>
+    <tr><td class="status-covered">Used 2026-08-05</td><td>Shadow AI in engineering orgs — what a security review of "who's sending code to which model" actually finds, and how deterministic tooling sidesteps the question</td><td>CTO / Security / Engineering leadership</td></tr>
+    <tr><td class="status-covered">Used 2026-08-04</td><td>GitHub Actions + Pages deploy recipe — docs site live in under 10 minutes</td><td>Developers / DevOps</td></tr>
+    <tr><td class="status-open">Open</td><td>Platform engineering's shift to IDPs/software catalogs for onboarding — where an auto-generated, drift-checked doc site fits as the catalog's data source rather than a replaced layer (partially seeded by the 2026-08-04 post; a dedicated deeper piece is still open)</td><td>Platform Engineering / DevOps / EM</td></tr>
+    <tr><td class="status-open">Open</td><td>Silo ratio and per-file "authorship concentration" as a companion metric to jsdoc-scribe's Architecture Insight page — could a future version surface this directly from git history</td><td>CTO / EM (also: informs a possible product feature, not just a post)</td></tr>
+    <tr><td class="status-open">Open</td><td>Context7-style "docs-as-context-layer" positioning — a technical explainer on wiring gen-docs output directly into an agent's context window (AGENTS.md generation, or an MCP-style local doc server) as a jsdoc-scribe companion workflow</td><td>Developers / DevOps (also: informs a possible product feature)</td></tr>
+    <tr><td class="status-open">Open</td><td>TypeScript "Project Corsa" native compiler — what a ~10x faster TS compiler API means for jsdoc-scribe's own CI/CLI speed once it ships stable, and whether early-adopter benchmarking is worth doing now</td><td>Developers / Engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>Syntax Scribe and other name-adjacent competitors now actively publishing SEO comparison content — should jsdoc-scribe write its own honest comparison/positioning post, given it currently has zero indexed presence to compete on</td><td>Developers evaluating doc tools (also: an off-blog discoverability action, not just a post — see note below)</td></tr>
+    <tr><td class="status-open">Open</td><td>A worked, copy-pasteable Node script that runs jsdoc-scribe's programmatic API across every workspace package and publishes one merged site — the natural, more code-heavy follow-up to the 2026-08-06 comparison piece</td><td>Developers / Platform teams</td></tr>
+    <tr><td class="status-open">New: open</td><td>CAIQ v4's expanded AI-specific questions (2026 revision) deserve their own deeper follow-up beyond today's general questionnaire mapping — a dedicated "how a zero-AI-calls tool answers the new AI governance section" piece</td><td>Security / Procurement / AI governance leads</td></tr>
+  </table>
+  <p>Each future run should cross-check this table plus the published list in Section 4, pick the strongest unused angle for that day's news/search signal, and append newly published posts back into Section 4's equivalent list. Note: the standing zero-organic-visibility finding in Section 1 is now eleven checks old without a dedicated action — repeating the recommendation that Chintan consider a non-blog discoverability action (tool directory submission, Show HN-style post) alongside the daily content cadence, since the content itself has nowhere to be found via search in the meantime.</p>
+</section>
+
+<footer>
+  Generated by the scheduled jsdoc-scribe content pipeline (Market Analyst role). Blog output for this date: <code>docs-site/posts/2026-08-07-answering-the-security-questionnaire-line-by-line.md</code>. Images intentionally omitted — Chintan handles cover-image generation himself, outside the automated pipeline.
+</footer>
+
+</div>
+</body>
+</html>

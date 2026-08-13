@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jsdoc-scribe — Daily Market &amp; Content Report — 2026-08-05</title>
+<style>
+  :root{--ink:#1a1d23;--muted:#5b6472;--line:#e4e7ec;--accent:#2f6fed;--bg-soft:#f6f8fb;--good:#12805c;--warn:#b6540a;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+  header.rep{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+  header.rep h1{font-size:1.5rem;margin:0 0 6px}
+  header.rep .meta{color:var(--muted);font-size:.92rem}
+  .badge{display:inline-block;background:var(--ink);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:4px;margin-right:8px}
+  .badge.role-a{background:var(--accent)}
+  .badge.role-b{background:var(--good)}
+  section{margin-bottom:36px}
+  h2{font-size:1.15rem;border-left:4px solid var(--accent);padding-left:10px;margin:0 0 14px}
+  h3{font-size:1rem;margin:20px 0 8px}
+  p{margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600}
+  ul{margin:0 0 14px;padding-left:20px}
+  li{margin-bottom:6px}
+  .card{background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+  .tag{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.78rem;color:var(--muted);margin:2px 4px 2px 0}
+  .status-covered{color:var(--muted)}
+  .status-open{color:var(--good);font-weight:600}
+  .status-missed{color:var(--warn);font-weight:600}
+  .source-list{font-size:.85rem;color:var(--muted)}
+  .source-list a{color:var(--accent)}
+  footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem}
+  .decision{border:1px solid var(--accent);border-radius:8px;padding:16px 18px;background:#eef4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="rep">
+  <span class="badge role-a">Market Analyst</span><span class="badge role-b">Content Writer</span>
+  <h1>Daily Report — jsdoc-scribe Content Pipeline</h1>
+  <div class="meta">Date: 2026-08-05 (Wednesday) &middot; Prepared for: Chintan Goswami &middot; Scope: npm package + docs site (imchintoo.github.io/jsdoc-scribe)</div>
+</header>
+
+<section>
+  <h2>1. Brand &amp; keyword visibility check</h2>
+  <p>Direct search for <code>jsdoc-scribe</code> still returns zero third-party mentions, reviews, or "alternatives to" roundups — ninth consecutive check (2026-07-23 through today) with no organic visibility change. Results continue to resolve to unrelated namesakes (core <code>jsdoc</code>, <code>scribe.js-ocr</code>, the Node.js "Scribe" project at scribe-js.readthedocs.io), plus one newly-surfacing adjacent name worth flagging: <strong>Syntax Scribe</strong>, a JS documentation tool actively publishing comparison content ("Syntax Scribe vs JSDoc") and running SEO-forward landing pages ("Generate JavaScript Docs from Code"). It is not the same product, but the name proximity plus its active content marketing is exactly the kind of competitor jsdoc-scribe would show up next to in search if it had any indexed presence at all — right now it doesn't.</p>
+  <div class="card">
+    <strong>Implication:</strong> unchanged pattern, one correction — the 2026-08-04 report's package-version note ("2.5.1 per package.json") does not match the repo's actual <code>package.json</code>, which reads <strong>2.4.8</strong> as of this check. Flagging so future reports and posts don't propagate the wrong number. Zero organic search competition / zero organic discovery otherwise stands as a repeated, unaddressed gap — see Section 6 note.
+  </div>
+</section>
+
+<section>
+  <h2>2. Competitive landscape snapshot</h2>
+  <table>
+    <tr><th>Tool / trend</th><th>Positioning</th><th>Where jsdoc-scribe differs</th></tr>
+    <tr><td>Syntax Scribe (newly observed)</td><td>A JS-focused documentation generator running active comparison-content SEO ("Syntax Scribe vs JSDoc") and a dedicated marketing site — the closest name-adjacent competitor found in nine checks</td><td>jsdoc-scribe has no equivalent comparison page and no indexed presence at all; this is the first direct evidence that competitors in this exact niche are winning search real estate jsdoc-scribe isn't contesting</td></tr>
+    <tr><td>AI coding assistants — 2026 security posture</td><td>84% of developers now use or plan to use AI coding tools, 51% daily; in parallel, Apiiro's 2025-26 telemetry found AI-assisted code driving 10,000+ new security findings/month and AI-assisted developers leaking cloud credentials at ~2x the rate of non-AI peers</td><td>Directly relevant to today's chosen angle: a JSDoc/docs generator that is AST-only and never calls a model is orthogonal to this entire risk category by construction, not by configuration</td></tr>
+    <tr><td>TypeDoc + TSDoc (Microsoft-maintained spec)</td><td>Continues to be the default recommended combo in 2026 comparison write-ups for TypeScript projects — TSDoc defines the comment grammar, TypeDoc renders it, API Extractor consumes it for public API surfaces</td><td>Unchanged from prior reports: jsdoc-scribe collapses generation + comment-writing + doc-site build into one dependency and two CLIs, no second spec/tool pairing required</td></tr>
+  </table>
+  <p class="source-list">Sources: <a href="https://syntaxscribe.com/blog/syntax-scribe-vs-jsdoc">Syntax Scribe vs JSDoc — Syntax Scribe Blog</a> &middot; <a href="https://www.digitalapplied.com/blog/ai-coding-adoption-statistics-2026-50-data-points">AI Coding Adoption 2026: 50 Statistics From 7 Surveys — Digital Applied</a> &middot; <a href="https://www.kusari.dev/blog/ai-coding-assistants-in-2026-4x-faster-10x-riskier-the-hidden-security-cost">AI Coding Assistants in 2026: 4× Faster, 10× Riskier — Kusari</a> &middot; <a href="https://npm-compare.com/@microsoft/tsdoc,jsdoc,typedoc">@microsoft/tsdoc vs jsdoc vs typedoc — npm-compare</a></p>
+</section>
+
+<section>
+  <h2>3. Signal worth writing about today</h2>
+  <div class="card">
+    <h3>"Shadow AI" now has hard 2026 numbers behind it, and source code is the single most-leaked data type</h3>
+    <p>Multiple independent 2026 sources converge on the same shape of finding: more than 59% of security leaders confirm or suspect employees are using AI tools their IT/security org never approved; Verizon's 2026 Data Breach Investigations Report puts regular corporate-device AI use at 45% of employees, up from just 15% the year before; and across the shadow-AI research generally, source code is called out as the data type employees hand to unsanctioned GenAI tools most often — ahead of images or other structured data. The 2023 Samsung incident (engineers pasted proprietary firmware source into ChatGPT to debug it; the company banned the tool weeks later after snippets surfaced in public GitHub gists) is still the most-cited concrete case study, which itself says something about how little has changed at the tooling level since then.</p>
+    <p>This is a different angle from the due-diligence and procurement-questionnaire posts already published (2026-07-23, 2026-07-29) — those covered the buyer-side moment where "where does our code go" gets asked. This angle is the seller/internal-security-review side: what a security team actually finds when it goes looking for shadow AI usage inside its own engineering org, and why a tool that is AST-based and never calls a model can't appear in that finding by construction, not by policy.</p>
+    <p class="source-list">Sources: <a href="https://www.toriihq.com/articles/shadow-ai">Shadow AI: What It Is &amp; 2026 Vendor Landscape — Torii</a> &middot; <a href="https://netwrix.com/en/resources/blog/shadow-ai-security-risks/">12 Shadow AI Security Risks to Monitor in 2026 — Netwrix</a> &middot; <a href="https://technologyradius.com/statistic/shadow-ai-statistics-2024-2026">20 Shadow AI Statistics 2024–2026 — Technology Radius</a> &middot; <a href="https://www.armorcode.com/blog/the-hidden-threat-understanding-and-mitigating-shadow-ai-risks">The Hidden Threat: Understanding and Mitigating Shadow AI Risks — Armorcode</a></p>
+  </div>
+  <p><strong>Today's strongest angle:</strong> the open backlog item "Shadow AI in engineering orgs — what a security review of who's sending code to which model actually finds, and how deterministic tooling sidesteps the question." Audience: CTO / Security / Engineering leadership — rotating back to a leadership-facing piece after yesterday's developer/DevOps tutorial. Grounded in fresh 2026 stats (59% suspected unapproved use, 45% regular AI use up from 15%, source code as the top-leaked data type) plus the still-relevant Samsung case study, none of which have appeared on this blog before.</p>
+</section>
+
+<section>
+  <h2>4. Content already published (do not repeat)</h2>
+  <table>
+    <tr><th>Date</th><th>Slug</th><th>Core angle</th></tr>
+    <tr><td>2026-07-10</td><td>why-deterministic-jsdoc-matters</td><td>Philosophy: deterministic AST-based docs vs. hand-written/guessed docs</td></tr>
+    <tr><td>2026-07-13</td><td>halving-engineering-overhead-documentation-automation</td><td>Case study: client cut transition overhead 50%, onboarding 70%+</td></tr>
+    <tr><td>2026-07-16</td><td>we-automated-documentation-out-of-existence</td><td>Cost/savings story: free, local, benchmarks, architecture insight, quality dashboard</td></tr>
+    <tr><td>2026-07-23</td><td>the-due-diligence-blind-spot</td><td>Due-diligence/risk story: continuous docs as an investor-facing signal (pre-raise)</td></tr>
+    <tr><td>2026-07-24</td><td>the-eslint-rule-that-disappeared</td><td>Technical deep-dive: ESLint v9 core rule removal, jsdoc-scribe's ESLint plugin</td></tr>
+    <tr><td>2026-07-28</td><td>what-saying-no-to-ai-actually-costs-you</td><td>Honest trade-off/rebuttal: what "no AI" costs vs. saves, argued against the product's own easy narrative</td></tr>
+    <tr><td>2026-07-29</td><td>the-question-that-stalls-your-deal</td><td>Procurement/compliance deep-dive: security questionnaires, EU AI Act deadline, deterministic tooling as a one-sentence answer</td></tr>
+    <tr><td>2026-07-30</td><td>the-bus-factor-nobody-puts-on-a-slide</td><td>Metric-and-scorecard piece: bus factor measurement methodology, onboarding-cost data, documentation as the lever</td></tr>
+    <tr><td>2026-07-31</td><td>your-ai-agent-is-only-as-good-as-its-docs</td><td>Technical/practical: "context rot" in AI coding agents, AGENTS.md efficiency data, drift-checking as the fix</td></tr>
+    <tr><td>2026-08-01</td><td>architecture-insight-page-new-hire-day-one</td><td>Product walkthrough: Architecture Insight page, new-hire onboarding, time-to-productivity data</td></tr>
+    <tr><td>2026-08-02</td><td>code-health-dashboard-small-team-sonarqube-alternative</td><td>Product comparison: <code>--quality</code> dashboard vs. SonarQube's free-tier limits, small-team framing</td></tr>
+    <tr><td>2026-08-03</td><td>eu-ai-act-a-day-later-what-actually-changed</td><td>Compliance retrospective: EU AI Act high-risk obligations, day-after fact-check of what actually went live</td></tr>
+    <tr><td>2026-08-04</td><td>docs-site-live-in-under-10-minutes</td><td>Tutorial (first of its kind on the blog): real GitHub Actions + Pages workflow taken from this repo's own CI</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>5. Today's pick</h2>
+  <div class="decision">
+    <strong>Title:</strong> "Shadow AI Is a Source-Code Problem First: What a Security Review Actually Finds"<br>
+    <strong>Audience:</strong> CTO / Security leadership / Engineering leadership — rotating back to a leadership-facing analysis piece after yesterday's practitioner tutorial<br>
+    <strong>Angle:</strong> the internal-security-review side of the AI-code-exposure story (as opposed to the external procurement-questionnaire side already covered on 2026-07-29): what "shadow AI" actually looks like once a security team goes looking for it inside engineering, grounded in 2026 stats (59% of security leaders suspect unapproved AI tool use, 45% of employees now regular corporate-device AI users up from 15% a year prior, source code as the most-leaked data type to unsanctioned GenAI tools) and the Samsung 2023 case study. Closes with why a docs tool that is AST-based and never calls a model structurally cannot be a shadow-AI finding, rather than merely policy-compliant.<br>
+    <strong>File:</strong> <code>docs-site/posts/2026-08-05-shadow-ai-is-a-source-code-problem-first.md</code>
+  </div>
+</section>
+
+<section>
+  <h2>6. Backlog — candidate angles for upcoming days (avoid re-selecting once used)</h2>
+  <table>
+    <tr><th>Status</th><th>Angle</th><th>Primary audience</th></tr>
+    <tr><td class="status-covered">Used 2026-08-05</td><td>Shadow AI in engineering orgs — what a security review of "who's sending code to which model" actually finds, and how deterministic tooling sidesteps the question</td><td>CTO / Security / Engineering leadership</td></tr>
+    <tr><td class="status-covered">Used 2026-08-04</td><td>GitHub Actions + Pages deploy recipe — docs site live in under 10 minutes</td><td>Developers / DevOps</td></tr>
+    <tr><td class="status-covered">Used 2026-07-31</td><td>Why AI coding assistants produce better output when the docs they read as context are accurate and current, not stale (context rot)</td><td>Developers / CTO</td></tr>
+    <tr><td class="status-covered">Used 2026-07-30</td><td>Bus-factor as a quantifiable metric — how to measure and report it to a board</td><td>CTO / EM</td></tr>
+    <tr><td class="status-covered">Used 2026-07-29</td><td>Why "self-hosted, no data leaves your infra" is becoming a procurement requirement, not a nice-to-have</td><td>CTO / Security / Procurement</td></tr>
+    <tr><td class="status-covered">Used 2026-07-28</td><td>What "no AI" actually costs you vs saves you — an honest trade-off piece, not a pitch</td><td>Founders / CTO / skeptical engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>Monorepo documentation: workspaces, multiple packages, one site (jsdoc-scribe's own architecture-pattern detection already recognizes "monorepo" — confirmed in README, not yet covered in a post)</td><td>Engineers / Platform teams</td></tr>
+    <tr><td class="status-open">Open</td><td>SIG/CAIQ/DDQ vendor questionnaires walked through line-by-line for a docs tool — a "how we'd actually answer this" reference post</td><td>Security / Procurement / Vendor-side engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>Platform engineering's shift to IDPs/software catalogs for onboarding — where an auto-generated, drift-checked doc site fits as the catalog's data source rather than a replaced layer (partially seeded by the 2026-08-04 post; a dedicated deeper piece is still open)</td><td>Platform Engineering / DevOps / EM</td></tr>
+    <tr><td class="status-open">Open</td><td>Silo ratio and per-file "authorship concentration" as a companion metric to jsdoc-scribe's Architecture Insight page — could a future version surface this directly from git history</td><td>CTO / EM (also: informs a possible product feature, not just a post)</td></tr>
+    <tr><td class="status-open">Open</td><td>Context7-style "docs-as-context-layer" positioning — a technical explainer on wiring gen-docs output directly into an agent's context window (AGENTS.md generation, or an MCP-style local doc server) as a jsdoc-scribe companion workflow</td><td>Developers / DevOps (also: informs a possible product feature)</td></tr>
+    <tr><td class="status-open">Open</td><td>TypeScript "Project Corsa" native compiler — what a ~10x faster TS compiler API means for jsdoc-scribe's own CI/CLI speed once it ships stable, and whether early-adopter benchmarking is worth doing now</td><td>Developers / Engineers</td></tr>
+    <tr><td class="status-open">New: open</td><td>Syntax Scribe and other name-adjacent competitors now actively publishing SEO comparison content — should jsdoc-scribe write its own honest comparison/positioning post, given it currently has zero indexed presence to compete on</td><td>Developers evaluating doc tools (also: an off-blog discoverability action, not just a post — see note below)</td></tr>
+  </table>
+  <p>Each future run should cross-check this table plus the published list in Section 4, pick the strongest unused angle for that day's news/search signal, and append newly published posts back into Section 4's equivalent list. Note: the standing zero-organic-visibility finding in Section 1 has now repeated nine times without a dedicated action, and today is the first time a concrete name-adjacent competitor (Syntax Scribe) was observed actively winning that search space — worth Chintan considering a non-blog discoverability action (tool directory submission, Show HN-style post) alongside the daily content cadence.</p>
+</section>
+
+<footer>
+  Generated by the scheduled jsdoc-scribe content pipeline (Market Analyst role). Blog output for this date: <code>docs-site/posts/2026-08-05-shadow-ai-is-a-source-code-problem-first.md</code>. Images intentionally omitted — Chintan handles cover-image generation himself, outside the automated pipeline.
+</footer>
+
+</div>
+</body>
+</html>

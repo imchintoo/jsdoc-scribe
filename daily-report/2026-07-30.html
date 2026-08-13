@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jsdoc-scribe — Daily Market &amp; Content Report — 2026-07-30</title>
+<style>
+  :root{--ink:#1a1d23;--muted:#5b6472;--line:#e4e7ec;--accent:#2f6fed;--bg-soft:#f6f8fb;--good:#12805c;--warn:#b6540a;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+  header.rep{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+  header.rep h1{font-size:1.5rem;margin:0 0 6px}
+  header.rep .meta{color:var(--muted);font-size:.92rem}
+  .badge{display:inline-block;background:var(--ink);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:4px;margin-right:8px}
+  .badge.role-a{background:var(--accent)}
+  .badge.role-b{background:var(--good)}
+  section{margin-bottom:36px}
+  h2{font-size:1.15rem;border-left:4px solid var(--accent);padding-left:10px;margin:0 0 14px}
+  h3{font-size:1rem;margin:20px 0 8px}
+  p{margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600}
+  ul{margin:0 0 14px;padding-left:20px}
+  li{margin-bottom:6px}
+  .card{background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+  .tag{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.78rem;color:var(--muted);margin:2px 4px 2px 0}
+  .status-covered{color:var(--muted)}
+  .status-open{color:var(--good);font-weight:600}
+  .source-list{font-size:.85rem;color:var(--muted)}
+  .source-list a{color:var(--accent)}
+  footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem}
+  .decision{border:1px solid var(--accent);border-radius:8px;padding:16px 18px;background:#eef4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="rep">
+  <span class="badge role-a">Market Analyst</span><span class="badge role-b">Content Writer</span>
+  <h1>Daily Report — jsdoc-scribe Content Pipeline</h1>
+  <div class="meta">Date: 2026-07-30 (Thursday) &middot; Prepared for: Chintan Goswami &middot; Scope: npm package + docs site (imchintoo.github.io/jsdoc-scribe)</div>
+</header>
+
+<section>
+  <h2>1. Brand &amp; keyword visibility check</h2>
+  <p>Direct search for <code>jsdoc-scribe</code> and the exact-quoted <code>"jsdoc-scribe"</code> still returns zero third-party mentions, reviews, or "alternatives to" roundups — results continue to resolve to the unrelated core <code>jsdoc</code> package, <code>scribe.js-ocr</code>, PHP-ecosystem <code>@knuckleswtf/scribe</code>, and a Node.js API-doc tool confusingly also named "Scribe" (scribe-js.readthedocs.io, unrelated project). No change in organic visibility across six consecutive checks (2026-07-23 through today).</p>
+  <div class="card">
+    <strong>Implication:</strong> unchanged from prior reports — zero organic search competition, zero organic discovery. Nothing new in the "-scribe" naming space today beyond what's already logged (Syntax Scribe, from 2026-07-29).
+  </div>
+</section>
+
+<section>
+  <h2>2. Competitive landscape snapshot</h2>
+  <table>
+    <tr><th>Tool</th><th>Positioning</th><th>Where jsdoc-scribe differs</th></tr>
+    <tr><td>TypeDoc</td><td>2026 roundups still frame it as the standard for TypeScript reference docs, generated from types + JSDoc comments — but explicitly "no story for guides, tutorials, or onboarding content" (PkgPulse's TypeDoc vs JSDoc vs API Extractor guide)</td><td>jsdoc-scribe's <code>gen-docs</code> ships a full navigable site (including the auto-generated Architecture Insight page) from the same run that writes the comments — no second tool needed for the surrounding narrative</td></tr>
+    <tr><td>Docusaurus</td><td>Meta-maintained, ~3M weekly downloads, the default recommendation for the "guides and tutorials" layer that pure reference-doc generators don't cover</td><td>Confirms the still-common 2026 advice: "pair JSDoc/TSDoc with Docusaurus." jsdoc-scribe remains the only option in this comparison set that produces both layers from one dependency and one CLI run</td></tr>
+    <tr><td>API Extractor (Microsoft)</td><td>Library-author-focused: public API surface rollup, breaking-change detection, API review reports — not a documentation-site generator</td><td>Different job entirely (contract enforcement vs. narrative docs); noted for completeness, not a direct competitor</td></tr>
+    <tr><td>"Platform-driven onboarding" (IDPs, software catalogs)</td><td>2026 onboarding-best-practice coverage (Cycloid, CorrectContext) frames the industry shift as moving *away* from documentation-driven onboarding toward self-service IDPs and software catalogs that answer "where is everything" without a human guide</td><td>Worth noting as a framing risk, not a threat: an IDP/software catalog still needs an accurate, current data source to populate itself from — auto-generated, drift-checked docs are exactly that source. New backlog angle logged in Section 6.</td></tr>
+  </table>
+  <p class="source-list">Sources: <a href="https://www.pkgpulse.com/guides/typedoc-vs-jsdoc-vs-api-extractor-2026">TypeDoc vs JSDoc vs API Extractor 2026 — PkgPulse</a> &middot; <a href="https://www.pkgpulse.com/guides/best-documentation-frameworks-2026">Best Documentation Frameworks 2026 — PkgPulse</a> &middot; <a href="https://docsio.co/blog/code-documentation-tools">12 Best Code Documentation Tools for Developers in 2026 — Docsio</a> &middot; <a href="https://www.cycloid.io/blogs/developer-onboarding-process/">Developer Onboarding Process: The Complete Guide (2026) — Cycloid</a> &middot; <a href="https://correctcontext.com/10-developer-onboarding-best-practices-that-reduce-time-to-productivity-by-60-2026-guide/">10 Developer Onboarding Best Practices 2026 — CorrectContext</a></p>
+</section>
+
+<section>
+  <h2>3. Signal worth writing about today</h2>
+  <div class="card">
+    <h3>Bus factor has real, citable measurement methodology now — and a hard number for what losing the fight costs</h3>
+    <p>Bus factor (aka truck factor) research has matured well past the informal definition: 2026 coverage cites a "silo ratio" metric (% of meaningful commits to a file/module made by the single top contributor — 95% silo ratio means one person owns nearly everything), Avelino's greedy Truck Factor algorithm for estimating impact of removing top contributors, and a dedicated tool (Bus Factor Explorer, arXiv:2403.08038) for computing and visualizing it per-repo. Consensus recommendation across sources: a bus factor of 3-5+ per critical module is the target; 1 is the danger zone.</p>
+    <p>Paired with it: 2026 onboarding-cost data now puts the true first-90-days cost of a new engineer at <strong>$20K-$80K</strong> (salary is only ~40% of that figure — the rest is mentor time, tooling, and team velocity drag), and new hires reach only <strong>25% productivity in their first 30 days</strong> without structured onboarding, taking up to <strong>six months</strong> to reach full productivity on a large, under-documented codebase.</p>
+    <p class="source-list">Sources: <a href="https://calyntro.com/blog/posts/2026-06-02-how-to-measure-bus-factor/">How to Measure Bus Factor in Your Software Team — Calyntro</a> &middot; <a href="https://leadermenu.com/lead-teams/bus-factor/">Bus Factor: The Risk Metric Most Teams Ignore Until It Hurts — Leader Menu</a> &middot; <a href="https://arxiv.org/abs/2403.08038">Bus Factor Explorer — arXiv:2403.08038</a> &middot; <a href="https://www.cesarsotovalero.net/blog/bus-factor-a-human-centered-risk-metric-in-the-software-supply-chain.html">Bus Factor: A Human-Centered Risk Metric — Cesar Soto Valero</a> &middot; <a href="https://developeronboardingcost.com/">Developer Onboarding Cost 2026</a> &middot; <a href="https://gitnux.org/onboarding-statistics/">150+ Onboarding Statistics: 2026 Verified Report — Gitnux</a></p>
+  </div>
+  <p><strong>Today's strongest angle:</strong> this is unused backlog angle #1 — "bus factor as a quantifiable metric, how to measure and report it to a board" — and today's research gives it exactly what it needed: a real measurement methodology (silo ratio, Avelino's algorithm) instead of just the informal "what if they got hit by a bus" framing, plus a hard dollar figure for what a low bus factor actually costs when it triggers (the $20K-$80K onboarding number, and the 25%-productivity/six-month ramp stat). Audience is CTO/EM — a metric-and-scorecard piece, structurally distinct from the last four posts (case study, technical deep-dive, philosophy/rebuttal, procurement deep-dive).</p>
+</section>
+
+<section>
+  <h2>4. Content already published (do not repeat)</h2>
+  <table>
+    <tr><th>Date</th><th>Slug</th><th>Core angle</th></tr>
+    <tr><td>2026-07-10</td><td>why-deterministic-jsdoc-matters</td><td>Philosophy: deterministic AST-based docs vs. hand-written/guessed docs</td></tr>
+    <tr><td>2026-07-13</td><td>halving-engineering-overhead-documentation-automation</td><td>Case study: client cut transition overhead 50%, onboarding 70%+</td></tr>
+    <tr><td>2026-07-16</td><td>we-automated-documentation-out-of-existence</td><td>Cost/savings story: free, local, benchmarks, architecture insight, quality dashboard</td></tr>
+    <tr><td>2026-07-23</td><td>the-due-diligence-blind-spot</td><td>Due-diligence/risk story: continuous docs as an investor-facing signal (pre-raise)</td></tr>
+    <tr><td>2026-07-24</td><td>the-eslint-rule-that-disappeared</td><td>Technical deep-dive: ESLint v9 core rule removal, jsdoc-scribe's ESLint plugin</td></tr>
+    <tr><td>2026-07-28</td><td>what-saying-no-to-ai-actually-costs-you</td><td>Honest trade-off/rebuttal: what "no AI" costs vs. saves, argued against the product's own easy narrative</td></tr>
+    <tr><td>2026-07-29</td><td>the-question-that-stalls-your-deal</td><td>Procurement/compliance deep-dive: security questionnaires, EU AI Act deadline, deterministic tooling as a one-sentence answer</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>5. Today's pick</h2>
+  <div class="decision">
+    <strong>Title:</strong> "The Bus Factor Nobody Puts on a Slide: How to Measure It, and the One Lever That Actually Moves It"<br>
+    <strong>Audience:</strong> CTOs and engineering managers — the people who own the metric and have to report on it, not the raise/procurement audience of the last two posts<br>
+    <strong>Angle:</strong> metric-and-scorecard piece — what bus factor actually is, how it's measured today (silo ratio, Avelino's Truck Factor algorithm, Bus Factor Explorer), the recommended 3-5+ target, the real dollar cost of hitting bus factor 1 (onboarding cost data, 25%-productivity/six-month ramp stat), and why continuous, drift-checked documentation is the one lever an EM can pull that raises the number without adding headcount.<br>
+    <strong>File:</strong> <code>docs-site/posts/2026-07-30-the-bus-factor-nobody-puts-on-a-slide.md</code>
+  </div>
+</section>
+
+<section>
+  <h2>6. Backlog — candidate angles for upcoming days (avoid re-selecting once used)</h2>
+  <table>
+    <tr><th>Status</th><th>Angle</th><th>Primary audience</th></tr>
+    <tr><td class="status-covered">Used 2026-07-30</td><td>Bus-factor as a quantifiable metric — how to measure and report it to a board</td><td>CTO / EM</td></tr>
+    <tr><td class="status-covered">Used 2026-07-29</td><td>Why "self-hosted, no data leaves your infra" is becoming a procurement requirement, not a nice-to-have</td><td>CTO / Security / Procurement</td></tr>
+    <tr><td class="status-open">Open</td><td>Architecture Insight page walkthrough — using auto-detected patterns for new-hire ramp-up</td><td>Engineers / EM</td></tr>
+    <tr><td class="status-open">Open</td><td>GitHub Actions + Pages deploy recipe — docs site live in under 10 minutes</td><td>Developers / DevOps</td></tr>
+    <tr><td class="status-open">Open</td><td>Code Health dashboard (--quality) as a lightweight alternative to SonarQube for small teams</td><td>Engineers / EM / CTO</td></tr>
+    <tr><td class="status-open">Open</td><td>Monorepo documentation: workspaces, multiple packages, one site</td><td>Engineers / Platform teams</td></tr>
+    <tr><td class="status-covered">Used 2026-07-28</td><td>What "no AI" actually costs you vs saves you — an honest trade-off piece, not a pitch</td><td>Founders / CTO / skeptical engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>Why AI coding assistants (Copilot, Cursor, agentic coding tools) produce better output when the docs they read as context are accurate and current, not stale</td><td>Developers / CTO</td></tr>
+    <tr><td class="status-open">Open</td><td>Shadow AI in engineering orgs — what a security review of "who's sending code to which model" actually finds, and how deterministic tooling sidesteps the question</td><td>CTO / Security / Engineering leadership</td></tr>
+    <tr><td class="status-open">Open</td><td>SIG/CAIQ/DDQ vendor questionnaires walked through line-by-line for a docs tool — a "how we'd actually answer this" reference post</td><td>Security / Procurement / Vendor-side engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>What August 2, 2026's EU AI Act high-risk enforcement actually changes for teams that don't think they use "AI systems" at all</td><td>CTO / Legal / Compliance</td></tr>
+    <tr><td class="status-open">Open</td><td>New: Platform engineering's shift to IDPs/software catalogs for onboarding — where an auto-generated, drift-checked doc site fits as the catalog's data source rather than a replaced layer</td><td>Platform Engineering / DevOps / EM</td></tr>
+    <tr><td class="status-open">Open</td><td>New: Silo ratio and per-file "authorship concentration" as a companion metric to jsdoc-scribe's Architecture Insight page — could a future version surface this directly from git history</td><td>CTO / EM (also: informs a possible product feature, not just a post)</td></tr>
+  </table>
+  <p>Each future run should cross-check this table plus the published list in Section 4, pick the strongest unused angle for that day's news/search signal, and append newly published posts back into Section 4's equivalent list.</p>
+</section>
+
+<footer>
+  Generated by the scheduled jsdoc-scribe content pipeline (Market Analyst role). Blog output for this date: <code>docs-site/posts/2026-07-30-the-bus-factor-nobody-puts-on-a-slide.md</code>. Images intentionally omitted — Chintan handles cover-image generation himself, outside the automated pipeline.
+</footer>
+
+</div>
+</body>
+</html>

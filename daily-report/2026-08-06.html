@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jsdoc-scribe — Daily Market &amp; Content Report — 2026-08-06</title>
+<style>
+  :root{--ink:#1a1d23;--muted:#5b6472;--line:#e4e7ec;--accent:#2f6fed;--bg-soft:#f6f8fb;--good:#12805c;--warn:#b6540a;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+  header.rep{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+  header.rep h1{font-size:1.5rem;margin:0 0 6px}
+  header.rep .meta{color:var(--muted);font-size:.92rem}
+  .badge{display:inline-block;background:var(--ink);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:4px;margin-right:8px}
+  .badge.role-a{background:var(--accent)}
+  .badge.role-b{background:var(--good)}
+  section{margin-bottom:36px}
+  h2{font-size:1.15rem;border-left:4px solid var(--accent);padding-left:10px;margin:0 0 14px}
+  h3{font-size:1rem;margin:20px 0 8px}
+  p{margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--bg-soft);font-weight:600}
+  ul{margin:0 0 14px;padding-left:20px}
+  li{margin-bottom:6px}
+  .card{background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+  .tag{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.78rem;color:var(--muted);margin:2px 4px 2px 0}
+  .status-covered{color:var(--muted)}
+  .status-open{color:var(--good);font-weight:600}
+  .status-missed{color:var(--warn);font-weight:600}
+  .source-list{font-size:.85rem;color:var(--muted)}
+  .source-list a{color:var(--accent)}
+  footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem}
+  .decision{border:1px solid var(--accent);border-radius:8px;padding:16px 18px;background:#eef4ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="rep">
+  <span class="badge role-a">Market Analyst</span><span class="badge role-b">Content Writer</span>
+  <h1>Daily Report — jsdoc-scribe Content Pipeline</h1>
+  <div class="meta">Date: 2026-08-06 (Thursday) &middot; Prepared for: Chintan Goswami &middot; Scope: npm package + docs site (imchintoo.github.io/jsdoc-scribe)</div>
+</header>
+
+<section>
+  <h2>1. Brand &amp; keyword visibility check</h2>
+  <p>Direct search for <code>jsdoc-scribe</code> still returns zero third-party mentions, reviews, or "alternatives to" roundups — tenth consecutive check (2026-07-23 through today) with no organic visibility change. Results continue to resolve to unrelated namesakes (core <code>jsdoc</code>, <code>scribe.js-ocr</code>, <code>@knuckleswtf/scribe</code>, the Node.js "Scribe" project at scribe-js.readthedocs.io). No new evidence today on the Syntax Scribe front from yesterday's report — its comparison content is still indexed and unchanged, so that observation stands rather than repeating in full here.</p>
+  <div class="card">
+    <strong>Implication:</strong> unchanged pattern — package version re-confirmed at <strong>2.4.8</strong> per <code>package.json</code>, consistent with 2026-08-05. Zero-organic-discovery finding is now ten checks old with no dedicated remediation action taken; carrying the standing recommendation forward again (see Section 6 note).
+  </div>
+</section>
+
+<section>
+  <h2>2. Competitive landscape snapshot</h2>
+  <table>
+    <tr><th>Tool / trend</th><th>Positioning</th><th>Where jsdoc-scribe differs</th></tr>
+    <tr><td>TypeDoc <code>entryPointStrategy: "packages"</code> (monorepo mode)</td><td>TypeDoc's dedicated monorepo path: point it at <code>packages/*</code>, it runs a separate conversion per package directory with a clean options object each time, then merges the outputs. Multiple open GitHub issues (cross-package type references not resolving, no way to exclude a package from the glob, project-references interaction bugs) show this mode is still rough at the edges as of 2026.</td><td>Directly relevant to today's angle: jsdoc-scribe detects the monorepo shape automatically (npm <code>workspaces</code> field) as one signal on the Architecture Insight page and documents a straightforward programmatic-API pattern for a combined multi-package site — no separate per-package options object to maintain, no merge-step configuration.</td></tr>
+    <tr><td>Turborepo / pnpm workspaces as the default 2026 monorepo stack</td><td>Guidance converging on Turborepo (task orchestration/caching) layered on top of npm/pnpm/Yarn workspaces as the standard baseline; documentation is still commonly bolted on afterward via a dedicated Next.js/Docusaurus app or Storybook, not treated as a first-class part of the workspace setup</td><td>jsdoc-scribe's Architecture Insight page reads the same <code>workspaces</code> field this tooling already relies on, so "is this a monorepo and what packages does it have" shows up for free rather than needing a separate documentation app to be stood up</td></tr>
+    <tr><td>TypeDoc + JSDoc download share (unchanged)</td><td>TypeDoc ~1.47M weekly downloads / JSDoc ~1.16M weekly downloads remain the two dominant inline-reference generators; 2026 buyer's-guide content (Docsio, PkgPulse) still frames the standard stack as "one tool for inline reference docs, one for the published site"</td><td>Unchanged from prior reports: jsdoc-scribe collapses comment generation + reference extraction + doc-site build into one dependency and two CLIs</td></tr>
+  </table>
+  <p class="source-list">Sources: <a href="https://github.com/TypeStrong/typedoc/issues/1835">Cross-package references in monorepository not working — TypeStrong/typedoc #1835</a> &middot; <a href="https://github.com/TypeStrong/typedoc/issues/1959">Feature: ignore a package in the --entryPointStrategy packages globs — #1959</a> &middot; <a href="https://typedoc.org/documents/Options.Input.html">Input Options — TypeDoc</a> &middot; <a href="https://devtoollab.com/blog/best-monorepo-management-tools">Best Monorepo Tools 2026: Turborepo, Nx, pnpm &amp; Lerna Compared — DevToolLab</a> &middot; <a href="https://npmtrends.com/documentation-vs-docusaurus-vs-jsdoc-vs-typedoc-vs-yuidocjs">documentation vs docusaurus vs jsdoc vs typedoc vs yuidocjs — npmtrends</a></p>
+</section>
+
+<section>
+  <h2>3. Signal worth writing about today</h2>
+  <div class="card">
+    <h3>Monorepo documentation is still assembled by hand, and the leading tool's own monorepo mode has open rough edges</h3>
+    <p>2026 monorepo guidance is remarkably consistent on tooling (Turborepo/pnpm/npm workspaces) but thin on documentation: the recurring pattern in current writeups is "add a Storybook" or "add a separate Next.js/Docusaurus docs app," treating documentation as a bolt-on rather than something the workspace configuration already implies. Meanwhile TypeDoc's dedicated monorepo path (<code>entryPointStrategy: "packages"</code>) has multiple open issues as of 2026 around cross-package reference resolution, per-package option duplication (root-level config isn't inherited by child conversions — each package needs its own <code>packageOptions</code> block), and no built-in way to exclude one package from the glob. This is a real, current pain point for exactly the audience jsdoc-scribe already has a documented, simpler path for.</p>
+    <p>This is a different angle from every prior post: it's a technical comparison/tutorial hybrid (not yet used in that exact combination), targets developers and platform engineers rather than leadership (last two posts were CTO/security-leadership-facing), and it uses a real, already-shipped jsdoc-scribe capability — the Architecture Insight page's monorepo/workspace detection plus the documented programmatic-API pattern for a combined multi-package site — that has been mentioned in the 2026-08-01 Architecture Insight walkthrough but never given its own dedicated deep-dive.</p>
+    <p class="source-list">Sources: <a href="https://github.com/TypeStrong/typedoc/issues/1791">Build documentation for individual package in monorepository — TypeStrong/typedoc #1791</a> &middot; <a href="https://github.com/TypeStrong/typedoc/issues/2138">multiple entry points inside monorepo — #2138</a> &middot; <a href="https://github.com/Gerrit0/typedoc-packages-example">typedoc-packages-example</a> &middot; <a href="https://dev.to/piotr_pomierski/building-centralized-documentation-across-microservices-with-docusaurus-gitlab-ci-and-typedoc-5a7d">Building Centralized Documentation Across Microservices with Docusaurus, GitLab CI, and TypeDoc — DEV Community</a> &middot; <a href="https://reintech.io/blog/npm-workspaces-monorepo-management-guide">npm Workspaces: Complete Monorepo Management Guide for TypeScript — Reintech</a></p>
+  </div>
+  <p><strong>Today's strongest angle:</strong> the open backlog item "Monorepo documentation: workspaces, multiple packages, one site." Audience: Developers / Platform teams — rotating back to a practitioner-facing piece after two consecutive leadership-facing posts (2026-08-03, 2026-08-05). Structured as a technical comparison + how-to (a combination not yet used on this blog), grounded in TypeDoc's actual open GitHub issues around its packages mode and jsdoc-scribe's real, already-documented Architecture Insight + programmatic-API capabilities — no invented features.</p>
+</section>
+
+<section>
+  <h2>4. Content already published (do not repeat)</h2>
+  <table>
+    <tr><th>Date</th><th>Slug</th><th>Core angle</th></tr>
+    <tr><td>2026-07-10</td><td>why-deterministic-jsdoc-matters</td><td>Philosophy: deterministic AST-based docs vs. hand-written/guessed docs</td></tr>
+    <tr><td>2026-07-13</td><td>halving-engineering-overhead-documentation-automation</td><td>Case study: client cut transition overhead 50%, onboarding 70%+</td></tr>
+    <tr><td>2026-07-16</td><td>we-automated-documentation-out-of-existence</td><td>Cost/savings story: free, local, benchmarks, architecture insight, quality dashboard</td></tr>
+    <tr><td>2026-07-23</td><td>the-due-diligence-blind-spot</td><td>Due-diligence/risk story: continuous docs as an investor-facing signal (pre-raise)</td></tr>
+    <tr><td>2026-07-24</td><td>the-eslint-rule-that-disappeared</td><td>Technical deep-dive: ESLint v9 core rule removal, jsdoc-scribe's ESLint plugin</td></tr>
+    <tr><td>2026-07-28</td><td>what-saying-no-to-ai-actually-costs-you</td><td>Honest trade-off/rebuttal: what "no AI" costs vs. saves, argued against the product's own easy narrative</td></tr>
+    <tr><td>2026-07-29</td><td>the-question-that-stalls-your-deal</td><td>Procurement/compliance deep-dive: security questionnaires, EU AI Act deadline, deterministic tooling as a one-sentence answer</td></tr>
+    <tr><td>2026-07-30</td><td>the-bus-factor-nobody-puts-on-a-slide</td><td>Metric-and-scorecard piece: bus factor measurement methodology, onboarding-cost data, documentation as the lever</td></tr>
+    <tr><td>2026-07-31</td><td>your-ai-agent-is-only-as-good-as-its-docs</td><td>Technical/practical: "context rot" in AI coding agents, AGENTS.md efficiency data, drift-checking as the fix</td></tr>
+    <tr><td>2026-08-01</td><td>architecture-insight-page-new-hire-day-one</td><td>Product walkthrough: Architecture Insight page, new-hire onboarding, time-to-productivity data</td></tr>
+    <tr><td>2026-08-02</td><td>code-health-dashboard-small-team-sonarqube-alternative</td><td>Product comparison: <code>--quality</code> dashboard vs. SonarQube's free-tier limits, small-team framing</td></tr>
+    <tr><td>2026-08-03</td><td>eu-ai-act-a-day-later-what-actually-changed</td><td>Compliance retrospective: EU AI Act high-risk obligations, day-after fact-check of what actually went live</td></tr>
+    <tr><td>2026-08-04</td><td>docs-site-live-in-under-10-minutes</td><td>Tutorial: real GitHub Actions + Pages workflow taken from this repo's own CI</td></tr>
+    <tr><td>2026-08-05</td><td>shadow-ai-is-a-source-code-problem-first</td><td>Leadership/security analysis: internal shadow-AI review findings, source code as top-leaked data type</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>5. Today's pick</h2>
+  <div class="decision">
+    <strong>Title:</strong> "One Docs Site, Every Package: Monorepo Documentation Without the Config Maze"<br>
+    <strong>Audience:</strong> Developers / Platform engineers — rotating back to a practitioner-facing piece after two leadership-facing posts (2026-08-03, 2026-08-05)<br>
+    <strong>Angle:</strong> a technical comparison + how-to hybrid (new structure for this blog): what TypeDoc's <code>entryPointStrategy: "packages"</code> monorepo mode actually requires (per-package clean options object, documented cross-package-reference and package-exclusion issues still open on GitHub), contrasted with jsdoc-scribe's built-in monorepo/workspace detection on the Architecture Insight page and the documented programmatic-API pattern for building one combined site across workspace packages from a single Node script.<br>
+    <strong>File:</strong> <code>docs-site/posts/2026-08-06-monorepo-documentation-without-the-config-maze.md</code>
+  </div>
+</section>
+
+<section>
+  <h2>6. Backlog — candidate angles for upcoming days (avoid re-selecting once used)</h2>
+  <table>
+    <tr><th>Status</th><th>Angle</th><th>Primary audience</th></tr>
+    <tr><td class="status-covered">Used 2026-08-06</td><td>Monorepo documentation: workspaces, multiple packages, one site</td><td>Developers / Platform teams</td></tr>
+    <tr><td class="status-covered">Used 2026-08-05</td><td>Shadow AI in engineering orgs — what a security review of "who's sending code to which model" actually finds, and how deterministic tooling sidesteps the question</td><td>CTO / Security / Engineering leadership</td></tr>
+    <tr><td class="status-covered">Used 2026-08-04</td><td>GitHub Actions + Pages deploy recipe — docs site live in under 10 minutes</td><td>Developers / DevOps</td></tr>
+    <tr><td class="status-covered">Used 2026-07-31</td><td>Why AI coding assistants produce better output when the docs they read as context are accurate and current, not stale (context rot)</td><td>Developers / CTO</td></tr>
+    <tr><td class="status-covered">Used 2026-07-30</td><td>Bus-factor as a quantifiable metric — how to measure and report it to a board</td><td>CTO / EM</td></tr>
+    <tr><td class="status-covered">Used 2026-07-29</td><td>Why "self-hosted, no data leaves your infra" is becoming a procurement requirement, not a nice-to-have</td><td>CTO / Security / Procurement</td></tr>
+    <tr><td class="status-covered">Used 2026-07-28</td><td>What "no AI" actually costs you vs saves you — an honest trade-off piece, not a pitch</td><td>Founders / CTO / skeptical engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>SIG/CAIQ/DDQ vendor questionnaires walked through line-by-line for a docs tool — a "how we'd actually answer this" reference post</td><td>Security / Procurement / Vendor-side engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>Platform engineering's shift to IDPs/software catalogs for onboarding — where an auto-generated, drift-checked doc site fits as the catalog's data source rather than a replaced layer (partially seeded by the 2026-08-04 post; a dedicated deeper piece is still open)</td><td>Platform Engineering / DevOps / EM</td></tr>
+    <tr><td class="status-open">Open</td><td>Silo ratio and per-file "authorship concentration" as a companion metric to jsdoc-scribe's Architecture Insight page — could a future version surface this directly from git history</td><td>CTO / EM (also: informs a possible product feature, not just a post)</td></tr>
+    <tr><td class="status-open">Open</td><td>Context7-style "docs-as-context-layer" positioning — a technical explainer on wiring gen-docs output directly into an agent's context window (AGENTS.md generation, or an MCP-style local doc server) as a jsdoc-scribe companion workflow</td><td>Developers / DevOps (also: informs a possible product feature)</td></tr>
+    <tr><td class="status-open">Open</td><td>TypeScript "Project Corsa" native compiler — what a ~10x faster TS compiler API means for jsdoc-scribe's own CI/CLI speed once it ships stable, and whether early-adopter benchmarking is worth doing now</td><td>Developers / Engineers</td></tr>
+    <tr><td class="status-open">Open</td><td>Syntax Scribe and other name-adjacent competitors now actively publishing SEO comparison content — should jsdoc-scribe write its own honest comparison/positioning post, given it currently has zero indexed presence to compete on</td><td>Developers evaluating doc tools (also: an off-blog discoverability action, not just a post — see note below)</td></tr>
+    <tr><td class="status-open">New: open</td><td>A worked, copy-pasteable Node script (referenced but not shown step-by-step in today's post) that runs jsdoc-scribe's programmatic API across every workspace package and publishes one merged site — the natural, more code-heavy follow-up to today's comparison piece</td><td>Developers / Platform teams</td></tr>
+  </table>
+  <p>Each future run should cross-check this table plus the published list in Section 4, pick the strongest unused angle for that day's news/search signal, and append newly published posts back into Section 4's equivalent list. Note: the standing zero-organic-visibility finding in Section 1 is now ten checks old without a dedicated action — repeating the recommendation from 2026-08-05 that Chintan consider a non-blog discoverability action (tool directory submission, Show HN-style post) alongside the daily content cadence, since the content itself has nowhere to be found via search in the meantime.</p>
+</section>
+
+<footer>
+  Generated by the scheduled jsdoc-scribe content pipeline (Market Analyst role). Blog output for this date: <code>docs-site/posts/2026-08-06-monorepo-documentation-without-the-config-maze.md</code>. Images intentionally omitted — Chintan handles cover-image generation himself, outside the automated pipeline.
+</footer>
+
+</div>
+</body>
+</html>
