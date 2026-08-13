@@ -1,0 +1,57 @@
+name: Marketplace Action Check
+
+# Dogfoods the published code-multivitals GitHub Marketplace Action
+# (https://github.com/marketplace/actions/code-multivitals, imchintoo/code-multivitals@v1)
+# directly, as an end user would consume it -- distinct from quality.yml, which
+# calls code-multivitals through gen-docs's own --quality passthrough (the
+# peerDependency/library integration, see
+# docs/backlog/story-gen-docs-code-multivitals-integration.md). This workflow
+# proves the packaged composite Action itself works end-to-end on every run,
+# independent of jsdoc-scribe's own library wiring.
+#
+# Non-blocking (continue-on-error) for the same reason quality.yml is: no
+# team-agreed error/warning threshold exists yet for this repo's own source
+# (see docs/backlog/adr-phase-j-project-dashboard.md). Report-only via the job
+# summary until that's decided -- see docs/backlog/task-marketplace-action-dogfood.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dogfood-marketplace-action:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run code-multivitals via the published Marketplace Action
+        id: quality
+        continue-on-error: true
+        uses: imchintoo/code-multivitals@v1
+        with:
+          patterns: '"lib/**/*.js" "bin/**/*.js" "packages/eslint-plugin-jsdoc-scribe/**/*.js"'
+          reporter: console
+          max-errors: '999'
+          max-warnings: '999'
+
+      - name: Write job summary
+        if: always()
+        run: |
+          {
+            echo "### code-multivitals (Marketplace Action) results"
+            echo ""
+            echo "| Metric | Value |"
+            echo "|---|---|"
+            echo "| Average health | ${{ steps.quality.outputs.average-health }} |"
+            echo "| Average MI | ${{ steps.quality.outputs.average-mi }} |"
+            echo "| Errors | ${{ steps.quality.outputs.error-count }} |"
+            echo "| Warnings | ${{ steps.quality.outputs.warn-count }} |"
+            echo "| Clone pairs | ${{ steps.quality.outputs.clone-count }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
