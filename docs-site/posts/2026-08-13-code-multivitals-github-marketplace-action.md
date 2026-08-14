@@ -5,6 +5,7 @@ description: code-multivitals just went live on GitHub Marketplace as a composit
 date: 2026-08-13
 readingTime: 7 min read
 tags: [GitHubActions, CodeQuality, CI/CD, DeveloperTools, OpenSource]
+image: ../assets/syntaxscribe-vs-jsdoc-scribe.png
 ---
 
 `code-multivitals` — the JS/TS code quality analyzer jsdoc-scribe has been quietly depending on since Track C — is now listed on [GitHub Marketplace](https://github.com/marketplace/actions/code-multivitals) as a proper Action, `imchintoo/code-multivitals@v1`, category code-quality. That's a distribution change, not a feature change, and it's worth being precise about the difference, because we already had code-multivitals wired into this repo one way before today. This post is about the second way, and why both are staying.
