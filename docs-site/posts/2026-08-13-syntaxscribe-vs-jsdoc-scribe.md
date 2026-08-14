@@ -5,6 +5,7 @@ description: SyntaxScribe is the clearest name-adjacent competitor we've found i
 date: 2026-08-13
 readingTime: 9 min read
 tags: [DeveloperTools, Documentation, Comparison, TypeScript, OpenSource]
+image: ../assets/syntaxscribe-vs-jsdoc-scribe.png
 ---
 
 Most of the tools we've mentioned in prior posts — TypeDoc, Docusaurus, Storybook — solve a documentation problem, but not quite *this* problem: "point a CLI at my JS/TS source and get a browsable docs site out, with no manual authoring step." SyntaxScribe does. It's also, as far as we can tell, the first tool we've found that occupies almost the exact same search intent as jsdoc-scribe, has its own indexed domain, and has real third-party coverage (a full [Medium walkthrough](https://medium.com/@patrick_32781/from-code-to-beautiful-docs-a-complete-syntax-scribe-tutorial-6d1c4aad1b43)). That combination is rare enough that it's worth a direct, sourced comparison rather than a passing mention.
