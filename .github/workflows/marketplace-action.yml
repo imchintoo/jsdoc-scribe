@@ -9,10 +9,17 @@ name: Code Multivitals Check
 # proves the packaged composite Action itself works end-to-end on every run,
 # independent of jsdoc-scribe's own library wiring.
 #
+# On pull_request: analyzes only the .js files actually changed in the PR
+# (added/modified, under lib/, bin/, packages/eslint-plugin-jsdoc-scribe/)
+# so the PR comment reports on what's actually being reviewed, not the whole
+# tree. On push/workflow_dispatch (no PR diff to scope to): falls back to the
+# full static tree, same as before.
+#
 # Non-blocking (continue-on-error) for the same reason quality.yml is: no
 # team-agreed error/warning threshold exists yet for this repo's own source
 # (see docs/backlog/adr-phase-j-project-dashboard.md). Report-only via the job
-# summary until that's decided -- see docs/backlog/task-marketplace-action-dogfood.md.
+# summary/PR comment until that's decided -- see
+# docs/backlog/task-marketplace-action-dogfood.md.
 
 on:
   push:
@@ -23,6 +30,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write   # required to post/update the PR comment below
 
 jobs:
   code-multivitals-action:
@@ -30,22 +38,63 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # changed-files needs base/head history to diff against
+
+      - name: Get changed .js files (PR only)
+        id: changed-files
+        if: github.event_name == 'pull_request'
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            lib/**/*.js
+            bin/**/*.js
+            packages/eslint-plugin-jsdoc-scribe/**/*.js
+          files_ignore: |
+            **/*.test.js
+          separator: ' '
+
+      - name: Determine patterns to analyze
+        id: determine
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RAW='${{ steps.changed-files.outputs.all_changed_files }}'
+            if [ -z "$RAW" ]; then
+              echo "patterns=" >> "$GITHUB_OUTPUT"
+              echo "file-count=0" >> "$GITHUB_OUTPUT"
+            else
+              PATTERNS=""
+              COUNT=0
+              for f in $RAW; do
+                PATTERNS="$PATTERNS \"$f\""
+                COUNT=$((COUNT + 1))
+              done
+              echo "patterns=${PATTERNS# }" >> "$GITHUB_OUTPUT"
+              echo "file-count=$COUNT" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo 'patterns="lib/**/*.js" "bin/**/*.js" "packages/eslint-plugin-jsdoc-scribe/**/*.js"' >> "$GITHUB_OUTPUT"
+            echo "file-count=all" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Run code-multivitals via the published Marketplace Action
         id: quality
+        if: steps.determine.outputs.patterns != ''
         continue-on-error: true
         uses: imchintoo/code-multivitals@v1
         with:
-          patterns: '"lib/**/*.js" "bin/**/*.js" "packages/eslint-plugin-jsdoc-scribe/**/*.js"'
+          patterns: ${{ steps.determine.outputs.patterns }}
           reporter: console
           max-errors: '999'
           max-warnings: '999'
 
       - name: Write job summary
-        if: always()
+        if: always() && steps.determine.outputs.patterns != ''
         run: |
           {
             echo "### code-multivitals (Marketplace Action) results"
+            echo ""
+            echo "Files analyzed: ${{ steps.determine.outputs.file-count }}"
             echo ""
             echo "| Metric | Value |"
             echo "|---|---|"
@@ -55,3 +104,83 @@ jobs:
             echo "| Warnings | ${{ steps.quality.outputs.warn-count }} |"
             echo "| Clone pairs | ${{ steps.quality.outputs.clone-count }} |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # Surfaces the report directly on the PR -- a job summary is easy to
+      # miss unless someone clicks into the Actions run. Sticky comment
+      # (find-and-update by marker) so re-pushes update one comment instead
+      # of spamming a new one per run. Always runs on a PR event (even with
+      # zero matching files) so a comment from an earlier push gets updated
+      # to reflect that, instead of going stale.
+      - name: Comment report on the PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true   # fork PRs get a read-only token here; don't redden the job over it
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- code-multivitals-report -->';
+            const fileCount = '${{ steps.determine.outputs.file-count }}';
+            const changedFiles = '${{ steps.changed-files.outputs.all_changed_files }}';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            let body;
+            if (fileCount === '0' || fileCount === '') {
+              body = [
+                marker,
+                '### 🩺 code-multivitals report',
+                '',
+                'No `.js` files under `lib/`, `bin/`, or `packages/eslint-plugin-jsdoc-scribe/` changed in this PR -- nothing to analyze.',
+              ].join('\n');
+            } else {
+              const health = '${{ steps.quality.outputs.average-health }}' || 'n/a';
+              const mi = '${{ steps.quality.outputs.average-mi }}' || 'n/a';
+              const errors = '${{ steps.quality.outputs.error-count }}' || 'n/a';
+              const warnings = '${{ steps.quality.outputs.warn-count }}' || 'n/a';
+              const clones = '${{ steps.quality.outputs.clone-count }}' || 'n/a';
+              const fileList = changedFiles
+                .split(' ')
+                .filter(Boolean)
+                .map((f) => `- \`${f}\``)
+                .join('\n');
+
+              body = [
+                marker,
+                '### 🩺 code-multivitals report',
+                '',
+                `Ran via the published [Marketplace Action](https://github.com/marketplace/actions/code-multivitals) (\`imchintoo/code-multivitals@v1\`) against the **${fileCount} file(s) changed in this PR**:`,
+                '',
+                fileList,
+                '',
+                '| Metric | Value |',
+                '|---|---|',
+                `| Average health | ${health} |`,
+                `| Average MI | ${mi} |`,
+                `| Errors | ${errors} |`,
+                `| Warnings | ${warnings} |`,
+                `| Clone pairs | ${clones} |`,
+                '',
+                `Non-blocking for now (no team-agreed threshold yet -- see \`docs/backlog/task-marketplace-action-dogfood.md\`). Full console output: [job summary](${runUrl}).`,
+              ].join('\n');
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
